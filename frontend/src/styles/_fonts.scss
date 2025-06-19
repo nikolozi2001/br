@@ -1,0 +1,22 @@
+@font-face {
+  font-family: 'BPG Nino Mtavruli';
+  src: url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.eot');
+  src: url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.eot?#iefix') format('embedded-opentype'),
+       url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.woff2') format('woff2'),
+       url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.woff') format('woff'),
+       url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.ttf') format('truetype'),
+       url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.svg#bpg_nino_mtavruliregular') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-bpg-nino {
+  font-family: "BPG Nino Mtavruli", sans-serif;
+}
+
+$font-bpg-nino: "BPG Nino Mtavruli", sans-serif;
+
+.font-poppins {
+  font-family: "Poppins", sans-serif;
+}
