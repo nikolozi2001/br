@@ -12,11 +12,13 @@ const Header = () => {
         />
 
         {/* Titles */}
-        <div className="leading-tight">          <h1 className="text-gray-800 text-[18px] font-bpg-nino font-medium">
+        <div className="leading-tight">
+          {" "}
+          <h1 className="text-gray-800 text-[18px] font-bpg-nino font-medium">
             საქართველოს სტატისტიკის ეროვნული სამსახური
           </h1>{" "}
           <p className="text-[#0080be] text-[20px] font-bold font-bpg-nino text-center w-full">
-            სტატისტიკური ბიზნეს რეესტრი
+            სტატისტიკური ბიზნეს რეგისტრი
           </p>
         </div>
       </div>

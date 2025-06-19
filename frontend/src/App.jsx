@@ -1,16 +1,19 @@
-import { useState } from 'react'
-import Header from './components/Header'
-import './App.scss'
+import { useState } from "react";
+import Header from "./components/Header";
+import TopNavigation from "./components/TopNavigation";
+import SearchForm from "./components/SearchForm";
+import "./App.scss";
 
 function App() {
   return (
     <>
       <Header />
       <main>
-        {/* Main content will go here */}
+        <TopNavigation />
+        <SearchForm />
       </main>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
