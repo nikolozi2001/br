@@ -2,7 +2,7 @@ import React from "react";
 
 const Header = () => {
   return (
-    <div className="w-full bg-gradient-to-r from-white to-blue-50 py-4 px-6 shadow-sm">
+    <div className="w-full from-white to-blue-50 py-4 px-6">
       <div className="max-w-7xl mx-auto flex items-center justify-center gap-6">
         {/* Logo */}
         <img
@@ -14,7 +14,7 @@ const Header = () => {
         {/* Titles */}
         <div className="leading-tight">
           {" "}
-          <h1 className="text-gray-800 text-[18px] font-bpg-nino font-medium">
+          <h1 className="text-gray-800 text-[18px] font-bpg-nino font-bold">
             საქართველოს სტატისტიკის ეროვნული სამსახური
           </h1>{" "}
           <p className="text-[#0080be] text-[20px] font-bold font-bpg-nino text-center w-full">

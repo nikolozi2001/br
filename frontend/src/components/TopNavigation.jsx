@@ -7,29 +7,31 @@ function TopNavigation() {
   };
 
   return (
-    <div className="w-full bg-white shadow-sm">
+    <div className="w-full">
       <div className="container mx-auto">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             {/* Left Side - Navigation Buttons */}
             <div
-              className="flex flex-wrap gap-2 justify-center sm:justify-start"
+              className="flex flex-wrap justify-center sm:justify-start"
               role="group"
             >
-              <button className="min-w-[100px] px-4 py-2 text-sm bg-white text-[#0080BE] border border-[#0080BE] rounded hover:bg-gray-50 transition-colors">
+              <button className="px-6 py-[6px] text-sm bg-white text-[#0080BE] border-t border-l border-[#0080BE] first:rounded-tl-lg hover:bg-gray-50 transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
                 მთავარი
               </button>
-              <button className="min-w-[100px] px-4 py-2 text-sm bg-[#0080BE] text-white border border-[#0080BE] rounded hover:bg-[#0070aa] transition-colors">
+
+              <button className="px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
                 რეპორტები
               </button>
-              <button className="min-w-[100px] px-4 py-2 text-sm bg-[#0080BE] text-white border border-[#0080BE] rounded hover:bg-[#0070aa] transition-colors">
+
+              <button className="px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0  after:h-full after:bg-[#0080BE]">
                 გრაფიკები
               </button>
               <a
                 href="http://gis.geostat.ge/geomap/index.html?open"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-w-[100px] px-4 py-2 text-sm bg-[#0080BE] text-white border border-[#0080BE] rounded hover:bg-[#0070aa] transition-colors text-center"
+                className="px-6 py-[6px] text-sm bg-[#0080BE] text-white border-[#0080BE] border-t border-l border-r last:rounded-tr-lg  hover:bg-[#fff] hover:text-[#0080BE] transition-colors text-center"
               >
                 GIS ანალიზი
               </a>

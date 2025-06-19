@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
