@@ -105,15 +105,15 @@ function SearchForm() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                   />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                </div>{" "}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <input
                     type="text"
                     placeholder="ორგანიზაციულ-სამართლებრივი ფორმა"
                     name="organizationalLegalForm"
                     value={formData.organizationalLegalForm}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-2"
                   />
                   <input
                     type="text"
