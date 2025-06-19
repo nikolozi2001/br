@@ -1,0 +1,64 @@
+.header {
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+
+  .header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    img.logo {
+      height: 50px;
+      width: auto;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      color: #333;
+      margin: 0;
+    }
+  }
+
+  .nav-menu {
+    ul {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      li {
+        a {
+          text-decoration: none;
+          color: #333;
+          font-weight: 500;
+          transition: color 0.3s ease;
+
+          &:hover {
+            color: #e31b23;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Add padding to body to account for fixed header
+body {
+  padding-top: 80px;
+}
