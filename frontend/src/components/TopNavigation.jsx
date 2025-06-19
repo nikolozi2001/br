@@ -2,12 +2,11 @@ import { useState } from "react";
 import britishFlag from "/src/assets/images/british-flag.png";
 import georgianFlag from "/src/assets/images/georgian-flag.svg";
 
-function TopNavigation() {
+function TopNavigation({ isEnglish, onLanguageChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEnglish, setIsEnglish] = useState(false);
 
   const handleLanguageSwitch = () => {
-    setIsEnglish(!isEnglish);
+    onLanguageChange(!isEnglish);
   };
 
   const handleModalOpen = () => {
@@ -78,15 +77,15 @@ function TopNavigation() {
                 className="flex flex-wrap justify-center sm:justify-start"
                 role="group"
               >
-                <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-white text-[#0080BE] border-t border-l border-[#0080BE] first:rounded-tl-lg hover:bg-gray-50 transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
+                <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-white text-[#0080BE] border-t border-l border-[#0080BE] first:rounded-tl-lg hover:bg-gray-50 transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE] cursor-pointer">
                   {currentLanguage.navigation.main}
                 </button>
 
-                <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
+                <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE] cursor-pointer">
                   {currentLanguage.navigation.reports}
                 </button>
 
-                <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0  after:h-full after:bg-[#0080BE]">
+                <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0  after:h-full after:bg-[#0080BE] cursor-pointer">
                   {currentLanguage.navigation.charts}
                 </button>
                 <a
@@ -119,7 +118,7 @@ function TopNavigation() {
 
                   {/* Language Switch */}
                   <button
-                    className="flex items-center hover:opacity-80 transition-opacity"
+                    className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
                     onClick={handleLanguageSwitch}
                     title={currentLanguage.languageSwitch}
                   >
@@ -133,7 +132,7 @@ function TopNavigation() {
 
                   {/* Info Button */}
                   <button
-                    className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1"
+                    className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1 cursor-pointer"
                     onClick={handleModalOpen}
                   >
                     <i className="fas fa-info-circle text-xl"></i>
