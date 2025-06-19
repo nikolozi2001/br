@@ -102,7 +102,6 @@ function SearchForm() {
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                   />
                 </div>
-
                 <div className="grid grid-cols-1 gap-4">
                   <input
                     type="text"
@@ -113,7 +112,6 @@ function SearchForm() {
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                   />
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">იურიდიული მისამართი</h3>
@@ -189,7 +187,6 @@ function SearchForm() {
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">
                     ეკონომიკური საქმიანობა (NACE Rev.2)
@@ -215,7 +212,6 @@ function SearchForm() {
                     />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="text"
@@ -232,29 +228,73 @@ function SearchForm() {
                     value={formData.businessForm}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
-                  />
+                  />{" "}
                 </div>
-
-                <div className="flex justify-center gap-4">
-                  <button
-                    type="submit"
-                    className="px-6 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors"
-                  >
-                    ძებნა
-                  </button>
-                  <button
-                    type="button"
-                    className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  >
-                    მონაცემის შენახვა
-                  </button>
-                  <button
-                    type="button"
-                    className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    onClick={handleReset}
-                  >
-                    გასუფთავება
-                  </button>
+                <div className="flex justify-center w-full mt-4">
+                  <div className="inline-flex">
+                    <button
+                      type="submit"
+                      className="flex items-center px-4 py-2 font-bold text-[#0080BE] border border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors rounded-l cursor-pointer"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      ძიება
+                    </button>
+                    <button
+                      type="button"
+                      className="flex items-center px-4 py-2 font-bold text-[#0080BE] border-t border-b border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors cursor-pointer"
+                      onClick={() => window.stop()}
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                        />
+                      </svg>
+                      ძიების შეჩერება
+                    </button>
+                    <button
+                      type="button"
+                      className="flex items-center px-4 py-2 font-bold text-red-600 border border-red-600 hover:bg-red-600 hover:text-white transition-colors rounded-r cursor-pointer"
+                      onClick={handleReset}
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      გაუქმება
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
