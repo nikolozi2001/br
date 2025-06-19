@@ -1,12 +1,13 @@
 import { useState } from "react";
 import britishFlag from "/src/assets/images/british-flag.png";
+import georgianFlag from "/src/assets/images/georgian-flag.svg";
 
 function TopNavigation() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEnglish, setIsEnglish] = useState(false);
 
   const handleLanguageSwitch = () => {
-    // TODO: Implement language switching functionality
-    console.log("Language switch clicked");
+    setIsEnglish(!isEnglish);
   };
 
   const handleModalOpen = () => {
@@ -16,6 +17,55 @@ function TopNavigation() {
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
+
+  const content = {
+    georgian: {
+      navigation: {
+        main: "მთავარი",
+        reports: "რეპორტები",
+        charts: "გრაფიკები",
+        gis: "GIS ანალიზი",
+      },
+      date: "2025 წლის ივნისის მდგომარეობით",
+      languageSwitch: "Switch to English",
+      modal: {
+        title: "ბიზნეს რეგისტრის შესახებ",
+        closeButton: "დახურვა",
+        paragraphs: [
+          "სტატისტიკური ბიზნეს რეგისტრი დაარსდა 1995 წელს. იგი მოიცავს რეგლამენტირებულ ცნობებს ქვეყნის ტერიტორიაზე საზოგადოებრივი ან სამეწარმეო საქმიანობით დაკავებული ყველა იურიდიული და ფიზიკური პირის შესახებ.",
+          "სტატისტიკური ბიზნეს რეგისტრის განახლება ხორციელდება ყოველთვიურად, ძირითადად, ადმინისტრაციული წყაროებიდან (საჯარო რეესტრის ეროვნული სააგენტო, შემოსავლების სამსახური) და სტატისტიკის ეროვნული სამსახურის მიერ ჩატარებული სხვადასხვა ბიზნეს გამოკვლევებიდან მიღებული ინფორმაციის საფუძველზე.",
+          "მოცემული გვერდის პირველ ჩანართზე - მთავარი განთავსებული ფილტრაციის ველები საშუალებას იძლევა მოძიებულ იქნას ინფორმაცია საქართველოში რეგისტრირებული სუბიექტების შესახებ სხვადასხვა მახასიათებლის მიხედვით (ორგანიზაციულ-სამართლებრივი ფორმა, საკუთრების ფორმა, რეგიონი, მუნიციპალიტეტი, ეკონომიკური საქმიანობის სახე და სხვა).",
+          "რეპორტების ნაწილში წარმოდგენილი ცხრილები ასახავს საქართველოში რეგისტრირებული და აქტიური საწარმოებისა და ორგანიზაციების განაწილებას სხვადასხვა მახასიათებლის მიხედვით.",
+          "გრაფიკების ნაწილში წარმოდგენილია საწარმოთა დემოგრაფიული მაჩვენებლების - საწარმოთა დაბადება, გარდაცვალება, გადარჩენა - ამსახველი გრაფიკები, სხვადასხვა მახასიათებლის მიხედვით.",
+          "GIS ანალიზის ნაწილი საშუალებას იძლევა ინტერაქტიულ რუკებზე, რომლებზეც დატანილია აქტიური კომპანიების გეოგრაფიული კოორდინატები, მოიძიებულ იქნას ბიზნეს სუბიექტები მათი ფაქტობრივი მისამართის მიხედვით.",
+        ],
+      },
+    },
+    english: {
+      navigation: {
+        main: "Main",
+        reports: "Reports",
+        charts: "Charts",
+        gis: "GIS Analysis",
+      },
+      date: "By June Of 2025",
+      languageSwitch: "გადართვა ქართულზე",
+      modal: {
+        title: "About Business Register",
+        closeButton: "Close",
+        paragraphs: [
+          "The Statistical Business Register was established in 1995. It includes regulated information on all legal persons and individuals engaged in public or entrepreneurial activities in the country.",
+          "The Statistical Business Register is updated monthly, mainly on the basis of information obtained from administrative sources (National Agency of Public Registry, Revenue Service) and various business surveys conducted by the National Statistics Office of Georgia (Geostat).",
+          "On the first section of this page – Home filtered allow to find information about registered entities in Georgia according to various characteristics (by legal status, ownership type, region, municipality, kind of economic activity, etc.)",
+          "The tables presented in the Reports section shows the distribution of registered and active enterprises in Georgia and organizations by different characteristics.",
+          "The charts section shows the Demographic Indicators of Enterprises – (Enterprise birth, Enterprise death, Survival).",
+          "GIS Analysis section, where the geographical coordinates of the active companies are indicated, allows to find the business entities, by their actual address on the interactive maps.",
+        ],
+      },
+    },
+  };
+
+  const currentLanguage = isEnglish ? content.english : content.georgian;
 
   return (
     <>
@@ -29,15 +79,15 @@ function TopNavigation() {
                 role="group"
               >
                 <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-white text-[#0080BE] border-t border-l border-[#0080BE] first:rounded-tl-lg hover:bg-gray-50 transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
-                  მთავარი
+                  {currentLanguage.navigation.main}
                 </button>
 
                 <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
-                  რეპორტები
+                  {currentLanguage.navigation.reports}
                 </button>
 
                 <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0  after:h-full after:bg-[#0080BE]">
-                  გრაფიკები
+                  {currentLanguage.navigation.charts}
                 </button>
                 <a
                   href="http://gis.geostat.ge/geomap/index.html?open"
@@ -45,7 +95,7 @@ function TopNavigation() {
                   rel="noopener noreferrer"
                   className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-[#0080BE] border-t border-l border-r last:rounded-tr-lg  hover:bg-[#fff] hover:text-[#0080BE] transition-colors text-center"
                 >
-                  GIS ანალიზი
+                  {currentLanguage.navigation.gis}
                 </a>
               </div>
 
@@ -53,7 +103,7 @@ function TopNavigation() {
               <div className="flex items-center gap-4 flex-wrap justify-center sm:justify-end">
                 {/* Date */}
                 <div className="text-sm text-gray-600 whitespace-nowrap font-bold">
-                  2025 წლის ივნისის მდგომარეობით
+                  {currentLanguage.date}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -71,11 +121,12 @@ function TopNavigation() {
                   <button
                     className="flex items-center hover:opacity-80 transition-opacity"
                     onClick={handleLanguageSwitch}
+                    title={currentLanguage.languageSwitch}
                   >
-                    <span className="sr-only">Switch Language</span>
+                    <span className="sr-only">{currentLanguage.languageSwitch}</span>
                     <img
-                      src={britishFlag}
-                      alt="English"
+                      src={isEnglish ? georgianFlag : britishFlag}
+                      alt={isEnglish ? "Georgian" : "English"}
                       className="w-6 h-auto"
                     />
                   </button>
@@ -101,8 +152,8 @@ function TopNavigation() {
           <div className="relative w-full max-w-[800px] mx-4" role="dialog">
             <div className="bg-white rounded-lg shadow-xl">
               <div className="modal-header border-b p-4 flex justify-between items-center">
-                <h5 className="modal-title font-bpg-nino text-xl" id="exampleModalLabel">
-                  ბიზნეს რეგისტრის შესახებ
+                <h5 className="modal-title font-bpg-nino text-xl">
+                  {currentLanguage.modal.title}
                 </h5>
                 <button
                   type="button"
@@ -113,12 +164,11 @@ function TopNavigation() {
                 </button>
               </div>
               <div className="modal-body p-6 font-bpg-nino max-h-[70vh] overflow-y-auto">
-                <p className="mb-4">სტატისტიკური ბიზნეს რეგისტრი დაარსდა 1995 წელს. იგი მოიცავს რეგლამენტირებულ ცნობებს ქვეყნის ტერიტორიაზე საზოგადოებრივი ან სამეწარმეო საქმიანობით დაკავებული ყველა იურიდიული და ფიზიკური პირის შესახებ.</p>
-                <p className="mb-4">სტატისტიკური ბიზნეს რეგისტრის განახლება ხორციელდება ყოველთვიურად, ძირითადად, ადმინისტრაციული წყაროებიდან (საჯარო რეესტრის ეროვნული სააგენტო, შემოსავლების სამსახური) და სტატისტიკის ეროვნული სამსახურის მიერ ჩატარებული სხვადასხვა ბიზნეს გამოკვლევებიდან მიღებული ინფორმაციის საფუძველზე.</p>
-                <p className="mb-4">მოცემული გვერდის პირველ ჩანართზე - მთავარი განთავსებული ფილტრაციის ველები საშუალებას იძლევა მოძიებულ იქნას  ინფორმაცია საქართველოში რეგისტრირებული სუბიექტების შესახებ სხვადასხვა მახასიათებლის მიხედვით (ორგანიზაციულ-სამართლებრივი ფორმა, საკუთრების ფორმა, რეგიონი, მუნიციპალიტეტი, ეკონომიკური საქმიანობის სახე და სხვა).</p>
-                <p className="mb-4">რეპორტების ნაწილში  წარმოდგენილი ცხრილები ასახავს საქართველოში  რეგისტრირებული და აქტიური საწარმოებისა და ორგანიზაციების განაწილებას სხვადასხვა მახასიათებლის მიხედვით.</p>
-                <p className="mb-4">გრაფიკების ნაწილში წარმოდგენილია საწარმოთა დემოგრაფიული მაჩვენებლების - საწარმოთა დაბადება, გარდაცვალება, გადარჩენა - ამსახველი გრაფიკები, სხვადასხვა მახასიათებლის მიხედვით.</p>
-                <p>GIS ანალიზის ნაწილი საშუალებას იძლევა ინტერაქტიულ რუკებზე, რომლებზეც დატანილია აქტიური კომპანიების გეოგრაფიული კოორდინატები, მოიძიებულ იქნას ბიზნეს სუბიექტები მათი ფაქტობრივი მისამართის მიხედვით.</p>
+                {currentLanguage.modal.paragraphs.map((paragraph, index) => (
+                  <p key={index} className="mb-4 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
               </div>
               <div className="modal-footer border-t p-4 flex justify-end">
                 <button
@@ -126,7 +176,7 @@ function TopNavigation() {
                   className="font-bpg-nino bg-[#6c757d] hover:bg-[#5a6268] text-white px-4 py-2 rounded transition-colors"
                   onClick={handleModalClose}
                 >
-                  დახურვა
+                  {currentLanguage.modal.closeButton}
                 </button>
               </div>
             </div>
