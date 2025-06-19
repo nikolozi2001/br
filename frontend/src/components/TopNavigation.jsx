@@ -16,22 +16,22 @@ function TopNavigation() {
               className="flex flex-wrap justify-center sm:justify-start"
               role="group"
             >
-              <button className="px-6 py-[6px] text-sm bg-white text-[#0080BE] border-t border-l border-[#0080BE] first:rounded-tl-lg hover:bg-gray-50 transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
+              <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-white text-[#0080BE] border-t border-l border-[#0080BE] first:rounded-tl-lg hover:bg-gray-50 transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
                 მთავარი
               </button>
 
-              <button className="px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
+              <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE]">
                 რეპორტები
               </button>
 
-              <button className="px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0  after:h-full after:bg-[#0080BE]">
+              <button className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0  after:h-full after:bg-[#0080BE]">
                 გრაფიკები
               </button>
               <a
                 href="http://gis.geostat.ge/geomap/index.html?open"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-6 py-[6px] text-sm bg-[#0080BE] text-white border-[#0080BE] border-t border-l border-r last:rounded-tr-lg  hover:bg-[#fff] hover:text-[#0080BE] transition-colors text-center"
+                className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-[#0080BE] border-t border-l border-r last:rounded-tr-lg  hover:bg-[#fff] hover:text-[#0080BE] transition-colors text-center"
               >
                 GIS ანალიზი
               </a>
