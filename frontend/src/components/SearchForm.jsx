@@ -6,6 +6,8 @@ function SearchForm() {
     identificationNumber: "",
     organizationName: "",
     organizationalLegalForm: "",
+    head: "",
+    partner: "",
     status: "",
     personalAddress: {
       region: "",
@@ -55,6 +57,8 @@ function SearchForm() {
       identificationNumber: "",
       organizationName: "",
       organizationalLegalForm: "",
+      head: "",
+      partner: "",
       status: "",
       personalAddress: {
         region: "",
@@ -102,12 +106,28 @@ function SearchForm() {
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                   />
                 </div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="text"
                     placeholder="ორგანიზაციულ-სამართლებრივი ფორმა"
                     name="organizationalLegalForm"
                     value={formData.organizationalLegalForm}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="ხელმძღვანელი"
+                    name="head"
+                    value={formData.head}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="პარტნიორი"
+                    name="partner"
+                    value={formData.partner}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                   />
