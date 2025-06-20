@@ -84,7 +84,7 @@ function SearchForm() {
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px]">
             <div className="p-6">
-              <h2 className="text-2xl font-medium mb-6 text-center sm:text-left">
+              <h2 className="text-2xl mb-6 text-center font-bpg-nino font-bold">
                 ეკონომიკური სუბიექტების ძებნა
               </h2>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -134,30 +134,34 @@ function SearchForm() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium">იურიდიული მისამართი</h3>
+                    <h3 className="text-lg font-bold font-bpg-nino text-center">
+                      იურიდიული მისამართი
+                    </h3>{" "}
                     <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="რეგიონი"
-                        value={formData.personalAddress.region}
-                        onChange={(e) =>
-                          handleInputChange(e, "personalAddress", "region")
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
-                      />
-                      <input
-                        type="text"
-                        placeholder="მუნიციპალიტეტი/ქალაქი"
-                        value={formData.personalAddress.municipalityCity}
-                        onChange={(e) =>
-                          handleInputChange(
-                            e,
-                            "personalAddress",
-                            "municipalityCity"
-                          )
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
-                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="რეგიონი"
+                          value={formData.personalAddress.region}
+                          onChange={(e) =>
+                            handleInputChange(e, "personalAddress", "region")
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="მუნიციპალიტეტი/ქალაქი"
+                          value={formData.personalAddress.municipalityCity}
+                          onChange={(e) =>
+                            handleInputChange(
+                              e,
+                              "personalAddress",
+                              "municipalityCity"
+                            )
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                        />
+                      </div>
                       <input
                         type="text"
                         placeholder="მისამართი"
@@ -171,30 +175,34 @@ function SearchForm() {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-medium">ფაქტიური მისამართი</h3>
+                    <h3 className="text-lg font-bold font-bpg-nino text-center">
+                      ფაქტობრივი მისამართი
+                    </h3>{" "}
                     <div className="space-y-3">
-                      <input
-                        type="text"
-                        placeholder="რეგიონი"
-                        value={formData.legalAddress.region}
-                        onChange={(e) =>
-                          handleInputChange(e, "legalAddress", "region")
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
-                      />
-                      <input
-                        type="text"
-                        placeholder="მუნიციპალიტეტი/ქალაქი"
-                        value={formData.legalAddress.municipalityCity}
-                        onChange={(e) =>
-                          handleInputChange(
-                            e,
-                            "legalAddress",
-                            "municipalityCity"
-                          )
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
-                      />
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="რეგიონი"
+                          value={formData.legalAddress.region}
+                          onChange={(e) =>
+                            handleInputChange(e, "legalAddress", "region")
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="მუნიციპალიტეტი/ქალაქი"
+                          value={formData.legalAddress.municipalityCity}
+                          onChange={(e) =>
+                            handleInputChange(
+                              e,
+                              "legalAddress",
+                              "municipalityCity"
+                            )
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                        />
+                      </div>
                       <input
                         type="text"
                         placeholder="მისამართი"
@@ -208,10 +216,10 @@ function SearchForm() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">
+                  <h3 className="text-lg font-bold font-bpg-nino text-center">
                     ეკონომიკური საქმიანობა (NACE Rev.2)
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  </h3>{" "}
+                  <div className="grid grid-cols-1 sm:grid-cols-10 gap-4">
                     <input
                       type="text"
                       placeholder="ეკონომიკური საქმიანობის კოდი"
@@ -219,7 +227,7 @@ function SearchForm() {
                       onChange={(e) =>
                         handleInputChange(e, "economicActivity", "code")
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-3"
                     />
                     <input
                       type="text"
@@ -228,7 +236,7 @@ function SearchForm() {
                       onChange={(e) =>
                         handleInputChange(e, "economicActivity", "description")
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-7"
                     />
                   </div>
                 </div>
