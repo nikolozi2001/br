@@ -2,6 +2,7 @@ import { useState } from "react";
 import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
+import Footer from "./components/Footer";
 import "./App.scss";
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         />
         <SearchForm />
       </main>
+      <Footer isEnglish={isEnglish} />
     </>
   );
 }
