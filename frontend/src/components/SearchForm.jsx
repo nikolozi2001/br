@@ -239,24 +239,34 @@ function SearchForm() {
                       className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-7"
                     />
                   </div>
-                </div>
+                </div>{" "}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder="საკუთრების ფორმა"
-                    name="ownershipForm"
-                    value={formData.ownershipForm}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="ბიზნესის ფორმა"
-                    name="businessForm"
-                    value={formData.businessForm}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
-                  />{" "}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-bold font-bpg-nino text-center">
+                      საკუთრების ფორმა
+                    </h3>
+                    <input
+                      type="text"
+                      placeholder="საკუთრების ფორმა"
+                      name="ownershipForm"
+                      value={formData.ownershipForm}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-bold font-bpg-nino text-center">
+                      ბიზნესის ზომა
+                    </h3>
+                    <input
+                      type="text"
+                      placeholder="ბიზნესის ზომა"
+                      name="businessForm"
+                      value={formData.businessForm}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-center w-full mt-4">
                   <div className="inline-flex">
