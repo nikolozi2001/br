@@ -9,6 +9,7 @@ function SearchForm() {
     head: "",
     partner: "",
     status: "",
+    isActive: false,
     personalAddress: {
       region: "",
       municipalityCity: "",
@@ -266,6 +267,60 @@ function SearchForm() {
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                     />
+                  </div>
+                </div>
+                <div className="w-full mb-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isActive"
+                      name="isActive"
+                      className="w-4 h-4 text-[#0080BE] border-gray-300 rounded focus:ring-[#0080BE]"
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          isActive: e.target.checked,
+                        }))
+                      }
+                    />
+                    <label
+                      htmlFor="isActive"
+                      className="flex items-center gap-2 font-bpg-nino font-bold"
+                    >
+                      აქტიური ეკონომიკური სუბიექტი
+                      <div className="relative group">
+                        <svg
+                          className="w-5 h-5 text-[#0080BE] cursor-help"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <div className="absolute left-0 w-96 p-2 bg-white border border-gray-200 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 text-sm">
+                          {" "}
+                          ეკონომიკური ერთეული აქტიურია, თუ იგი აკმაყოფილებს
+                          ქვემოთ ჩამოთვლილი კრიტერიუმებიდან ერთ-ერთს:
+                          <br />
+                          1) ბრუნვა{">"} 0 (დღგ-ს, ყოველთვიური საშემოსავლო და
+                          სხვა დეკლარაციები);
+                          <br />
+                          2) ხელფასი ან დასაქმებულთა რაოდენობა {">"} 0
+                          (ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
+                          <br />
+                          3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
+                          <br />
+                          4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ
+                          ქონების გადასახადისა
+                        </div>
+                      </div>
+                    </label>
                   </div>
                 </div>
                 <div className="flex justify-center w-full mt-4">
