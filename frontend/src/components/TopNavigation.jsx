@@ -1,9 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import britishFlag from "/src/assets/images/british-flag.png";
 import georgianFlag from "/src/assets/images/georgian-flag.svg";
 
 function TopNavigation({ isEnglish, onLanguageChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Add ESC key handler
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === "Escape" && isModalOpen) {
+        handleModalClose();
+      }
+    };
+
+    if (isModalOpen) {
+      document.addEventListener("keydown", handleEscKey);
+    }
+
+    // Cleanup listener
+    return () => {
+      document.removeEventListener("keydown", handleEscKey);
+    };
+  }, [isModalOpen]);
 
   const handleLanguageSwitch = () => {
     onLanguageChange(!isEnglish);
@@ -122,7 +140,9 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                     onClick={handleLanguageSwitch}
                     title={currentLanguage.languageSwitch}
                   >
-                    <span className="sr-only">{currentLanguage.languageSwitch}</span>
+                    <span className="sr-only">
+                      {currentLanguage.languageSwitch}
+                    </span>
                     <img
                       src={isEnglish ? georgianFlag : britishFlag}
                       alt={isEnglish ? "Georgian" : "English"}
@@ -146,9 +166,21 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="fixed inset-0 bg-black opacity-50"></div>
-          <div className="relative w-full max-w-[800px] mx-4" role="dialog">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop - Click to close */}
+          <div
+            className="fixed inset-0 bg-black opacity-50"
+            onClick={handleModalClose}
+            aria-hidden="true"
+          />
+
+          {/* Modal content - Prevent click propagation */}
+          <div
+            className="relative w-full max-w-[800px] mx-4 z-10"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-white rounded-lg shadow-xl">
               <div className="modal-header border-b p-4 flex justify-between items-center">
                 <h5 className="modal-title font-bpg-nino text-xl">
@@ -156,10 +188,11 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                 </h5>
                 <button
                   type="button"
-                  className="text-gray-400 hover:text-gray-500 transition-colors"
+                  className="text-gray-400 hover:text-gray-500 transition-colors text-2xl leading-none pb-1 cursor-pointer"
                   onClick={handleModalClose}
+                  aria-label="Close modal"
                 >
-                  <span className="text-2xl">&times;</span>
+                  &times;
                 </button>
               </div>
               <div className="modal-body p-6 font-bpg-nino max-h-[70vh] overflow-y-auto">
@@ -172,7 +205,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
               <div className="modal-footer border-t p-4 flex justify-end">
                 <button
                   type="button"
-                  className="font-bpg-nino bg-[#6c757d] hover:bg-[#5a6268] text-white px-4 py-2 rounded transition-colors"
+                  className="font-bpg-nino bg-[#6c757d] hover:bg-[#5a6268] text-white px-4 py-2 rounded transition-colors cursor-pointer"
                   onClick={handleModalClose}
                 >
                   {currentLanguage.modal.closeButton}
