@@ -10,6 +10,12 @@ app.use(express.json());
 // Import database configuration
 const { sql, poolPromise } = require('./config/database');
 
+// Import routes
+const legalFormsRouter = require('./routes/legalForms');
+
+// Route middlewares
+app.use('/api/legal-forms', legalFormsRouter);
+
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
   try {

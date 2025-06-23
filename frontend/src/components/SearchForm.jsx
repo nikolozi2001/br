@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Select from "react-select";
 import "../styles/SearchForm.scss";
 
@@ -61,28 +61,30 @@ const translations = {
 
 function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
+  const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] = useState([]);
 
-  // Add options for organizational legal forms
-  const organizationalLegalFormOptions = [
-    {
-      value: "llc",
-      label: isEnglish
-        ? "Limited Liability Company"
-        : "შეზღუდული პასუხისმგებლობის საზოგადოება",
-    },
-    {
-      value: "jsc",
-      label: isEnglish ? "Joint Stock Company" : "სააქციო საზოგადოება",
-    },
-    {
-      value: "sp",
-      label: isEnglish ? "Sole Proprietorship" : "ინდივიდუალური მეწარმე",
-    },
-    {
-      value: "ngo",
-      label: isEnglish ? "Non-Governmental Organization" : "არასამთავრობო ორგანიზაცია",
-    },
-  ];
+  useEffect(() => {
+    const fetchLegalForms = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/legal-forms');
+        const data = await response.json();
+        
+        // Transform the data to match the select component format
+        const transformedOptions = data.map(form => ({
+          value: form.ID.toString(),
+          label: isEnglish ? form.Legal_Form : form.Legal_Form // You might want to add Georgian translations in the backend
+        }));
+        
+        setOrganizationalLegalFormOptions(transformedOptions);
+      } catch (error) {
+        console.error('Error fetching legal forms:', error);
+        // Fallback to empty array if API fails
+        setOrganizationalLegalFormOptions([]);
+      }
+    };
+
+    fetchLegalForms();
+  }, [isEnglish]); // Re-fetch when language changes
 
   const [formData, setFormData] = useState({
     identificationNumber: "",
