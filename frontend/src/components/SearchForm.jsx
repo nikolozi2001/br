@@ -154,7 +154,7 @@ function SearchForm({ isEnglish }) {
                     name="identificationNumber"
                     value={formData.identificationNumber}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                   />
                   <input
                     type="text"
@@ -162,7 +162,7 @@ function SearchForm({ isEnglish }) {
                     name="organizationName"
                     value={formData.organizationName}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -172,7 +172,7 @@ function SearchForm({ isEnglish }) {
                     name="organizationalLegalForm"
                     value={formData.organizationalLegalForm}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-2"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-2 hover:border-[#0080BE]"
                   />
                   <input
                     type="text"
@@ -180,7 +180,7 @@ function SearchForm({ isEnglish }) {
                     name="head"
                     value={formData.head}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                   />
                   <input
                     type="text"
@@ -188,7 +188,7 @@ function SearchForm({ isEnglish }) {
                     name="partner"
                     value={formData.partner}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -205,7 +205,7 @@ function SearchForm({ isEnglish }) {
                           onChange={(e) =>
                             handleInputChange(e, "personalAddress", "region")
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                         />
                         <input
                           type="text"
@@ -218,7 +218,7 @@ function SearchForm({ isEnglish }) {
                               "municipalityCity"
                             )
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                         />
                       </div>
                       <input
@@ -228,7 +228,7 @@ function SearchForm({ isEnglish }) {
                         onChange={(e) =>
                           handleInputChange(e, "personalAddress", "address")
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                       />
                     </div>
                   </div>
@@ -246,7 +246,7 @@ function SearchForm({ isEnglish }) {
                           onChange={(e) =>
                             handleInputChange(e, "legalAddress", "region")
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                         />
                         <input
                           type="text"
@@ -259,7 +259,7 @@ function SearchForm({ isEnglish }) {
                               "municipalityCity"
                             )
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                         />
                       </div>
                       <input
@@ -269,7 +269,7 @@ function SearchForm({ isEnglish }) {
                         onChange={(e) =>
                           handleInputChange(e, "legalAddress", "address")
                         }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                       />
                     </div>
                   </div>
@@ -286,7 +286,7 @@ function SearchForm({ isEnglish }) {
                       onChange={(e) =>
                         handleInputChange(e, "economicActivity", "code")
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-3"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-3 hover:border-[#0080BE]"
                     />
                     <input
                       type="text"
@@ -295,7 +295,7 @@ function SearchForm({ isEnglish }) {
                       onChange={(e) =>
                         handleInputChange(e, "economicActivity", "description")
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-7"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-7 hover:border-[#0080BE]"
                     />
                   </div>
                 </div>
@@ -310,7 +310,7 @@ function SearchForm({ isEnglish }) {
                       name="ownershipForm"
                       value={formData.ownershipForm}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                     />
                   </div>
                   <div className="space-y-3 sm:space-y-4">
@@ -323,7 +323,7 @@ function SearchForm({ isEnglish }) {
                       name="businessForm"
                       value={formData.businessForm}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
+                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
                     />
                   </div>
                 </div>
@@ -333,7 +333,7 @@ function SearchForm({ isEnglish }) {
                       type="checkbox"
                       id="isActive"
                       name="isActive"
-                      className="w-4 h-4 text-[#0080BE] border-gray-300 rounded focus:ring-[#0080BE]"
+                      className="w-4 h-4 text-[#0080BE] border-gray-300 rounded focus:ring-[#0080BE] cursor-pointer"
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
