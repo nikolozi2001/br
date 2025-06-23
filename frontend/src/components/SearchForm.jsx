@@ -140,13 +140,13 @@ function SearchForm({ isEnglish }) {
   return (
     <div className="w-full">
       <div className="container mx-auto">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div className="bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px]">
-            <div className="p-6">
-              <h2 className="text-lg mb-6 text-center font-bpg-nino font-bold">
+            <div className="p-3 sm:p-6">
+              <h2 className="text-base sm:text-lg mb-4 sm:mb-6 text-center font-bpg-nino font-bold">
                 {t.title}
               </h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="text"
@@ -275,10 +275,10 @@ function SearchForm({ isEnglish }) {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <h3 className="text-lg font-bold font-bpg-nino text-center">
+                  <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
                     {t.economicActivity}
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-10 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-10 gap-3 sm:gap-4">
                     <input
                       type="text"
                       placeholder={t.activityCode}
@@ -300,8 +300,8 @@ function SearchForm({ isEnglish }) {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold font-bpg-nino text-center">
+                  <div className="space-y-3 sm:space-y-4">
+                    <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
                       {t.ownershipForm}
                     </h3>
                     <input
@@ -313,8 +313,8 @@ function SearchForm({ isEnglish }) {
                       className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                     />
                   </div>
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold font-bpg-nino text-center">
+                  <div className="space-y-3 sm:space-y-4">
+                    <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
                       {t.businessSize}
                     </h3>
                     <input
@@ -328,7 +328,7 @@ function SearchForm({ isEnglish }) {
                   </div>
                 </div>
                 <div className="w-full mb-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input
                       type="checkbox"
                       id="isActive"
@@ -361,7 +361,7 @@ function SearchForm({ isEnglish }) {
                             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <div className="absolute left-0 w-96 p-2 bg-white border border-gray-200 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 text-sm">
+                        <div className="absolute left-0 w-[calc(100vw-2rem)] sm:w-96 p-2 bg-white border border-gray-200 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 text-xs sm:text-sm">
                           {t.activeTooltip}
                         </div>
                       </div>
@@ -369,10 +369,10 @@ function SearchForm({ isEnglish }) {
                   </div>
                 </div>
                 <div className="flex justify-center w-full mt-4">
-                  <div className="inline-flex">
+                  <div className="inline-flex flex-col sm:flex-row w-full sm:w-auto">
                     <button
                       type="submit"
-                      className="flex items-center px-4 py-2 font-bold text-[#0080BE] border border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors rounded-l cursor-pointer"
+                      className="flex items-center justify-center px-4 py-2 font-bold text-[#0080BE] border border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors rounded-t sm:rounded-t-none sm:rounded-l cursor-pointer text-sm sm:text-base"
                     >
                       <svg
                         className="w-4 h-4 mr-2"
@@ -392,7 +392,7 @@ function SearchForm({ isEnglish }) {
                     </button>
                     <button
                       type="button"
-                      className="flex items-center px-4 py-2 font-bold text-[#0080BE] border-t border-b border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors cursor-pointer"
+                      className="flex items-center justify-center px-4 py-2 font-bold text-[#0080BE] border-y border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors cursor-pointer text-sm sm:text-base"
                       onClick={() => window.stop()}
                     >
                       <svg
@@ -413,7 +413,7 @@ function SearchForm({ isEnglish }) {
                     </button>
                     <button
                       type="button"
-                      className="flex items-center px-4 py-2 font-bold text-red-600 border border-red-600 hover:bg-red-600 hover:text-white transition-colors rounded-r cursor-pointer"
+                      className="flex items-center justify-center px-4 py-2 font-bold text-red-600 border border-l border-red-600 hover:bg-red-600 hover:text-white transition-colors rounded-b sm:rounded-b-none sm:rounded-r cursor-pointer text-sm sm:text-base"
                       onClick={handleReset}
                     >
                       <svg
