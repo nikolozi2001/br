@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Select from "react-select";
 import "../styles/SearchForm.scss";
 
 const translations = {
@@ -60,6 +61,29 @@ const translations = {
 
 function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
+
+  // Add options for organizational legal forms
+  const organizationalLegalFormOptions = [
+    {
+      value: "llc",
+      label: isEnglish
+        ? "Limited Liability Company"
+        : "შეზღუდული პასუხისმგებლობის საზოგადოება",
+    },
+    {
+      value: "jsc",
+      label: isEnglish ? "Joint Stock Company" : "სააქციო საზოგადოება",
+    },
+    {
+      value: "sp",
+      label: isEnglish ? "Sole Proprietorship" : "ინდივიდუალური მეწარმე",
+    },
+    {
+      value: "ngo",
+      label: isEnglish ? "Non-Governmental Organization" : "არასამთავრობო ორგანიზაცია",
+    },
+  ];
+
   const [formData, setFormData] = useState({
     identificationNumber: "",
     organizationName: "",
@@ -166,13 +190,39 @@ function SearchForm({ isEnglish }) {
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  <input
-                    type="text"
+                  <Select
                     placeholder={t.organizationalLegalForm}
                     name="organizationalLegalForm"
-                    value={formData.organizationalLegalForm}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-2 hover:border-[#0080BE]"
+                    value={organizationalLegalFormOptions.find(
+                      (option) => option.value === formData.organizationalLegalForm
+                    )}
+                    onChange={(option) =>
+                      handleInputChange({ target: { name: "organizationalLegalForm", value: option?.value || "" } })
+                    }
+                    options={organizationalLegalFormOptions}
+                    className="sm:col-span-2"
+                    classNamePrefix="react-select"
+                    isClearable
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
+                        "&:hover": {
+                          borderColor: "#0080BE",
+                        },
+                        boxShadow: "none",
+                        padding: "1px",
+                      }),
+                      option: (base, state) => ({
+                        ...base,
+                        backgroundColor:
+                          state.isSelected ? "#0080BE" : state.isFocused ? "#E6F4FA" : "white",
+                        color: state.isSelected ? "white" : "#000000",
+                        "&:hover": {
+                          backgroundColor: state.isSelected ? "#0080BE" : "#E6F4FA",
+                        },
+                      }),
+                    }}
                   />
                   <input
                     type="text"
