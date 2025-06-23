@@ -20,9 +20,9 @@ function App() {
           isEnglish={isEnglish}
           onLanguageChange={handleLanguageChange}
         />
-        <SearchForm />
+        <SearchForm isEnglish={isEnglish} />
+        <Footer isEnglish={isEnglish} />
       </main>
-      <Footer isEnglish={isEnglish} />
     </>
   );
 }

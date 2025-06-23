@@ -1,7 +1,65 @@
 import { useState } from "react";
 import "../styles/SearchForm.scss";
 
-function SearchForm() {
+const translations = {
+  ge: {
+    title: "ეკონომიკური სუბიექტების ძებნა",
+    identificationNumber: "საიდენტიფიკაციო ნომერი",
+    organizationName: "ორგანიზაციის დასახელება",
+    organizationalLegalForm: "ორგანიზაციულ-სამართლებრივი ფორმა",
+    head: "ხელმძღვანელი",
+    partner: "პარტნიორი",
+    legalAddress: "იურიდიული მისამართი",
+    factualAddress: "ფაქტობრივი მისამართი",
+    region: "რეგიონი",
+    municipalityCity: "მუნიციპალიტეტი/ქალაქი",
+    address: "მისამართი",
+    economicActivity: "ეკონომიკური საქმიანობა (NACE Rev.2)",
+    activityCode: "ეკონომიკური საქმიანობის კოდი",
+    activityDescription: "ეკონომიკური საქმიანობის დასახელება",
+    ownershipForm: "საკუთრების ფორმა",
+    businessSize: "ბიზნესის ზომა",
+    activeSubject: "აქტიური ეკონომიკური სუბიექტი",
+    search: "ძიება",
+    stopSearch: "ძიების შეჩერება",
+    cancel: "გაუქმება",
+    activeTooltip: `ეკონომიკური ერთეული აქტიურია, თუ იგი აკმაყოფილებს ქვემოთ ჩამოთვლილი კრიტერიუმებიდან ერთ-ერთს:
+1) ბრუნვა > 0 (დღგ-ს, ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
+2) ხელფასი ან დასაქმებულთა რაოდენობა > 0 (ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
+3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
+4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ ქონების გადასახადისა`,
+  },
+  en: {
+    title: "Economic Entity Search",
+    identificationNumber: "Identification Number",
+    organizationName: "Organization Name",
+    organizationalLegalForm: "Organizational Legal Form",
+    head: "Head",
+    partner: "Partner",
+    legalAddress: "Legal Address",
+    factualAddress: "Actual Address",
+    region: "Region",
+    municipalityCity: "Municipality/City",
+    address: "Address",
+    economicActivity: "Economic Activity (NACE Rev.2)",
+    activityCode: "Economic Activity Code",
+    activityDescription: "Economic Activity Description",
+    ownershipForm: "Ownership Form",
+    businessSize: "Business Size",
+    activeSubject: "Active Economic Entity",
+    search: "Search",
+    stopSearch: "Stop Search",
+    cancel: "Cancel",
+    activeTooltip: `The economic unit is active if it meets one of the criteria listed below:
+1) Turnover > 0 (VAT, monthly income and other declarations);
+2) Salary or number of employees > 0 (monthly income and other declarations);
+3) Has profit or loss (profit declaration);
+4) Paid any type of tax, except property tax only`,
+  },
+};
+
+function SearchForm({ isEnglish }) {
+  const t = translations[isEnglish ? "en" : "ge"];
   const [formData, setFormData] = useState({
     identificationNumber: "",
     organizationName: "",
@@ -85,14 +143,14 @@ function SearchForm() {
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px]">
             <div className="p-6">
-              <h2 className="text-2xl mb-6 text-center font-bpg-nino font-bold">
-                ეკონომიკური სუბიექტების ძებნა
+              <h2 className="text-lg mb-6 text-center font-bpg-nino font-bold">
+                {t.title}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="text"
-                    placeholder="საიდენტიფიკაციო ნომერი"
+                    placeholder={t.identificationNumber}
                     name="identificationNumber"
                     value={formData.identificationNumber}
                     onChange={handleInputChange}
@@ -100,17 +158,17 @@ function SearchForm() {
                   />
                   <input
                     type="text"
-                    placeholder="ორგანიზაციის დასახელება"
+                    placeholder={t.organizationName}
                     name="organizationName"
                     value={formData.organizationName}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white"
                   />
-                </div>{" "}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <input
                     type="text"
-                    placeholder="ორგანიზაციულ-სამართლებრივი ფორმა"
+                    placeholder={t.organizationalLegalForm}
                     name="organizationalLegalForm"
                     value={formData.organizationalLegalForm}
                     onChange={handleInputChange}
@@ -118,7 +176,7 @@ function SearchForm() {
                   />
                   <input
                     type="text"
-                    placeholder="ხელმძღვანელი"
+                    placeholder={t.head}
                     name="head"
                     value={formData.head}
                     onChange={handleInputChange}
@@ -126,7 +184,7 @@ function SearchForm() {
                   />
                   <input
                     type="text"
-                    placeholder="პარტნიორი"
+                    placeholder={t.partner}
                     name="partner"
                     value={formData.partner}
                     onChange={handleInputChange}
@@ -136,13 +194,13 @@ function SearchForm() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <h3 className="text-lg font-bold font-bpg-nino text-center">
-                      იურიდიული მისამართი
-                    </h3>{" "}
+                      {t.legalAddress}
+                    </h3>
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <input
                           type="text"
-                          placeholder="რეგიონი"
+                          placeholder={t.region}
                           value={formData.personalAddress.region}
                           onChange={(e) =>
                             handleInputChange(e, "personalAddress", "region")
@@ -151,7 +209,7 @@ function SearchForm() {
                         />
                         <input
                           type="text"
-                          placeholder="მუნიციპალიტეტი/ქალაქი"
+                          placeholder={t.municipalityCity}
                           value={formData.personalAddress.municipalityCity}
                           onChange={(e) =>
                             handleInputChange(
@@ -165,7 +223,7 @@ function SearchForm() {
                       </div>
                       <input
                         type="text"
-                        placeholder="მისამართი"
+                        placeholder={t.address}
                         value={formData.personalAddress.address}
                         onChange={(e) =>
                           handleInputChange(e, "personalAddress", "address")
@@ -177,13 +235,13 @@ function SearchForm() {
 
                   <div className="space-y-4">
                     <h3 className="text-lg font-bold font-bpg-nino text-center">
-                      ფაქტობრივი მისამართი
-                    </h3>{" "}
+                      {t.factualAddress}
+                    </h3>
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <input
                           type="text"
-                          placeholder="რეგიონი"
+                          placeholder={t.region}
                           value={formData.legalAddress.region}
                           onChange={(e) =>
                             handleInputChange(e, "legalAddress", "region")
@@ -192,7 +250,7 @@ function SearchForm() {
                         />
                         <input
                           type="text"
-                          placeholder="მუნიციპალიტეტი/ქალაქი"
+                          placeholder={t.municipalityCity}
                           value={formData.legalAddress.municipalityCity}
                           onChange={(e) =>
                             handleInputChange(
@@ -206,7 +264,7 @@ function SearchForm() {
                       </div>
                       <input
                         type="text"
-                        placeholder="მისამართი"
+                        placeholder={t.address}
                         value={formData.legalAddress.address}
                         onChange={(e) =>
                           handleInputChange(e, "legalAddress", "address")
@@ -218,12 +276,12 @@ function SearchForm() {
                 </div>
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold font-bpg-nino text-center">
-                    ეკონომიკური საქმიანობა (NACE Rev.2)
-                  </h3>{" "}
+                    {t.economicActivity}
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-10 gap-4">
                     <input
                       type="text"
-                      placeholder="ეკონომიკური საქმიანობის კოდი"
+                      placeholder={t.activityCode}
                       value={formData.economicActivity.code}
                       onChange={(e) =>
                         handleInputChange(e, "economicActivity", "code")
@@ -232,7 +290,7 @@ function SearchForm() {
                     />
                     <input
                       type="text"
-                      placeholder="ეკონომიკური საქმიანობის დასახელება"
+                      placeholder={t.activityDescription}
                       value={formData.economicActivity.description}
                       onChange={(e) =>
                         handleInputChange(e, "economicActivity", "description")
@@ -240,15 +298,15 @@ function SearchForm() {
                       className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-7"
                     />
                   </div>
-                </div>{" "}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <h3 className="text-lg font-bold font-bpg-nino text-center">
-                      საკუთრების ფორმა
+                      {t.ownershipForm}
                     </h3>
                     <input
                       type="text"
-                      placeholder="საკუთრების ფორმა"
+                      placeholder={t.ownershipForm}
                       name="ownershipForm"
                       value={formData.ownershipForm}
                       onChange={handleInputChange}
@@ -257,11 +315,11 @@ function SearchForm() {
                   </div>
                   <div className="space-y-4">
                     <h3 className="text-lg font-bold font-bpg-nino text-center">
-                      ბიზნესის ზომა
+                      {t.businessSize}
                     </h3>
                     <input
                       type="text"
-                      placeholder="ბიზნესის ზომა"
+                      placeholder={t.businessSize}
                       name="businessForm"
                       value={formData.businessForm}
                       onChange={handleInputChange}
@@ -287,7 +345,7 @@ function SearchForm() {
                       htmlFor="isActive"
                       className="flex items-center gap-2 font-bpg-nino font-bold"
                     >
-                      აქტიური ეკონომიკური სუბიექტი
+                      {t.activeSubject}
                       <div className="relative group">
                         <svg
                           className="w-5 h-5 text-[#0080BE] cursor-help"
@@ -304,20 +362,7 @@ function SearchForm() {
                           />
                         </svg>
                         <div className="absolute left-0 w-96 p-2 bg-white border border-gray-200 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 text-sm">
-                          {" "}
-                          ეკონომიკური ერთეული აქტიურია, თუ იგი აკმაყოფილებს
-                          ქვემოთ ჩამოთვლილი კრიტერიუმებიდან ერთ-ერთს:
-                          <br />
-                          1) ბრუნვა{">"} 0 (დღგ-ს, ყოველთვიური საშემოსავლო და
-                          სხვა დეკლარაციები);
-                          <br />
-                          2) ხელფასი ან დასაქმებულთა რაოდენობა {">"} 0
-                          (ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
-                          <br />
-                          3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
-                          <br />
-                          4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ
-                          ქონების გადასახადისა
+                          {t.activeTooltip}
                         </div>
                       </div>
                     </label>
@@ -343,7 +388,7 @@ function SearchForm() {
                           d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                         />
                       </svg>
-                      ძიება
+                      {t.search}
                     </button>
                     <button
                       type="button"
@@ -364,7 +409,7 @@ function SearchForm() {
                           d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                         />
                       </svg>
-                      ძიების შეჩერება
+                      {t.stopSearch}
                     </button>
                     <button
                       type="button"
@@ -385,7 +430,7 @@ function SearchForm() {
                           d="M6 18L18 6M6 6l12 12"
                         />
                       </svg>
-                      გაუქმება
+                      {t.cancel}
                     </button>
                   </div>
                 </div>
