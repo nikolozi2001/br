@@ -6,6 +6,9 @@ const { poolPromise } = require('../config/database');
 // GET /api/legal-forms
 router.get('/', async (req, res) => {
     try {
+        const { lang } = req.query; // Get language from query parameter
+        const tableName = lang === 'en' ? '[register].[CL].[Legal_Forms_EN]' : '[register].[CL].[Legal_Forms]';
+        
         const pool = await poolPromise;
         const result = await pool.request()
             .query(`
@@ -17,7 +20,7 @@ router.get('/', async (req, res) => {
                     ,[Rec_User_ID]
                     ,[Rec_Date]
                     ,[Rec_Type]
-                FROM [register].[CL].[Legal_Forms]
+                FROM ${tableName}
             `);
         
         res.json(result.recordset);

@@ -66,13 +66,13 @@ function SearchForm({ isEnglish }) {
   useEffect(() => {
     const fetchLegalForms = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/legal-forms');
+        const response = await fetch(`http://localhost:5000/api/legal-forms?lang=${isEnglish ? 'en' : 'ge'}`);
         const data = await response.json();
         
         // Transform the data to match the select component format
         const transformedOptions = data.map(form => ({
           value: form.ID.toString(),
-          label: isEnglish ? form.Legal_Form : form.Legal_Form // You might want to add Georgian translations in the backend
+          label: form.Legal_Form
         }));
         
         setOrganizationalLegalFormOptions(transformedOptions);
