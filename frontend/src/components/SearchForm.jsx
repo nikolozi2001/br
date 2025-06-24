@@ -107,12 +107,12 @@ function SearchForm({ isEnglish }) {
     isActive: false,
     personalAddress: {
       region: [], // Changed to array for multi-select
-      municipalityCity: "",
+      municipalityCity: [], // Changed to array for multi-select
       address: "",
     },
     legalAddress: {
       region: [], // Changed to array for multi-select
-      municipalityCity: "",
+      municipalityCity: [], // Changed to array for multi-select
       address: "",
     },
     economicActivity: {
@@ -168,12 +168,12 @@ function SearchForm({ isEnglish }) {
       isActive: false,
       personalAddress: {
         region: [], // Reset to empty array for multi-select
-        municipalityCity: "",
+        municipalityCity: [], // Reset to empty array for multi-select
         address: "",
       },
       legalAddress: {
         region: [], // Reset to empty array for multi-select
-        municipalityCity: "",
+        municipalityCity: [], // Reset to empty array for multi-select
         address: "",
       },
       economicActivity: {
@@ -345,19 +345,55 @@ function SearchForm({ isEnglish }) {
                               },
                             }),
                           }}
-                        />
-                        <input
-                          type="text"
+                        />{" "}
+                        <Select
                           placeholder={t.municipalityCity}
-                          value={formData.personalAddress.municipalityCity}
-                          onChange={(e) =>
-                            handleInputChange(
-                              e,
-                              "personalAddress",
-                              "municipalityCity"
-                            )
-                          }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+                          value={formData.personalAddress.municipalityCity.map(
+                            (city) => ({ value: city, label: city })
+                          )}
+                          onChange={(selected) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              personalAddress: {
+                                ...prev.personalAddress,
+                                municipalityCity: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
+                              },
+                            }));
+                          }}
+                          options={[]} // You'll need to populate this with municipality options
+                          isClearable
+                          isMulti
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              borderColor: state.isFocused
+                                ? "#0080BE"
+                                : "#D1D5DB",
+                              "&:hover": {
+                                borderColor: "#0080BE",
+                              },
+                              boxShadow: "none",
+                              padding: "1px",
+                            }),
+                            option: (base, state) => ({
+                              ...base,
+                              backgroundColor: state.isSelected
+                                ? "#0080BE"
+                                : state.isFocused
+                                ? "#E6F4FA"
+                                : "white",
+                              color: state.isSelected ? "white" : "#000000",
+                              "&:hover": {
+                                backgroundColor: state.isSelected
+                                  ? "#0080BE"
+                                  : "#E6F4FA",
+                              },
+                            }),
+                          }}
                         />
                       </div>
                       <input
@@ -427,19 +463,55 @@ function SearchForm({ isEnglish }) {
                               },
                             }),
                           }}
-                        />
-                        <input
-                          type="text"
+                        />{" "}
+                        <Select
                           placeholder={t.municipalityCity}
-                          value={formData.legalAddress.municipalityCity}
-                          onChange={(e) =>
-                            handleInputChange(
-                              e,
-                              "legalAddress",
-                              "municipalityCity"
-                            )
-                          }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+                          value={formData.legalAddress.municipalityCity.map(
+                            (city) => ({ value: city, label: city })
+                          )}
+                          onChange={(selected) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              legalAddress: {
+                                ...prev.legalAddress,
+                                municipalityCity: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
+                              },
+                            }));
+                          }}
+                          options={[]} // You'll need to populate this with municipality options
+                          isClearable
+                          isMulti
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              borderColor: state.isFocused
+                                ? "#0080BE"
+                                : "#D1D5DB",
+                              "&:hover": {
+                                borderColor: "#0080BE",
+                              },
+                              boxShadow: "none",
+                              padding: "1px",
+                            }),
+                            option: (base, state) => ({
+                              ...base,
+                              backgroundColor: state.isSelected
+                                ? "#0080BE"
+                                : state.isFocused
+                                ? "#E6F4FA"
+                                : "white",
+                              color: state.isSelected ? "white" : "#000000",
+                              "&:hover": {
+                                backgroundColor: state.isSelected
+                                  ? "#0080BE"
+                                  : "#E6F4FA",
+                              },
+                            }),
+                          }}
                         />
                       </div>
                       <input
