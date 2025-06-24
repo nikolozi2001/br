@@ -94,7 +94,7 @@ function SearchForm({ isEnglish }) {
   const [formData, setFormData] = useState({
     identificationNumber: "",
     organizationName: "",
-    organizationalLegalForm: "",
+    organizationalLegalForm: [], // Changed to array for multi-select
     head: "",
     partner: "",
     status: "",
@@ -136,20 +136,27 @@ function SearchForm({ isEnglish }) {
     }
   };
 
+  // Add a specific handler for legal form multi-select
+  const handleLegalFormChange = (options) => {
+    setFormData((prev) => ({
+      ...prev,
+      organizationalLegalForm: options ? options.map((option) => option.value) : [],
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Handle form submission
     console.log(formData);
-  };
-
-  const handleReset = () => {
+  };  const handleReset = () => {
     setFormData({
       identificationNumber: "",
       organizationName: "",
-      organizationalLegalForm: "",
+      organizationalLegalForm: [], // Reset to empty array for multi-select
       head: "",
       partner: "",
       status: "",
+      isActive: false,
       personalAddress: {
         region: "",
         municipalityCity: "",
@@ -200,22 +207,15 @@ function SearchForm({ isEnglish }) {
                   <Select
                     placeholder={t.organizationalLegalForm}
                     name="organizationalLegalForm"
-                    value={organizationalLegalFormOptions.find(
-                      (option) =>
-                        option.value === formData.organizationalLegalForm
+                    value={organizationalLegalFormOptions.filter(
+                      (option) => formData.organizationalLegalForm.includes(option.value)
                     )}
-                    onChange={(option) =>
-                      handleInputChange({
-                        target: {
-                          name: "organizationalLegalForm",
-                          value: option?.value || "",
-                        },
-                      })
-                    }
+                    onChange={handleLegalFormChange}
                     options={organizationalLegalFormOptions}
                     className="sm:col-span-2"
                     classNamePrefix="react-select"
                     isClearable
+                    isMulti
                     styles={{
                       control: (base, state) => ({
                         ...base,
@@ -238,6 +238,24 @@ function SearchForm({ isEnglish }) {
                           backgroundColor: state.isSelected
                             ? "#0080BE"
                             : "#E6F4FA",
+                        },
+                      }),
+                      multiValue: (base) => ({
+                        ...base,
+                        backgroundColor: "#E6F4FA",
+                        borderRadius: "4px",
+                      }),
+                      multiValueLabel: (base) => ({
+                        ...base,
+                        color: "#0080BE",
+                        fontWeight: "bold",
+                      }),
+                      multiValueRemove: (base) => ({
+                        ...base,
+                        color: "#0080BE",
+                        "&:hover": {
+                          backgroundColor: "#0080BE",
+                          color: "white",
                         },
                       }),
                     }}
