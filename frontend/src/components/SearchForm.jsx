@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import "../styles/SearchForm.scss";
+import { fetchLegalForms } from "../services/api";
 
 const translations = {
   ge: {
@@ -63,32 +64,18 @@ function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] =
     useState([]);
-
   useEffect(() => {
-    const fetchLegalForms = async () => {
+    const loadLegalForms = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/legal-forms?lang=${
-            isEnglish ? "en" : "ge"
-          }`
-        );
-        const data = await response.json();
-
-        // Transform the data to match the select component format
-        const transformedOptions = data.map((form) => ({
-          value: form.ID.toString(),
-          label: form.Abbreviation + " - " + form.Legal_Form,
-        }));
-
-        setOrganizationalLegalFormOptions(transformedOptions);
+        const options = await fetchLegalForms(isEnglish ? "en" : "ge");
+        setOrganizationalLegalFormOptions(options);
       } catch (error) {
-        console.error("Error fetching legal forms:", error);
-        // Fallback to empty array if API fails
+        console.error("Error loading legal forms:", error);
         setOrganizationalLegalFormOptions([]);
       }
     };
 
-    fetchLegalForms();
+    loadLegalForms();
   }, [isEnglish]); // Re-fetch when language changes
 
   const [formData, setFormData] = useState({
