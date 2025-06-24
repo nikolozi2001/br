@@ -65,6 +65,8 @@ function SearchForm({ isEnglish }) {
   const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] =
     useState([]);
   const [regionOptions, setRegionOptions] = useState([]);
+  const [personalMunicipalityOptions, setPersonalMunicipalityOptions] = useState([]);
+  const [legalMunicipalityOptions, setLegalMunicipalityOptions] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -122,6 +124,85 @@ function SearchForm({ isEnglish }) {
     ownershipForm: "",
     businessForm: "",
   });
+
+
+  // Effect for personal address municipalities
+  useEffect(() => {
+    const fetchPersonalMunicipalities = async () => {
+      try {
+        const selectedRegions = regionOptions.filter((option) =>
+          formData.personalAddress.region.includes(option.value)
+        );
+
+        const codes = [...new Set(selectedRegions.map(region => region.code.split(' ')[0]))];
+        
+        const municipalitiesPromises = codes.map(code =>
+          fetch(`http://192.168.1.27:5000/api/locations/code/${code}?lang=${isEnglish ? "en" : "ge"}`)
+            .then(res => res.json())
+        );
+
+        const municipalitiesResults = await Promise.all(municipalitiesPromises);
+        
+        const formattedMunicipalities = municipalitiesResults
+          .flat()
+          .map(municipality => ({
+            value: municipality.ID,
+            label: `${municipality.Location_Code} - ${municipality.Location_Name}`,
+            code: municipality.Location_Code
+          }));
+
+        setPersonalMunicipalityOptions(formattedMunicipalities);
+      } catch (error) {
+        console.error("Error loading personal municipalities:", error);
+        setPersonalMunicipalityOptions([]);
+      }
+    };
+
+    if (formData.personalAddress.region.length > 0) {
+      fetchPersonalMunicipalities();
+    } else {
+      setPersonalMunicipalityOptions([]);
+    }
+  }, [formData.personalAddress.region, isEnglish, regionOptions]);
+
+  // Effect for legal address municipalities
+  useEffect(() => {
+    const fetchLegalMunicipalities = async () => {
+      try {
+        const selectedRegions = regionOptions.filter((option) =>
+          formData.legalAddress.region.includes(option.value)
+        );
+
+        const codes = [...new Set(selectedRegions.map(region => region.code.split(' ')[0]))];
+        
+        const municipalitiesPromises = codes.map(code =>
+          fetch(`http://192.168.1.27:5000/api/locations/code/${code}?lang=${isEnglish ? "en" : "ge"}`)
+            .then(res => res.json())
+        );
+
+        const municipalitiesResults = await Promise.all(municipalitiesPromises);
+        
+        const formattedMunicipalities = municipalitiesResults
+          .flat()
+          .map(municipality => ({
+            value: municipality.ID,
+            label: `${municipality.Location_Code} - ${municipality.Location_Name}`,
+            code: municipality.Location_Code
+          }));
+
+        setLegalMunicipalityOptions(formattedMunicipalities);
+      } catch (error) {
+        console.error("Error loading legal municipalities:", error);
+        setLegalMunicipalityOptions([]);
+      }
+    };
+
+    if (formData.legalAddress.region.length > 0) {
+      fetchLegalMunicipalities();
+    } else {
+      setLegalMunicipalityOptions([]);
+    }
+  }, [formData.legalAddress.region, isEnglish, regionOptions]);
 
   const handleInputChange = (e, section = null, field = null) => {
     const { name, value } = e.target;
@@ -184,6 +265,12 @@ function SearchForm({ isEnglish }) {
       businessForm: "",
     });
   };
+
+  console.log(
+    regionOptions.filter((option) =>
+      formData.personalAddress.region.includes(option.value)
+    )
+  );
 
   return (
     <div className="w-full">
@@ -347,9 +434,8 @@ function SearchForm({ isEnglish }) {
                           }}
                         />{" "}
                         <Select
-                          placeholder={t.municipalityCity}
-                          value={formData.personalAddress.municipalityCity.map(
-                            (city) => ({ value: city, label: city })
+                          placeholder={t.municipalityCity}                          value={personalMunicipalityOptions.filter(option => 
+                            formData.personalAddress.municipalityCity.includes(option.value)
                           )}
                           onChange={(selected) => {
                             setFormData((prev) => ({
@@ -362,7 +448,7 @@ function SearchForm({ isEnglish }) {
                               },
                             }));
                           }}
-                          options={[]} // You'll need to populate this with municipality options
+                          options={personalMunicipalityOptions}
                           isClearable
                           isMulti
                           className="react-select-container"
@@ -370,9 +456,7 @@ function SearchForm({ isEnglish }) {
                           styles={{
                             control: (base, state) => ({
                               ...base,
-                              borderColor: state.isFocused
-                                ? "#0080BE"
-                                : "#D1D5DB",
+                              borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
                               "&:hover": {
                                 borderColor: "#0080BE",
                               },
@@ -465,9 +549,8 @@ function SearchForm({ isEnglish }) {
                           }}
                         />{" "}
                         <Select
-                          placeholder={t.municipalityCity}
-                          value={formData.legalAddress.municipalityCity.map(
-                            (city) => ({ value: city, label: city })
+                          placeholder={t.municipalityCity}                          value={legalMunicipalityOptions.filter(option => 
+                            formData.legalAddress.municipalityCity.includes(option.value)
                           )}
                           onChange={(selected) => {
                             setFormData((prev) => ({
@@ -480,7 +563,7 @@ function SearchForm({ isEnglish }) {
                               },
                             }));
                           }}
-                          options={[]} // You'll need to populate this with municipality options
+                          options={legalMunicipalityOptions}
                           isClearable
                           isMulti
                           className="react-select-container"
