@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import "../styles/SearchForm.scss";
-import { fetchLegalForms } from "../services/api";
+import { fetchLegalForms, fetchLocations } from "../services/api";
 
 const translations = {
   ge: {
@@ -64,18 +64,25 @@ function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] =
     useState([]);
+  const [locationOptions, setLocationOptions] = useState([]);
+
   useEffect(() => {
-    const loadLegalForms = async () => {
+    const loadData = async () => {
       try {
-        const options = await fetchLegalForms(isEnglish ? "en" : "ge");
-        setOrganizationalLegalFormOptions(options);
+        const [legalForms, locations] = await Promise.all([
+          fetchLegalForms(isEnglish ? "en" : "ge"),
+          fetchLocations(isEnglish ? "en" : "ge"),
+        ]);
+        setOrganizationalLegalFormOptions(legalForms);
+        setLocationOptions(locations);
       } catch (error) {
-        console.error("Error loading legal forms:", error);
+        console.error("Error loading data:", error);
         setOrganizationalLegalFormOptions([]);
+        setLocationOptions([]);
       }
     };
 
-    loadLegalForms();
+    loadData();
   }, [isEnglish]); // Re-fetch when language changes
 
   const [formData, setFormData] = useState({
@@ -270,15 +277,47 @@ function SearchForm({ isEnglish }) {
                       {t.legalAddress}
                     </h3>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
+                      <div className="grid grid-cols-2 gap-3">                        <Select
                           placeholder={t.region}
-                          value={formData.personalAddress.region}
-                          onChange={(e) =>
-                            handleInputChange(e, "personalAddress", "region")
-                          }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+                          value={locationOptions.find(option => option.value === formData.personalAddress.region)}
+                          onChange={(option) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              personalAddress: {
+                                ...prev.personalAddress,
+                                region: option ? option.value : ""
+                              }
+                            }));
+                          }}
+                          options={locationOptions}
+                          isClearable
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
+                              "&:hover": {
+                                borderColor: "#0080BE",
+                              },
+                              boxShadow: "none",
+                              padding: "1px",
+                            }),
+                            option: (base, state) => ({
+                              ...base,
+                              backgroundColor: state.isSelected
+                                ? "#0080BE"
+                                : state.isFocused
+                                ? "#E6F4FA"
+                                : "white",
+                              color: state.isSelected ? "white" : "#000000",
+                              "&:hover": {
+                                backgroundColor: state.isSelected
+                                  ? "#0080BE"
+                                  : "#E6F4FA",
+                              },
+                            }),
+                          }}
                         />
                         <input
                           type="text"
@@ -311,15 +350,47 @@ function SearchForm({ isEnglish }) {
                       {t.factualAddress}
                     </h3>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
+                      <div className="grid grid-cols-2 gap-3">                        <Select
                           placeholder={t.region}
-                          value={formData.legalAddress.region}
-                          onChange={(e) =>
-                            handleInputChange(e, "legalAddress", "region")
-                          }
-                          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+                          value={locationOptions.find(option => option.value === formData.legalAddress.region)}
+                          onChange={(option) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              legalAddress: {
+                                ...prev.legalAddress,
+                                region: option ? option.value : ""
+                              }
+                            }));
+                          }}
+                          options={locationOptions}
+                          isClearable
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
+                              "&:hover": {
+                                borderColor: "#0080BE",
+                              },
+                              boxShadow: "none",
+                              padding: "1px",
+                            }),
+                            option: (base, state) => ({
+                              ...base,
+                              backgroundColor: state.isSelected
+                                ? "#0080BE"
+                                : state.isFocused
+                                ? "#E6F4FA"
+                                : "white",
+                              color: state.isSelected ? "white" : "#000000",
+                              "&:hover": {
+                                backgroundColor: state.isSelected
+                                  ? "#0080BE"
+                                  : "#E6F4FA",
+                              },
+                            }),
+                          }}
                         />
                         <input
                           type="text"

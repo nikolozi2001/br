@@ -12,9 +12,11 @@ const { sql, poolPromise } = require('./config/database');
 
 // Import routes
 const legalFormsRouter = require('./routes/legalForms');
+const locationsRouter = require('./routes/locations');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
+app.use('/api/locations', locationsRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
