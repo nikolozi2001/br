@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import "../styles/SearchForm.scss";
-import { fetchLegalForms, fetchLocations } from "../services/api";
+import { fetchLegalForms } from "../services/api";
 
 const translations = {
   ge: {
@@ -64,21 +64,34 @@ function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] =
     useState([]);
-  const [locationOptions, setLocationOptions] = useState([]);
+  const [regionOptions, setRegionOptions] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [legalForms, locations] = await Promise.all([
+        const [legalForms, regionsResponse] = await Promise.all([
           fetchLegalForms(isEnglish ? "en" : "ge"),
-          fetchLocations(isEnglish ? "en" : "ge"),
+          fetch(
+            `http://192.168.1.27:5000/api/locations/regions?lang=${
+              isEnglish ? "en" : "ge"
+            }`
+          ),
         ]);
+
+        const regions = await regionsResponse.json();
+        const formattedRegions = regions.map((region) => ({
+          value: region.ID,
+          label: `${region.Location_Code} - ${region.Location_Name}`,
+          code: region.Location_Code,
+          level: region.Level,
+        }));
+
         setOrganizationalLegalFormOptions(legalForms);
-        setLocationOptions(locations);
+        setRegionOptions(formattedRegions);
       } catch (error) {
         console.error("Error loading data:", error);
         setOrganizationalLegalFormOptions([]);
-        setLocationOptions([]);
+        setRegionOptions([]);
       }
     };
 
@@ -93,12 +106,12 @@ function SearchForm({ isEnglish }) {
     status: "",
     isActive: false,
     personalAddress: {
-      region: [],  // Changed to array for multi-select
+      region: [], // Changed to array for multi-select
       municipalityCity: "",
       address: "",
     },
     legalAddress: {
-      region: [],  // Changed to array for multi-select
+      region: [], // Changed to array for multi-select
       municipalityCity: "",
       address: "",
     },
@@ -143,7 +156,8 @@ function SearchForm({ isEnglish }) {
     e.preventDefault();
     // Handle form submission
     console.log(formData);
-  };  const handleReset = () => {
+  };
+  const handleReset = () => {
     setFormData({
       identificationNumber: "",
       organizationName: "",
@@ -170,6 +184,7 @@ function SearchForm({ isEnglish }) {
       businessForm: "",
     });
   };
+
   return (
     <div className="w-full">
       <div className="container mx-auto">
@@ -278,21 +293,27 @@ function SearchForm({ isEnglish }) {
                       {t.legalAddress}
                     </h3>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">                        <Select
+                      <div className="grid grid-cols-2 gap-3">
+                        {" "}
+                        <Select
                           placeholder={t.region}
-                          value={locationOptions.filter(
-                            (option) => formData.personalAddress.region.includes(option.value)
+                          value={regionOptions.filter((option) =>
+                            formData.personalAddress.region.includes(
+                              option.value
+                            )
                           )}
                           onChange={(selected) => {
                             setFormData((prev) => ({
                               ...prev,
                               personalAddress: {
                                 ...prev.personalAddress,
-                                region: selected ? selected.map(option => option.value) : []
+                                region: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
                               },
                             }));
                           }}
-                          options={locationOptions}
+                          options={regionOptions}
                           isClearable
                           isMulti
                           className="react-select-container"
@@ -357,21 +378,24 @@ function SearchForm({ isEnglish }) {
                     </h3>
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">
-                        {" "}                        <Select
+                        {" "}
+                        <Select
                           placeholder={t.region}
-                          value={locationOptions.filter(
-                            (option) => formData.legalAddress.region.includes(option.value)
+                          value={regionOptions.filter((option) =>
+                            formData.legalAddress.region.includes(option.value)
                           )}
                           onChange={(selected) => {
                             setFormData((prev) => ({
                               ...prev,
                               legalAddress: {
                                 ...prev.legalAddress,
-                                region: selected ? selected.map(option => option.value) : []
+                                region: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
                               },
                             }));
                           }}
-                          options={locationOptions}
+                          options={regionOptions}
                           isClearable
                           isMulti
                           className="react-select-container"
