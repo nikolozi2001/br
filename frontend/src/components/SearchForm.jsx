@@ -84,7 +84,6 @@ function SearchForm({ isEnglish }) {
 
     loadData();
   }, [isEnglish]); // Re-fetch when language changes
-
   const [formData, setFormData] = useState({
     identificationNumber: "",
     organizationName: "",
@@ -94,12 +93,12 @@ function SearchForm({ isEnglish }) {
     status: "",
     isActive: false,
     personalAddress: {
-      region: "",
+      region: [],  // Changed to array for multi-select
       municipalityCity: "",
       address: "",
     },
     legalAddress: {
-      region: "",
+      region: [],  // Changed to array for multi-select
       municipalityCity: "",
       address: "",
     },
@@ -134,7 +133,9 @@ function SearchForm({ isEnglish }) {
   const handleLegalFormChange = (options) => {
     setFormData((prev) => ({
       ...prev,
-      organizationalLegalForm: options ? options.map((option) => option.value) : [],
+      organizationalLegalForm: options
+        ? options.map((option) => option.value)
+        : [],
     }));
   };
 
@@ -152,12 +153,12 @@ function SearchForm({ isEnglish }) {
       status: "",
       isActive: false,
       personalAddress: {
-        region: "",
+        region: [], // Reset to empty array for multi-select
         municipalityCity: "",
         address: "",
       },
       legalAddress: {
-        region: "",
+        region: [], // Reset to empty array for multi-select
         municipalityCity: "",
         address: "",
       },
@@ -201,8 +202,8 @@ function SearchForm({ isEnglish }) {
                   <Select
                     placeholder={t.organizationalLegalForm}
                     name="organizationalLegalForm"
-                    value={organizationalLegalFormOptions.filter(
-                      (option) => formData.organizationalLegalForm.includes(option.value)
+                    value={organizationalLegalFormOptions.filter((option) =>
+                      formData.organizationalLegalForm.includes(option.value)
                     )}
                     onChange={handleLegalFormChange}
                     options={organizationalLegalFormOptions}
@@ -279,24 +280,29 @@ function SearchForm({ isEnglish }) {
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-3">                        <Select
                           placeholder={t.region}
-                          value={locationOptions.find(option => option.value === formData.personalAddress.region)}
-                          onChange={(option) => {
-                            setFormData(prev => ({
+                          value={locationOptions.filter(
+                            (option) => formData.personalAddress.region.includes(option.value)
+                          )}
+                          onChange={(selected) => {
+                            setFormData((prev) => ({
                               ...prev,
                               personalAddress: {
                                 ...prev.personalAddress,
-                                region: option ? option.value : ""
-                              }
+                                region: selected ? selected.map(option => option.value) : []
+                              },
                             }));
                           }}
                           options={locationOptions}
                           isClearable
+                          isMulti
                           className="react-select-container"
                           classNamePrefix="react-select"
                           styles={{
                             control: (base, state) => ({
                               ...base,
-                              borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
+                              borderColor: state.isFocused
+                                ? "#0080BE"
+                                : "#D1D5DB",
                               "&:hover": {
                                 borderColor: "#0080BE",
                               },
@@ -350,26 +356,32 @@ function SearchForm({ isEnglish }) {
                       {t.factualAddress}
                     </h3>
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">                        <Select
+                      <div className="grid grid-cols-2 gap-3">
+                        {" "}                        <Select
                           placeholder={t.region}
-                          value={locationOptions.find(option => option.value === formData.legalAddress.region)}
-                          onChange={(option) => {
-                            setFormData(prev => ({
+                          value={locationOptions.filter(
+                            (option) => formData.legalAddress.region.includes(option.value)
+                          )}
+                          onChange={(selected) => {
+                            setFormData((prev) => ({
                               ...prev,
                               legalAddress: {
                                 ...prev.legalAddress,
-                                region: option ? option.value : ""
-                              }
+                                region: selected ? selected.map(option => option.value) : []
+                              },
                             }));
                           }}
                           options={locationOptions}
                           isClearable
+                          isMulti
                           className="react-select-container"
                           classNamePrefix="react-select"
                           styles={{
                             control: (base, state) => ({
                               ...base,
-                              borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
+                              borderColor: state.isFocused
+                                ? "#0080BE"
+                                : "#D1D5DB",
                               "&:hover": {
                                 borderColor: "#0080BE",
                               },
