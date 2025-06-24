@@ -1,229 +1,30 @@
-import { useState, useEffect } from "react";
-import Select from "react-select";
 import "../styles/SearchForm.scss";
-import { fetchLegalForms } from "../services/api";
-
-const translations = {
-  ge: {
-    title: "ეკონომიკური სუბიექტების ძებნა",
-    identificationNumber: "საიდენტიფიკაციო ნომერი",
-    organizationName: "ორგანიზაციის დასახელება",
-    organizationalLegalForm: "ორგანიზაციულ-სამართლებრივი ფორმა",
-    head: "ხელმძღვანელი",
-    partner: "პარტნიორი",
-    legalAddress: "იურიდიული მისამართი",
-    factualAddress: "ფაქტობრივი მისამართი",
-    region: "რეგიონი",
-    municipalityCity: "მუნიციპალიტეტი/ქალაქი",
-    address: "მისამართი",
-    economicActivity: "ეკონომიკური საქმიანობა (NACE Rev.2)",
-    activityCode: "ეკონომიკური საქმიანობის კოდი",
-    activityDescription: "ეკონომიკური საქმიანობის დასახელება",
-    ownershipForm: "საკუთრების ფორმა",
-    businessSize: "ბიზნესის ზომა",
-    activeSubject: "აქტიური ეკონომიკური სუბიექტი",
-    search: "ძიება",
-    stopSearch: "ძიების შეჩერება",
-    cancel: "გაუქმება",
-    activeTooltip: `ეკონომიკური ერთეული აქტიურია, თუ იგი აკმაყოფილებს ქვემოთ ჩამოთვლილი კრიტერიუმებიდან ერთ-ერთს:
-1) ბრუნვა > 0 (დღგ-ს, ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
-2) ხელფასი ან დასაქმებულთა რაოდენობა > 0 (ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
-3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
-4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ ქონების გადასახადისა`,
-  },
-  en: {
-    title: "Economic Entity Search",
-    identificationNumber: "Identification Number",
-    organizationName: "Organization Name",
-    organizationalLegalForm: "Organizational Legal Form",
-    head: "Head",
-    partner: "Partner",
-    legalAddress: "Legal Address",
-    factualAddress: "Actual Address",
-    region: "Region",
-    municipalityCity: "Municipality/City",
-    address: "Address",
-    economicActivity: "Economic Activity (NACE Rev.2)",
-    activityCode: "Economic Activity Code",
-    activityDescription: "Economic Activity Description",
-    ownershipForm: "Ownership Form",
-    businessSize: "Business Size",
-    activeSubject: "Active Economic Entity",
-    search: "Search",
-    stopSearch: "Stop Search",
-    cancel: "Cancel",
-    activeTooltip: `The economic unit is active if it meets one of the criteria listed below:
-1) Turnover > 0 (VAT, monthly income and other declarations);
-2) Salary or number of employees > 0 (monthly income and other declarations);
-3) Has profit or loss (profit declaration);
-4) Paid any type of tax, except property tax only`,
-  },
-};
+import { translations } from "../translations/searchForm";
+import { useSearchForm } from "../hooks/useSearchForm";
+import { AddressSection } from "./AddressSection";
+import { BasicInfoSection } from "./BasicInfoSection";
+import { EconomicActivitySection } from "./EconomicActivitySection";
+import { AdditionalInfoSection } from "./AdditionalInfoSection";
+import { FormActions } from "./FormActions";
 
 function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
-  const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] =
-    useState([]);
-  const [regionOptions, setRegionOptions] = useState([]);
-  const [personalMunicipalityOptions, setPersonalMunicipalityOptions] = useState([]);
-  const [legalMunicipalityOptions, setLegalMunicipalityOptions] = useState([]);
+  const {
+    formData,
+    setFormData,
+    organizationalLegalFormOptions,
+    regionOptions,
+    personalMunicipalityOptions,
+    legalMunicipalityOptions,
+    handleInputChange,
+    handleReset
+  } = useSearchForm(isEnglish);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [legalForms, regionsResponse] = await Promise.all([
-          fetchLegalForms(isEnglish ? "en" : "ge"),
-          fetch(
-            `http://192.168.1.27:5000/api/locations/regions?lang=${
-              isEnglish ? "en" : "ge"
-            }`
-          ),
-        ]);
-
-        const regions = await regionsResponse.json();
-        const formattedRegions = regions.map((region) => ({
-          value: region.ID,
-          label: `${region.Location_Code} - ${region.Location_Name}`,
-          code: region.Location_Code,
-          level: region.Level,
-        }));
-
-        setOrganizationalLegalFormOptions(legalForms);
-        setRegionOptions(formattedRegions);
-      } catch (error) {
-        console.error("Error loading data:", error);
-        setOrganizationalLegalFormOptions([]);
-        setRegionOptions([]);
-      }
-    };
-
-    loadData();
-  }, [isEnglish]); // Re-fetch when language changes
-  const [formData, setFormData] = useState({
-    identificationNumber: "",
-    organizationName: "",
-    organizationalLegalForm: [], // Changed to array for multi-select
-    head: "",
-    partner: "",
-    status: "",
-    isActive: false,
-    personalAddress: {
-      region: [], // Changed to array for multi-select
-      municipalityCity: [], // Changed to array for multi-select
-      address: "",
-    },
-    legalAddress: {
-      region: [], // Changed to array for multi-select
-      municipalityCity: [], // Changed to array for multi-select
-      address: "",
-    },
-    economicActivity: {
-      code: "",
-      description: "",
-    },
-    ownershipForm: "",
-    businessForm: "",
-  });
-
-
-  // Effect for personal address municipalities
-  useEffect(() => {
-    const fetchPersonalMunicipalities = async () => {
-      try {
-        const selectedRegions = regionOptions.filter((option) =>
-          formData.personalAddress.region.includes(option.value)
-        );
-
-        const codes = [...new Set(selectedRegions.map(region => region.code.split(' ')[0]))];
-        
-        const municipalitiesPromises = codes.map(code =>
-          fetch(`http://192.168.1.27:5000/api/locations/code/${code}?lang=${isEnglish ? "en" : "ge"}`)
-            .then(res => res.json())
-        );
-
-        const municipalitiesResults = await Promise.all(municipalitiesPromises);
-        
-        const formattedMunicipalities = municipalitiesResults
-          .flat()
-          .map(municipality => ({
-            value: municipality.ID,
-            label: `${municipality.Location_Code} - ${municipality.Location_Name}`,
-            code: municipality.Location_Code
-          }));
-
-        setPersonalMunicipalityOptions(formattedMunicipalities);
-      } catch (error) {
-        console.error("Error loading personal municipalities:", error);
-        setPersonalMunicipalityOptions([]);
-      }
-    };
-
-    if (formData.personalAddress.region.length > 0) {
-      fetchPersonalMunicipalities();
-    } else {
-      setPersonalMunicipalityOptions([]);
-    }
-  }, [formData.personalAddress.region, isEnglish, regionOptions]);
-
-  // Effect for legal address municipalities
-  useEffect(() => {
-    const fetchLegalMunicipalities = async () => {
-      try {
-        const selectedRegions = regionOptions.filter((option) =>
-          formData.legalAddress.region.includes(option.value)
-        );
-
-        const codes = [...new Set(selectedRegions.map(region => region.code.split(' ')[0]))];
-        
-        const municipalitiesPromises = codes.map(code =>
-          fetch(`http://192.168.1.27:5000/api/locations/code/${code}?lang=${isEnglish ? "en" : "ge"}`)
-            .then(res => res.json())
-        );
-
-        const municipalitiesResults = await Promise.all(municipalitiesPromises);
-        
-        const formattedMunicipalities = municipalitiesResults
-          .flat()
-          .map(municipality => ({
-            value: municipality.ID,
-            label: `${municipality.Location_Code} - ${municipality.Location_Name}`,
-            code: municipality.Location_Code
-          }));
-
-        setLegalMunicipalityOptions(formattedMunicipalities);
-      } catch (error) {
-        console.error("Error loading legal municipalities:", error);
-        setLegalMunicipalityOptions([]);
-      }
-    };
-
-    if (formData.legalAddress.region.length > 0) {
-      fetchLegalMunicipalities();
-    } else {
-      setLegalMunicipalityOptions([]);
-    }
-  }, [formData.legalAddress.region, isEnglish, regionOptions]);
-
-  const handleInputChange = (e, section = null, field = null) => {
-    const { name, value } = e.target;
-
-    if (section) {
-      setFormData((prev) => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(formData);
   };
 
-  // Add a specific handler for legal form multi-select
   const handleLegalFormChange = (options) => {
     setFormData((prev) => ({
       ...prev,
@@ -232,46 +33,6 @@ function SearchForm({ isEnglish }) {
         : [],
     }));
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log(formData);
-  };
-  const handleReset = () => {
-    setFormData({
-      identificationNumber: "",
-      organizationName: "",
-      organizationalLegalForm: [], // Reset to empty array for multi-select
-      head: "",
-      partner: "",
-      status: "",
-      isActive: false,
-      personalAddress: {
-        region: [], // Reset to empty array for multi-select
-        municipalityCity: [], // Reset to empty array for multi-select
-        address: "",
-      },
-      legalAddress: {
-        region: [], // Reset to empty array for multi-select
-        municipalityCity: [], // Reset to empty array for multi-select
-        address: "",
-      },
-      economicActivity: {
-        code: "",
-        description: "",
-      },
-      ownershipForm: "",
-      businessForm: "",
-    });
-  };
-
-  console.log(
-    regionOptions.filter((option) =>
-      formData.personalAddress.region.includes(option.value)
-    )
-  );
-
   return (
     <div className="w-full">
       <div className="container mx-auto">
@@ -282,386 +43,82 @@ function SearchForm({ isEnglish }) {
                 {t.title}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder={t.identificationNumber}
-                    name="identificationNumber"
-                    value={formData.identificationNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                  />
-                  <input
-                    type="text"
-                    placeholder={t.organizationName}
-                    name="organizationName"
-                    value={formData.organizationName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  <Select
-                    placeholder={t.organizationalLegalForm}
-                    name="organizationalLegalForm"
-                    value={organizationalLegalFormOptions.filter((option) =>
-                      formData.organizationalLegalForm.includes(option.value)
-                    )}
-                    onChange={handleLegalFormChange}
-                    options={organizationalLegalFormOptions}
-                    className="sm:col-span-2"
-                    classNamePrefix="react-select"
-                    isClearable
-                    isMulti
-                    styles={{
-                      control: (base, state) => ({
-                        ...base,
-                        borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
-                        "&:hover": {
-                          borderColor: "#0080BE",
-                        },
-                        boxShadow: "none",
-                        padding: "1px",
-                      }),
-                      option: (base, state) => ({
-                        ...base,
-                        backgroundColor: state.isSelected
-                          ? "#0080BE"
-                          : state.isFocused
-                          ? "#E6F4FA"
-                          : "white",
-                        color: state.isSelected ? "white" : "#000000",
-                        "&:hover": {
-                          backgroundColor: state.isSelected
-                            ? "#0080BE"
-                            : "#E6F4FA",
-                        },
-                      }),
-                      multiValue: (base) => ({
-                        ...base,
-                        backgroundColor: "#E6F4FA",
-                        borderRadius: "4px",
-                      }),
-                      multiValueLabel: (base) => ({
-                        ...base,
-                        color: "#0080BE",
-                        fontWeight: "bold",
-                      }),
-                      multiValueRemove: (base) => ({
-                        ...base,
-                        color: "#0080BE",
-                        "&:hover": {
-                          backgroundColor: "#0080BE",
-                          color: "white",
-                        },
-                      }),
-                    }}
-                  />
-                  <input
-                    type="text"
-                    placeholder={t.head}
-                    name="head"
-                    value={formData.head}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                  />
-                  <input
-                    type="text"
-                    placeholder={t.partner}
-                    name="partner"
-                    value={formData.partner}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold font-bpg-nino text-center">
-                      {t.legalAddress}
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        {" "}
-                        <Select
-                          placeholder={t.region}
-                          value={regionOptions.filter((option) =>
-                            formData.personalAddress.region.includes(
-                              option.value
-                            )
-                          )}
-                          onChange={(selected) => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              personalAddress: {
-                                ...prev.personalAddress,
-                                region: selected
-                                  ? selected.map((option) => option.value)
-                                  : [],
-                              },
-                            }));
-                          }}
-                          options={regionOptions}
-                          isClearable
-                          isMulti
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              borderColor: state.isFocused
-                                ? "#0080BE"
-                                : "#D1D5DB",
-                              "&:hover": {
-                                borderColor: "#0080BE",
-                              },
-                              boxShadow: "none",
-                              padding: "1px",
-                            }),
-                            option: (base, state) => ({
-                              ...base,
-                              backgroundColor: state.isSelected
-                                ? "#0080BE"
-                                : state.isFocused
-                                ? "#E6F4FA"
-                                : "white",
-                              color: state.isSelected ? "white" : "#000000",
-                              "&:hover": {
-                                backgroundColor: state.isSelected
-                                  ? "#0080BE"
-                                  : "#E6F4FA",
-                              },
-                            }),
-                          }}
-                        />{" "}
-                        <Select
-                          placeholder={t.municipalityCity}                          value={personalMunicipalityOptions.filter(option => 
-                            formData.personalAddress.municipalityCity.includes(option.value)
-                          )}
-                          onChange={(selected) => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              personalAddress: {
-                                ...prev.personalAddress,
-                                municipalityCity: selected
-                                  ? selected.map((option) => option.value)
-                                  : [],
-                              },
-                            }));
-                          }}
-                          options={personalMunicipalityOptions}
-                          isClearable
-                          isMulti
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              borderColor: state.isFocused ? "#0080BE" : "#D1D5DB",
-                              "&:hover": {
-                                borderColor: "#0080BE",
-                              },
-                              boxShadow: "none",
-                              padding: "1px",
-                            }),
-                            option: (base, state) => ({
-                              ...base,
-                              backgroundColor: state.isSelected
-                                ? "#0080BE"
-                                : state.isFocused
-                                ? "#E6F4FA"
-                                : "white",
-                              color: state.isSelected ? "white" : "#000000",
-                              "&:hover": {
-                                backgroundColor: state.isSelected
-                                  ? "#0080BE"
-                                  : "#E6F4FA",
-                              },
-                            }),
-                          }}
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder={t.address}
-                        value={formData.personalAddress.address}
-                        onChange={(e) =>
-                          handleInputChange(e, "personalAddress", "address")
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                      />
-                    </div>
-                  </div>
+                <BasicInfoSection 
+                  formData={formData}
+                  handleInputChange={handleInputChange}
+                  handleLegalFormChange={handleLegalFormChange}
+                  organizationalLegalFormOptions={organizationalLegalFormOptions}
+                  t={t}
+                />
 
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold font-bpg-nino text-center">
-                      {t.factualAddress}
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        {" "}
-                        <Select
-                          placeholder={t.region}
-                          value={regionOptions.filter((option) =>
-                            formData.legalAddress.region.includes(option.value)
-                          )}
-                          onChange={(selected) => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              legalAddress: {
-                                ...prev.legalAddress,
-                                region: selected
-                                  ? selected.map((option) => option.value)
-                                  : [],
-                              },
-                            }));
-                          }}
-                          options={regionOptions}
-                          isClearable
-                          isMulti
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              borderColor: state.isFocused
-                                ? "#0080BE"
-                                : "#D1D5DB",
-                              "&:hover": {
-                                borderColor: "#0080BE",
-                              },
-                              boxShadow: "none",
-                              padding: "1px",
-                            }),
-                            option: (base, state) => ({
-                              ...base,
-                              backgroundColor: state.isSelected
-                                ? "#0080BE"
-                                : state.isFocused
-                                ? "#E6F4FA"
-                                : "white",
-                              color: state.isSelected ? "white" : "#000000",
-                              "&:hover": {
-                                backgroundColor: state.isSelected
-                                  ? "#0080BE"
-                                  : "#E6F4FA",
-                              },
-                            }),
-                          }}
-                        />{" "}
-                        <Select
-                          placeholder={t.municipalityCity}                          value={legalMunicipalityOptions.filter(option => 
-                            formData.legalAddress.municipalityCity.includes(option.value)
-                          )}
-                          onChange={(selected) => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              legalAddress: {
-                                ...prev.legalAddress,
-                                municipalityCity: selected
-                                  ? selected.map((option) => option.value)
-                                  : [],
-                              },
-                            }));
-                          }}
-                          options={legalMunicipalityOptions}
-                          isClearable
-                          isMulti
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              borderColor: state.isFocused
-                                ? "#0080BE"
-                                : "#D1D5DB",
-                              "&:hover": {
-                                borderColor: "#0080BE",
-                              },
-                              boxShadow: "none",
-                              padding: "1px",
-                            }),
-                            option: (base, state) => ({
-                              ...base,
-                              backgroundColor: state.isSelected
-                                ? "#0080BE"
-                                : state.isFocused
-                                ? "#E6F4FA"
-                                : "white",
-                              color: state.isSelected ? "white" : "#000000",
-                              "&:hover": {
-                                backgroundColor: state.isSelected
-                                  ? "#0080BE"
-                                  : "#E6F4FA",
-                              },
-                            }),
-                          }}
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder={t.address}
-                        value={formData.legalAddress.address}
-                        onChange={(e) =>
-                          handleInputChange(e, "legalAddress", "address")
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                      />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <AddressSection
+                    title={t.legalAddress}
+                    formData={formData.legalAddress}
+                    handleInputChange={(e) => handleInputChange(e, "legalAddress", "address")}
+                    regionOptions={regionOptions}
+                    municipalityOptions={legalMunicipalityOptions}
+                    onRegionChange={(selected) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        legalAddress: {
+                          ...prev.legalAddress,
+                          region: selected ? selected.map((option) => option.value) : [],
+                        },
+                      }));
+                    }}
+                    onMunicipalityChange={(selected) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        legalAddress: {
+                          ...prev.legalAddress,
+                          municipalityCity: selected ? selected.map((option) => option.value) : [],
+                        },
+                      }));
+                    }}
+                    t={t}
+                  />
+
+                  <AddressSection
+                    title={t.factualAddress}
+                    formData={formData.personalAddress}
+                    handleInputChange={(e) => handleInputChange(e, "personalAddress", "address")}
+                    regionOptions={regionOptions}
+                    municipalityOptions={personalMunicipalityOptions}
+                    onRegionChange={(selected) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        personalAddress: {
+                          ...prev.personalAddress,
+                          region: selected ? selected.map((option) => option.value) : [],
+                        },
+                      }));
+                    }}
+                    onMunicipalityChange={(selected) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        personalAddress: {
+                          ...prev.personalAddress,
+                          municipalityCity: selected ? selected.map((option) => option.value) : [],
+                        },
+                      }));
+                    }}
+                    t={t}
+                  />
                 </div>
-                <div className="space-y-4">
-                  <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
-                    {t.economicActivity}
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-10 gap-3 sm:gap-4">
-                    <input
-                      type="text"
-                      placeholder={t.activityCode}
-                      value={formData.economicActivity.code}
-                      onChange={(e) =>
-                        handleInputChange(e, "economicActivity", "code")
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-3 hover:border-[#0080BE]"
-                    />
-                    <input
-                      type="text"
-                      placeholder={t.activityDescription}
-                      value={formData.economicActivity.description}
-                      onChange={(e) =>
-                        handleInputChange(e, "economicActivity", "description")
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white sm:col-span-7 hover:border-[#0080BE]"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-3 sm:space-y-4">
-                    <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
-                      {t.ownershipForm}
-                    </h3>
-                    <input
-                      type="text"
-                      placeholder={t.ownershipForm}
-                      name="ownershipForm"
-                      value={formData.ownershipForm}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                    />
-                  </div>
-                  <div className="space-y-3 sm:space-y-4">
-                    <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
-                      {t.businessSize}
-                    </h3>
-                    <input
-                      type="text"
-                      placeholder={t.businessSize}
-                      name="businessForm"
-                      value={formData.businessForm}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
-                    />
-                  </div>
-                </div>
+
+                <EconomicActivitySection 
+                  formData={formData.economicActivity}
+                  handleInputChange={handleInputChange}
+                  t={t}
+                />
+
+                <AdditionalInfoSection 
+                  formData={formData}
+                  handleInputChange={handleInputChange}
+                  t={t}
+                />
+
                 <div className="w-full mb-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <input
@@ -703,72 +160,8 @@ function SearchForm({ isEnglish }) {
                     </label>
                   </div>
                 </div>
-                <div className="flex justify-center w-full mt-4">
-                  <div className="inline-flex flex-col sm:flex-row w-full sm:w-auto">
-                    <button
-                      type="submit"
-                      className="flex items-center justify-center px-4 py-2 font-bold text-[#0080BE] border border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors rounded-t sm:rounded-t-none sm:rounded-l cursor-pointer text-sm sm:text-base"
-                    >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                      {t.search}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex items-center justify-center px-4 py-2 font-bold text-[#0080BE] border-y border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors cursor-pointer text-sm sm:text-base"
-                      onClick={() => window.stop()}
-                    >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                        />
-                      </svg>
-                      {t.stopSearch}
-                    </button>
-                    <button
-                      type="button"
-                      className="flex items-center justify-center px-4 py-2 font-bold text-red-600 border border-l border-red-600 hover:bg-red-600 hover:text-white transition-colors rounded-b sm:rounded-b-none sm:rounded-r cursor-pointer text-sm sm:text-base"
-                      onClick={handleReset}
-                    >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                      {t.cancel}
-                    </button>
-                  </div>
-                </div>
+
+                <FormActions t={t} onReset={handleReset} />
               </form>
             </div>
           </div>

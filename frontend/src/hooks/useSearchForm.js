@@ -1,0 +1,149 @@
+import { useState, useEffect, useCallback } from "react";
+import { fetchLegalForms } from "../services/api";
+
+const initialFormData = {
+  identificationNumber: "",
+  organizationName: "",
+  organizationalLegalForm: [],
+  head: "",
+  partner: "",
+  status: "",
+  isActive: false,
+  personalAddress: {
+    region: [],
+    municipalityCity: [],
+    address: "",
+  },
+  legalAddress: {
+    region: [],
+    municipalityCity: [],
+    address: "",
+  },
+  economicActivity: {
+    code: "",
+    description: "",
+  },
+  ownershipForm: "",
+  businessForm: "",
+};
+
+export function useSearchForm(isEnglish) {
+  const [formData, setFormData] = useState(initialFormData);
+  const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] = useState([]);
+  const [regionOptions, setRegionOptions] = useState([]);
+  const [personalMunicipalityOptions, setPersonalMunicipalityOptions] = useState([]);
+  const [legalMunicipalityOptions, setLegalMunicipalityOptions] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [legalForms, regionsResponse] = await Promise.all([
+          fetchLegalForms(isEnglish ? "en" : "ge"),
+          fetch(
+            `http://192.168.1.27:5000/api/locations/regions?lang=${
+              isEnglish ? "en" : "ge"
+            }`
+          ),
+        ]);
+
+        const regions = await regionsResponse.json();
+        const formattedRegions = regions.map((region) => ({
+          value: region.ID,
+          label: `${region.Location_Code} - ${region.Location_Name}`,
+          code: region.Location_Code,
+          level: region.Level,
+        }));
+
+        setOrganizationalLegalFormOptions(legalForms);
+        setRegionOptions(formattedRegions);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        setOrganizationalLegalFormOptions([]);
+        setRegionOptions([]);
+      }
+    };
+
+    loadData();
+  }, [isEnglish]);
+  const fetchMunicipalities = useCallback(async (regions, isLegal = false) => {
+    try {
+      const selectedRegions = regionOptions.filter((option) =>
+        regions.includes(option.value)
+      );
+
+      const codes = [...new Set(selectedRegions.map(region => region.code.split(' ')[0]))];
+      
+      const municipalitiesPromises = codes.map(code =>
+        fetch(`http://192.168.1.27:5000/api/locations/code/${code}?lang=${isEnglish ? "en" : "ge"}`)
+          .then(res => res.json())
+      );
+
+      const municipalitiesResults = await Promise.all(municipalitiesPromises);
+      
+      const formattedMunicipalities = municipalitiesResults
+        .flat()
+        .map(municipality => ({
+          value: municipality.ID,
+          label: `${municipality.Location_Code} - ${municipality.Location_Name}`,
+          code: municipality.Location_Code
+        }));
+
+      return formattedMunicipalities;
+    } catch (error) {
+      console.error(`Error loading ${isLegal ? 'legal' : 'personal'} municipalities:`, error);
+      return [];
+    }
+  }, [regionOptions, isEnglish]);
+
+  useEffect(() => {
+    if (formData.personalAddress.region.length > 0) {
+      fetchMunicipalities(formData.personalAddress.region, false)
+        .then(setPersonalMunicipalityOptions);
+    } else {
+      setPersonalMunicipalityOptions([]);
+    }
+  }, [formData.personalAddress.region, fetchMunicipalities]);
+
+  useEffect(() => {
+    if (formData.legalAddress.region.length > 0) {
+      fetchMunicipalities(formData.legalAddress.region, true)
+        .then(setLegalMunicipalityOptions);
+    } else {
+      setLegalMunicipalityOptions([]);
+    }
+  }, [formData.legalAddress.region, fetchMunicipalities]);
+
+  const handleInputChange = (e, section = null, field = null) => {
+    const { name, value } = e.target;
+
+    if (section) {
+      setFormData((prev) => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleReset = () => {
+    setFormData(initialFormData);
+  };
+
+  return {
+    formData,
+    setFormData,
+    organizationalLegalFormOptions,
+    regionOptions,
+    personalMunicipalityOptions,
+    legalMunicipalityOptions,
+    handleInputChange,
+    handleReset
+  };
+}
