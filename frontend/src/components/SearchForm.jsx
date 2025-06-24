@@ -61,23 +61,28 @@ const translations = {
 
 function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
-  const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] = useState([]);
+  const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] =
+    useState([]);
 
   useEffect(() => {
     const fetchLegalForms = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/legal-forms?lang=${isEnglish ? 'en' : 'ge'}`);
+        const response = await fetch(
+          `http://localhost:5000/api/legal-forms?lang=${
+            isEnglish ? "en" : "ge"
+          }`
+        );
         const data = await response.json();
-        
+
         // Transform the data to match the select component format
-        const transformedOptions = data.map(form => ({
+        const transformedOptions = data.map((form) => ({
           value: form.ID.toString(),
-          label: form.Legal_Form
+          label: form.Abbreviation + " - " + form.Legal_Form,
         }));
-        
+
         setOrganizationalLegalFormOptions(transformedOptions);
       } catch (error) {
-        console.error('Error fetching legal forms:', error);
+        console.error("Error fetching legal forms:", error);
         // Fallback to empty array if API fails
         setOrganizationalLegalFormOptions([]);
       }
@@ -196,10 +201,16 @@ function SearchForm({ isEnglish }) {
                     placeholder={t.organizationalLegalForm}
                     name="organizationalLegalForm"
                     value={organizationalLegalFormOptions.find(
-                      (option) => option.value === formData.organizationalLegalForm
+                      (option) =>
+                        option.value === formData.organizationalLegalForm
                     )}
                     onChange={(option) =>
-                      handleInputChange({ target: { name: "organizationalLegalForm", value: option?.value || "" } })
+                      handleInputChange({
+                        target: {
+                          name: "organizationalLegalForm",
+                          value: option?.value || "",
+                        },
+                      })
                     }
                     options={organizationalLegalFormOptions}
                     className="sm:col-span-2"
@@ -217,11 +228,16 @@ function SearchForm({ isEnglish }) {
                       }),
                       option: (base, state) => ({
                         ...base,
-                        backgroundColor:
-                          state.isSelected ? "#0080BE" : state.isFocused ? "#E6F4FA" : "white",
+                        backgroundColor: state.isSelected
+                          ? "#0080BE"
+                          : state.isFocused
+                          ? "#E6F4FA"
+                          : "white",
                         color: state.isSelected ? "white" : "#000000",
                         "&:hover": {
-                          backgroundColor: state.isSelected ? "#0080BE" : "#E6F4FA",
+                          backgroundColor: state.isSelected
+                            ? "#0080BE"
+                            : "#E6F4FA",
                         },
                       }),
                     }}
