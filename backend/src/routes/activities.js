@@ -5,6 +5,9 @@ const { poolPromise } = require('../config/database');
 // GET all activities
 router.get('/', async (req, res) => {
     try {
+        const lang = req.query.lang || "ge";
+        const tableName = lang === "en" ? "Activities_NACE2_EN" : "Activities_NACE2";
+
         const pool = await poolPromise;
         const result = await pool.request()
             .query(`
@@ -19,7 +22,7 @@ router.get('/', async (req, res) => {
                     ,[root3]
                     ,[root4]
                     ,[root5]
-                FROM [register].[CL].[Activities_NACE2]
+                FROM [register].[CL].[${tableName}]
                 ORDER BY Activity_Code
             `);
         res.json(result.recordset);

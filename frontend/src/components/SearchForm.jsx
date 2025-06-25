@@ -105,12 +105,11 @@ function SearchForm({ isEnglish }) {
                     }}
                     t={t}
                   />
-                </div>
-
-                <EconomicActivitySection 
+                </div>                <EconomicActivitySection 
                   formData={formData.economicActivity}
                   handleInputChange={handleInputChange}
                   t={t}
+                  isEnglish={isEnglish}
                 />
 
                 <AdditionalInfoSection 

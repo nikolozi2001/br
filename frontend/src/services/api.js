@@ -48,9 +48,9 @@ export const fetchLocations = async (lang = "ge") => {
 };
 
 // Activities API
-export const fetchActivities = async () => {
+export const fetchActivities = async (lang = 'ge') => {
   try {
-    const response = await fetch(`${API_BASE_URL}/activities`);
+    const response = await fetch(`${API_BASE_URL}/activities?lang=${lang}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }

@@ -2,19 +2,18 @@ import { useEffect, useState } from "react";
 import CustomSelect from "./common/CustomSelect";
 import { fetchActivities } from "../services/api";
 
-export function EconomicActivitySection({ formData, handleInputChange, t }) {
+export function EconomicActivitySection({ formData, handleInputChange, t, isEnglish }) {
   const [activities, setActivities] = useState({
     codesOnly: [],
     codesWithNames: [],
   });
-
   useEffect(() => {
     const loadActivities = async () => {
-      const data = await fetchActivities();
+      const data = await fetchActivities(isEnglish ? 'en' : 'ge');
       setActivities(data);
     };
     loadActivities();
-  }, []);
+  }, [isEnglish]);
   const selectedActivityCodes = formData.selectedActivities
     ? activities.codesOnly.filter((opt) =>
         formData.selectedActivities.includes(opt.value)
