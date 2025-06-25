@@ -100,12 +100,34 @@ export const fetchOwnershipTypes = async (lang = "ge") => {
   }
 };
 
+// Sizes API
+export const fetchSizes = async (lang) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/sizes?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    
+    const sizes = data.recordset || data;
+    
+    return sizes.map((size) => ({
+      value: size.id.toString(),
+      label: size.zoma
+    }));
+  } catch (error) {
+    console.error("Error fetching sizes:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
   fetchLocations,
   fetchActivities,
   fetchOwnershipTypes,
+  fetchSizes,
 };
 
 export default API;

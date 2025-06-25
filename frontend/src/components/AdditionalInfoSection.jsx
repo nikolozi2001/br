@@ -1,23 +1,37 @@
 import { useEffect, useState } from 'react';
 import CustomSelect from './common/CustomSelect';
-import { fetchOwnershipTypes } from '../services/api';
+import { fetchOwnershipTypes, fetchSizes } from '../services/api';
 
 export function AdditionalInfoSection({ formData, handleInputChange, t, isEnglish }) {
   const [ownershipTypes, setOwnershipTypes] = useState([]);
+  const [sizes, setSizes] = useState([]);
 
   useEffect(() => {
-    const loadOwnershipTypes = async () => {
-      const types = await fetchOwnershipTypes(isEnglish ? 'en' : 'ge');
+    const loadData = async () => {
+      const [types, sizesList] = await Promise.all([
+        fetchOwnershipTypes(isEnglish ? 'en' : 'ge'),
+        fetchSizes(isEnglish ? 'en' : 'ge')
+      ]);
       setOwnershipTypes(types);
+      setSizes(sizesList);
     };
-    loadOwnershipTypes();
+    loadData();
   }, [isEnglish]);
 
-  const handleOwnershipChange = (selectedOption) => {
+  const handleOwnershipChange = (selectedOptions) => {
     handleInputChange({
       target: {
         name: 'ownershipForm',
-        value: selectedOption
+        value: selectedOptions || []
+      }
+    });
+  };
+
+  const handleSizeChange = (selectedOptions) => {
+    handleInputChange({
+      target: {
+        name: 'businessForm',
+        value: selectedOptions || []
       }
     });
   };
@@ -33,19 +47,19 @@ export function AdditionalInfoSection({ formData, handleInputChange, t, isEnglis
           value={formData.ownershipForm}
           onChange={handleOwnershipChange}
           options={ownershipTypes}
+          isMulti={true}
         />
       </div>
       <div className="space-y-3 sm:space-y-4">
         <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
           {t.businessSize}
         </h3>
-        <input
-          type="text"
+        <CustomSelect
           placeholder={t.businessSize}
-          name="businessForm"
           value={formData.businessForm}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+          onChange={handleSizeChange}
+          options={sizes}
+          isMulti={true}
         />
       </div>
     </div>
