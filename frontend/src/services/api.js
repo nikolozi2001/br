@@ -47,10 +47,40 @@ export const fetchLocations = async (lang = "ge") => {
   }
 };
 
+// Activities API
+export const fetchActivities = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/activities`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    
+    const codesOnly = data.map((activity) => ({
+      value: activity.Activity_Code,
+      label: activity.Activity_Code
+    }));
+
+    const codesWithNames = data.map((activity) => ({
+      value: activity.Activity_Code,
+      label: `${activity.Activity_Code} - ${activity.Activity_Name}`
+    }));
+    
+    return {
+      codesOnly,
+      codesWithNames
+    };
+  } catch (error) {
+    console.error("Error fetching activities:", error);
+    return { codesOnly: [], codesWithNames: [] };
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
   fetchLocations,
+  fetchActivities,
 };
 
 export default API;
