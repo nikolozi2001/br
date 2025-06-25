@@ -17,7 +17,7 @@ function SearchForm({ isEnglish }) {
     personalMunicipalityOptions,
     legalMunicipalityOptions,
     handleInputChange,
-    handleReset
+    handleReset,
   } = useSearchForm(isEnglish);
 
   const handleSubmit = (e) => {
@@ -43,19 +43,22 @@ function SearchForm({ isEnglish }) {
                 {t.title}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                <BasicInfoSection 
+                <BasicInfoSection
                   formData={formData}
                   handleInputChange={handleInputChange}
                   handleLegalFormChange={handleLegalFormChange}
-                  organizationalLegalFormOptions={organizationalLegalFormOptions}
+                  organizationalLegalFormOptions={
+                    organizationalLegalFormOptions
+                  }
                   t={t}
                 />
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <AddressSection
                     title={t.legalAddress}
                     formData={formData.legalAddress}
-                    handleInputChange={(e) => handleInputChange(e, "legalAddress", "address")}
+                    handleInputChange={(e) =>
+                      handleInputChange(e, "legalAddress", "address")
+                    }
                     regionOptions={regionOptions}
                     municipalityOptions={legalMunicipalityOptions}
                     onRegionChange={(selected) => {
@@ -63,7 +66,9 @@ function SearchForm({ isEnglish }) {
                         ...prev,
                         legalAddress: {
                           ...prev.legalAddress,
-                          region: selected ? selected.map((option) => option.value) : [],
+                          region: selected
+                            ? selected.map((option) => option.value)
+                            : [],
                         },
                       }));
                     }}
@@ -72,7 +77,9 @@ function SearchForm({ isEnglish }) {
                         ...prev,
                         legalAddress: {
                           ...prev.legalAddress,
-                          municipalityCity: selected ? selected.map((option) => option.value) : [],
+                          municipalityCity: selected
+                            ? selected.map((option) => option.value)
+                            : [],
                         },
                       }));
                     }}
@@ -82,7 +89,9 @@ function SearchForm({ isEnglish }) {
                   <AddressSection
                     title={t.factualAddress}
                     formData={formData.personalAddress}
-                    handleInputChange={(e) => handleInputChange(e, "personalAddress", "address")}
+                    handleInputChange={(e) =>
+                      handleInputChange(e, "personalAddress", "address")
+                    }
                     regionOptions={regionOptions}
                     municipalityOptions={personalMunicipalityOptions}
                     onRegionChange={(selected) => {
@@ -90,7 +99,9 @@ function SearchForm({ isEnglish }) {
                         ...prev,
                         personalAddress: {
                           ...prev.personalAddress,
-                          region: selected ? selected.map((option) => option.value) : [],
+                          region: selected
+                            ? selected.map((option) => option.value)
+                            : [],
                         },
                       }));
                     }}
@@ -99,25 +110,27 @@ function SearchForm({ isEnglish }) {
                         ...prev,
                         personalAddress: {
                           ...prev.personalAddress,
-                          municipalityCity: selected ? selected.map((option) => option.value) : [],
+                          municipalityCity: selected
+                            ? selected.map((option) => option.value)
+                            : [],
                         },
                       }));
                     }}
                     t={t}
                   />
-                </div>                <EconomicActivitySection 
+                </div>{" "}
+                <EconomicActivitySection
                   formData={formData.economicActivity}
                   handleInputChange={handleInputChange}
                   t={t}
                   isEnglish={isEnglish}
                 />
-
-                <AdditionalInfoSection 
+                <AdditionalInfoSection
                   formData={formData}
                   handleInputChange={handleInputChange}
                   t={t}
+                  isEnglish={isEnglish}
                 />
-
                 <div className="w-full mb-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <input
@@ -159,7 +172,6 @@ function SearchForm({ isEnglish }) {
                     </label>
                   </div>
                 </div>
-
                 <FormActions t={t} onReset={handleReset} />
               </form>
             </div>

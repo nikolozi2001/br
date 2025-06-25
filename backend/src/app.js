@@ -14,11 +14,13 @@ const { sql, poolPromise } = require('./config/database');
 const legalFormsRouter = require('./routes/legalForms');
 const locationsRouter = require('./routes/locations');
 const activitiesRouter = require('./routes/activities');
+const ownershipTypesRouter = require('./routes/ownershipTypes');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/activities', activitiesRouter);
+app.use('/api/ownership-types', ownershipTypesRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

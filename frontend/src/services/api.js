@@ -48,31 +48,55 @@ export const fetchLocations = async (lang = "ge") => {
 };
 
 // Activities API
-export const fetchActivities = async (lang = 'ge') => {
+export const fetchActivities = async (lang = "ge") => {
   try {
     const response = await fetch(`${API_BASE_URL}/activities?lang=${lang}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    
+
     const codesOnly = data.map((activity) => ({
       value: activity.Activity_Code,
-      label: activity.Activity_Code
+      label: activity.Activity_Code,
     }));
 
     const codesWithNames = data.map((activity) => ({
       value: activity.Activity_Code,
-      label: `${activity.Activity_Code} - ${activity.Activity_Name}`
+      label: `${activity.Activity_Code} - ${activity.Activity_Name}`,
     }));
-    
+
     return {
       codesOnly,
-      codesWithNames
+      codesWithNames,
     };
   } catch (error) {
     console.error("Error fetching activities:", error);
     return { codesOnly: [], codesWithNames: [] };
+  }
+};
+
+// Ownership Types API
+export const fetchOwnershipTypes = async (lang = "ge") => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/ownership-types?lang=${lang}`
+    );
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+
+    // Check if data is in recordset format
+    const types = data.recordset || data;
+
+    return types.map((type) => ({
+      value: type.ID?.toString(),
+      label: type.Ownership_Type,
+    }));
+  } catch (error) {
+    console.error("Error fetching ownership types:", error);
+    return [];
   }
 };
 
@@ -81,6 +105,7 @@ export const API = {
   fetchLegalForms,
   fetchLocations,
   fetchActivities,
+  fetchOwnershipTypes,
 };
 
 export default API;
