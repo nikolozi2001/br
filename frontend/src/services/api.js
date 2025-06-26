@@ -34,12 +34,19 @@ export const fetchLocations = async (lang = "ge") => {
     const response = await fetch(`${API_BASE_URL}/locations?lang=${lang}`);
     const data = await response.json();
     // Group and transform locations into regions for the select component
-    const regions = [
-      ...new Set(data.map((location) => location.Location_Name)),
-    ];
-    return regions.map((region) => ({
-      value: region,
-      label: region,
+    // Remove duplicates and transform into select options
+    const uniqueRegions = data.reduce((acc, location) => {
+      if (!acc.some(r => r.Location_Code === location.Location_Code)) {
+        acc.push(location);
+      }
+      return acc;
+    }, []);
+
+    return uniqueRegions.map((region) => ({
+      value: region.ID,
+      label: `${region.Location_Code} - ${region.Location_Name}`,
+      code: region.Location_Code,
+      level: region.Level,
     }));
   } catch (error) {
     console.error("Error fetching locations:", error);
@@ -122,8 +129,14 @@ export const fetchSizes = async (lang) => {
 };
 
 // documents API
-export const fetchDocuments = async (searchParams, lang = "ge") => {
+export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = []) => {
   try {
+    console.log('Search params being sent:', {
+      organizationalLegalForm: searchParams.organizationalLegalForm,
+      legalRegion: searchParams.legalAddress?.region,
+      personalRegion: searchParams.personalAddress?.region
+    });
+
     const queryParams = new URLSearchParams({
       lang,
       ...(searchParams.identificationNumber && { identificationNumber: searchParams.identificationNumber }),
@@ -131,10 +144,10 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
       ...(searchParams.organizationalLegalForm?.length && { organizationalLegalForm: searchParams.organizationalLegalForm.join(',') }),
       ...(searchParams.head && { head: searchParams.head }),
       ...(searchParams.partner && { partner: searchParams.partner }),
-      ...(searchParams.legalAddress?.region?.length && { legalRegion: searchParams.legalAddress.region.join(',') }),
+      ...(searchParams.legalAddress?.region?.length && { region: regionOptions?.find(r => r.value === searchParams.legalAddress.region[0])?.code || searchParams.legalAddress.region.join(',') }),
       ...(searchParams.legalAddress?.municipalityCity?.length && { legalMunicipality: searchParams.legalAddress.municipalityCity.join(',') }),
       ...(searchParams.legalAddress?.address && { legalAddress: searchParams.legalAddress.address }),
-      ...(searchParams.personalAddress?.region?.length && { personalRegion: searchParams.personalAddress.region.join(',') }),
+      ...(searchParams.personalAddress?.region?.length && { personalRegion: regionOptions?.find(r => r.value === searchParams.personalAddress.region[0])?.code || searchParams.personalAddress.region.join(',') }),
       ...(searchParams.personalAddress?.municipalityCity?.length && { personalMunicipality: searchParams.personalAddress.municipalityCity.join(',') }),
       ...(searchParams.personalAddress?.address && { personalAddress: searchParams.personalAddress.address }),
       ...(searchParams.economicActivity?.selectedActivities?.length && { activityCode: searchParams.economicActivity.selectedActivities.join(',') }),
@@ -143,11 +156,14 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
       ...(searchParams.isActive && { isActive: searchParams.isActive })
     });
 
+    console.log('Full query string being sent:', `${API_BASE_URL}/documents?${queryParams}`);
+    
     const response = await fetch(`${API_BASE_URL}/documents?${queryParams}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
+    console.log('Raw response data:', data);
     
     return data.map((doc) => ({
       id: doc.Stat_ID.toString(),

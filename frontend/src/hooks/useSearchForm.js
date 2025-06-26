@@ -134,7 +134,7 @@ export function useSearchForm(isEnglish) {
 
   const handleSubmit = async () => {
     try {
-      const documents = await fetchDocuments(formData, isEnglish ? "en" : "ge");
+      const documents = await fetchDocuments(formData, isEnglish ? "en" : "ge", regionOptions);
       console.log("Search Results:", documents);
       return documents;
     } catch (error) {

@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
       organizationalLegalForm,
       head,
       partner,
-      legalRegion,
+      region,
       legalMunicipality,
       legalAddress,
       personalRegion,
@@ -39,6 +39,12 @@ router.get('/', async (req, res) => {
       FROM [register].[dbo].[DocMain]
       WHERE 1=1
     `;
+
+    console.log('Received parameters:', {
+      organizationalLegalForm,
+      region,
+      personalRegion
+    });
 
     const params = {};
 
@@ -82,9 +88,11 @@ router.get('/', async (req, res) => {
       query += ` AND [ISActive] = 1`;
     }
 
+    
+
     // Add region and municipality filters for both legal and personal addresses
-    if (legalRegion) {
-      query += ` AND [Region_Code] IN (${legalRegion})`;
+    if (region) {
+      query += ` AND [Region_Code] IN ('${region.split(",").join("','")}')`;
     }
 
     if (legalMunicipality) {
@@ -92,7 +100,7 @@ router.get('/', async (req, res) => {
     }
 
     if (personalRegion) {
-      query += ` AND [Region_Code2] IN (${personalRegion})`;
+      query += ` AND [Region_Code2] IN ('${personalRegion.split(",").join("','")}')`;
     }
 
     if (personalMunicipality) {
@@ -109,6 +117,8 @@ router.get('/', async (req, res) => {
       params.personalAddress = `%${personalAddress}%`;
     }
 
+    console.log('Final SQL Query:', query);
+
     const pool = await poolPromise;
     const request = pool.request();
 
@@ -117,7 +127,36 @@ router.get('/', async (req, res) => {
       request.input(key, value);
     });
 
+    // Let's run diagnostic queries to understand the data
+    const diagnosticQuery1 = `
+      SELECT COUNT(*) as count
+      FROM [register].[dbo].[DocMain]
+      WHERE [Legal_Form_ID] = ${organizationalLegalForm}`;
+
+    const diagnosticQuery2 = `
+      SELECT DISTINCT [Region_Code], [Region_name]
+      FROM [register].[dbo].[DocMain]
+      WHERE [Legal_Form_ID] = ${organizationalLegalForm}
+      ORDER BY [Region_Code]`;
+
+    const diagnosticQuery3 = `
+      SELECT [Region_Code], [Region_name], COUNT(*) as count
+      FROM [register].[dbo].[DocMain]
+      WHERE [Legal_Form_ID] = ${organizationalLegalForm}
+      GROUP BY [Region_Code], [Region_name]
+      ORDER BY count DESC`;
+    
     const result = await request.query(query);
+    const diagnostic1 = await request.query(diagnosticQuery1);
+    const diagnostic2 = await request.query(diagnosticQuery2);
+    const diagnostic3 = await request.query(diagnosticQuery3);
+    
+    console.log('Diagnostic results:');
+    console.log('Total records with Legal_Form_ID=40:', diagnostic1.recordset[0].count);
+    console.log('Available regions for Legal_Form_ID=40:', diagnostic2.recordset);
+    console.log('Region distribution for Legal_Form_ID=40:', diagnostic3.recordset);
+    console.log('Result count:', result.recordset.length);
+    
     res.json(result.recordset);
   } catch (err) {
     res.status(500).json({ error: err.message });
