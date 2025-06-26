@@ -31,7 +31,7 @@ export const translations = {
 3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
 4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ ქონების გადასახადისა`,
     exportToCSV: "ექსპორტი CSV-ში",
-    perPage: "ჩანაწერი გვერდზე",
+    perPage: "ჩანაწერი",
     showing: "ნაჩვენებია",
     of: "დან",
     selectAll: "ყველას მონიშვნა",
@@ -77,7 +77,7 @@ export const translations = {
 3) Has profit or loss (profit declaration);
 4) Paid any type of tax, except property tax only`,
     exportToCSV: "Export to CSV",
-    perPage: "items per page",
+    perPage: "items",
     showing: "Showing",
     of: "of",
     selectAll: "Select All",

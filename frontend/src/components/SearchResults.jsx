@@ -4,7 +4,7 @@ import "../styles/scrollbar.css";
 
 function SearchResults({ results, isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -13,17 +13,17 @@ function SearchResults({ results, isEnglish }) {
     if (!config.key) return data;
 
     return [...data].sort((a, b) => {
-      let aVal = config.key.split('.').reduce((obj, key) => obj?.[key], a);
-      let bVal = config.key.split('.').reduce((obj, key) => obj?.[key], b);
+      let aVal = config.key.split(".").reduce((obj, key) => obj?.[key], a);
+      let bVal = config.key.split(".").reduce((obj, key) => obj?.[key], b);
 
-      if (aVal === null || aVal === undefined) aVal = '';
-      if (bVal === null || bVal === undefined) bVal = '';
+      if (aVal === null || aVal === undefined) aVal = "";
+      if (bVal === null || bVal === undefined) bVal = "";
 
-      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      if (typeof aVal === "string") aVal = aVal.toLowerCase();
+      if (typeof bVal === "string") bVal = bVal.toLowerCase();
 
-      if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
+      if (aVal < bVal) return config.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return config.direction === "asc" ? 1 : -1;
       return 0;
     });
   };
@@ -31,62 +31,73 @@ function SearchResults({ results, isEnglish }) {
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
       key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+      direction:
+        prevConfig.key === key && prevConfig.direction === "asc"
+          ? "desc"
+          : "asc",
     }));
   };
 
   const exportToCSV = () => {
     const headers = [
-      'identificationNumber',
-      'personalNumber',
-      'legalForm',
-      'name',
-      'legalAddress.region',
-      'legalAddress.address',
-      'factualAddress.region',
-      'factualAddress.address',
-      'activities[0].code',
-      'activities[0].name',
-      'head',
-      'phone',
-      'partner',
-      'email',
-      'ownershipType',
-      'isActive',
-      'size'
+      "identificationNumber",
+      "personalNumber",
+      "legalForm",
+      "name",
+      "legalAddress.region",
+      "legalAddress.address",
+      "factualAddress.region",
+      "factualAddress.address",
+      "activities[0].code",
+      "activities[0].name",
+      "head",
+      "phone",
+      "partner",
+      "email",
+      "ownershipType",
+      "isActive",
+      "size",
     ];
 
     const csvContent = [
-      headers.map(header => {
-        const label = header.includes('.') || header.includes('[') 
-          ? t[header.split('.')[0]] 
-          : t[header] || header;
-        return `"${label}"`;
-      }).join(','),
-      ...sortedResults.map(row => 
-        headers.map(header => {
-          let value = header.includes('[') 
-            ? row.activities[0]?.[header.split('.')[1]] || ''
-            : header.includes('.') 
-              ? row[header.split('.')[0]][header.split('.')[1]] 
+      headers
+        .map((header) => {
+          const label =
+            header.includes(".") || header.includes("[")
+              ? t[header.split(".")[0]]
+              : t[header] || header;
+          return `"${label}"`;
+        })
+        .join(","),
+      ...sortedResults.map((row) =>
+        headers
+          .map((header) => {
+            let value = header.includes("[")
+              ? row.activities[0]?.[header.split(".")[1]] || ""
+              : header.includes(".")
+              ? row[header.split(".")[0]][header.split(".")[1]]
               : row[header];
-          if (header === 'isActive') value = value ? '✓' : '✗';
-          return `"${value || ''}"`;
-        }).join(',')
-      )
-    ].join('\n');
+            if (header === "isActive") value = value ? "✓" : "✗";
+            return `"${value || ""}"`;
+          })
+          .join(",")
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `business_registry_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `business_registry_${new Date().toISOString().split("T")[0]}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handleRowSelect = (id) => {
-    setSelectedRows(prev => {
+    setSelectedRows((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -101,12 +112,15 @@ function SearchResults({ results, isEnglish }) {
     if (selectedRows.size === sortedResults.length) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(sortedResults.map(r => r.id)));
+      setSelectedRows(new Set(sortedResults.map((r) => r.id)));
     }
   };
 
-  const sortedResults = useMemo(() => sortData(results, sortConfig), [results, sortConfig]);
-  
+  const sortedResults = useMemo(
+    () => sortData(results, sortConfig),
+    [results, sortConfig]
+  );
+
   // Pagination
   const totalPages = Math.ceil(sortedResults.length / itemsPerPage);
   const paginatedResults = sortedResults.slice(
@@ -124,15 +138,15 @@ function SearchResults({ results, isEnglish }) {
     } else {
       // Always show first page
       pages.push(1);
-      
+
       if (currentPage > 3) {
-        pages.push('...');
+        pages.push("...");
       }
-      
+
       // Show pages around current page
       let start = Math.max(2, currentPage - 1);
       let end = Math.min(totalPages - 1, currentPage + 1);
-      
+
       // Adjust start and end to always show 3 pages
       if (currentPage <= 3) {
         end = 4;
@@ -140,15 +154,15 @@ function SearchResults({ results, isEnglish }) {
       if (currentPage >= totalPages - 2) {
         start = totalPages - 3;
       }
-      
+
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
-      
+
       if (currentPage < totalPages - 2) {
-        pages.push('...');
+        pages.push("...");
       }
-      
+
       // Always show last page
       pages.push(totalPages);
     }
@@ -158,12 +172,14 @@ function SearchResults({ results, isEnglish }) {
   if (!results?.length) return null;
 
   const getSortIndicator = (key) => {
-    if (sortConfig.key !== key) return '↕️';
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
+    if (sortConfig.key !== key) return "↕️";
+    return sortConfig.direction === "asc" ? "↑" : "↓";
   };
 
-  const headerClassName = "sticky top-0 z-20 px-4 py-3 text-sm font-bpg-nino cursor-pointer bg-gray-50 text-center transition-colors border-b border-gray-200 first:rounded-tl-lg last:rounded-tr-lg hover:bg-gray-100";
-  const cellClassName = "px-4 py-3 text-sm whitespace-nowrap text-center border-b border-gray-200 group-hover:bg-blue-50/50";
+  const headerClassName =
+    "sticky top-0 z-20 px-4 py-3 text-sm font-bpg-nino cursor-pointer bg-gray-50 text-center transition-colors border-b border-gray-200 first:rounded-tl-lg last:rounded-tr-lg hover:bg-gray-100";
+  const cellClassName =
+    "px-4 py-3 text-sm whitespace-nowrap text-center border-b border-gray-200 group-hover:bg-blue-50/50";
 
   return (
     <div className="w-full mt-4 bg-white rounded-lg shadow-sm border border-gray-100">
@@ -175,28 +191,35 @@ function SearchResults({ results, isEnglish }) {
               onClick={exportToCSV}
               className="inline-flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium group"
             >
-              <svg 
-                className="w-4 h-4 mr-2 transform group-hover:translate-y-0.5 transition-transform" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-4 h-4 mr-2 transform group-hover:translate-y-0.5 transition-transform"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
               </svg>
               {t.exportToCSV}
             </button>
           </div>
           <div className="text-sm bg-gray-50 px-4 py-2 rounded-lg text-gray-600 font-medium">
-            {t.showing}{' '}
+            {t.showing}{" "}
             <span className="text-gray-900">
-              {Math.min((currentPage - 1) * itemsPerPage + 1, sortedResults.length)}
-            </span>{' '}
-            {t.to}{' '}
+              {Math.min(
+                (currentPage - 1) * itemsPerPage + 1,
+                sortedResults.length
+              )}
+            </span>{" "}
+            {t.to}{" "}
             <span className="text-gray-900">
               {Math.min(currentPage * itemsPerPage, sortedResults.length)}
-            </span>{' '}
-            {t.of}{' '}
-            <span className="text-gray-900">{sortedResults.length}</span>{' '}
+            </span>{" "}
+            {t.of} <span className="text-gray-900">{sortedResults.length}</span>{" "}
             {t.results}
           </div>
         </div>
@@ -215,68 +238,71 @@ function SearchResults({ results, isEnglish }) {
                   className="w-4 h-4 rounded border-gray-300 text-[#0080BE] focus:ring-[#0080BE] transition-colors"
                 />
               </th>
-              <th 
-                onClick={() => handleSort('identificationNumber')}
+              <th
+                onClick={() => handleSort("identificationNumber")}
                 className={headerClassName}
               >
-                {t.identificationNumber} {getSortIndicator('identificationNumber')}
+                {t.identificationNumber}{" "}
+                {getSortIndicator("identificationNumber")}
               </th>
-              <th 
-                onClick={() => handleSort('personalNumber')}
+              <th
+                onClick={() => handleSort("personalNumber")}
                 className={headerClassName}
               >
-                {t.personalNumber} {getSortIndicator('personalNumber')}
+                {t.personalNumber} {getSortIndicator("personalNumber")}
               </th>
-              <th 
-                onClick={() => handleSort('legalForm')}
+              <th
+                onClick={() => handleSort("legalForm")}
                 className={headerClassName}
               >
-                {t.organizationalLegalForm} {getSortIndicator('legalForm')}
+                {t.organizationalLegalForm} {getSortIndicator("legalForm")}
               </th>
-              <th 
-                onClick={() => handleSort('name')}
+              <th
+                onClick={() => handleSort("name")}
                 className={headerClassName}
               >
-                {t.organizationName} {getSortIndicator('name')}
+                {t.organizationName} {getSortIndicator("name")}
               </th>
-              <th 
-                onClick={() => handleSort('legalAddress.region')}
+              <th
+                onClick={() => handleSort("legalAddress.region")}
                 className={headerClassName}
               >
-                {t.region} ({t.legalAddress}) {getSortIndicator('legalAddress.region')}
+                {t.region} ({t.legalAddress}){" "}
+                {getSortIndicator("legalAddress.region")}
               </th>
-              <th 
-                onClick={() => handleSort('legalAddress.address')}
+              <th
+                onClick={() => handleSort("legalAddress.address")}
                 className={headerClassName}
               >
-                {t.legalAddress} {getSortIndicator('legalAddress.address')}
+                {t.legalAddress} {getSortIndicator("legalAddress.address")}
               </th>
-              <th 
-                onClick={() => handleSort('factualAddress.region')}
+              <th
+                onClick={() => handleSort("factualAddress.region")}
                 className={headerClassName}
               >
-                {t.region} ({t.factualAddress}) {getSortIndicator('factualAddress.region')}
+                {t.region} ({t.factualAddress}){" "}
+                {getSortIndicator("factualAddress.region")}
               </th>
-              <th 
-                onClick={() => handleSort('factualAddress.address')}
+              <th
+                onClick={() => handleSort("factualAddress.address")}
                 className={headerClassName}
               >
-                {t.factualAddress} {getSortIndicator('factualAddress.address')}
+                {t.factualAddress} {getSortIndicator("factualAddress.address")}
               </th>
               <th className="text-center px-4 py-2 text-sm font-bpg-nino">
                 NACE 2
               </th>
-              <th 
-                onClick={() => handleSort('activities.0.name')}
+              <th
+                onClick={() => handleSort("activities.0.name")}
                 className={headerClassName}
               >
-                {t.activityDescription} {getSortIndicator('activities.0.name')}
+                {t.activityDescription} {getSortIndicator("activities.0.name")}
               </th>
-              <th 
-                onClick={() => handleSort('head')}
+              <th
+                onClick={() => handleSort("head")}
                 className={headerClassName}
               >
-                {t.head} {getSortIndicator('head')}
+                {t.head} {getSortIndicator("head")}
               </th>
               <th className="text-center px-4 py-2 text-sm font-bpg-nino">
                 {t.phone}
@@ -287,23 +313,23 @@ function SearchResults({ results, isEnglish }) {
               <th className="text-center px-4 py-2 text-sm font-bpg-nino">
                 {t.email}
               </th>
-              <th 
-                onClick={() => handleSort('ownershipType')}
+              <th
+                onClick={() => handleSort("ownershipType")}
                 className={headerClassName}
               >
-                {t.ownershipForm} {getSortIndicator('ownershipType')}
+                {t.ownershipForm} {getSortIndicator("ownershipType")}
               </th>
-              <th 
-                onClick={() => handleSort('isActive')}
+              <th
+                onClick={() => handleSort("isActive")}
                 className={headerClassName}
               >
-                {t.activeSubject} {getSortIndicator('isActive')}
+                {t.activeSubject} {getSortIndicator("isActive")}
               </th>
-              <th 
-                onClick={() => handleSort('size')}
+              <th
+                onClick={() => handleSort("size")}
                 className={headerClassName}
               >
-                {t.businessSize} {getSortIndicator('size')}
+                {t.businessSize} {getSortIndicator("size")}
               </th>
             </tr>
           </thead>
@@ -312,7 +338,7 @@ function SearchResults({ results, isEnglish }) {
               <tr
                 key={result.id}
                 className={`group transition-colors ${
-                  selectedRows.has(result.id) ? 'bg-blue-50' : ''
+                  selectedRows.has(result.id) ? "bg-blue-50" : ""
                 }`}
               >
                 <td className={`sticky left-0 z-10 bg-white ${cellClassName}`}>
@@ -329,22 +355,20 @@ function SearchResults({ results, isEnglish }) {
                 <td className={cellClassName}>{result.name}</td>
                 <td className={cellClassName}>{result.legalAddress.region}</td>
                 <td className={cellClassName}>{result.legalAddress.address}</td>
-                <td className={cellClassName}>{result.factualAddress.region}</td>
-                <td className={cellClassName}>{result.factualAddress.address}</td>
                 <td className={cellClassName}>
-                  {result.activities[0]?.code}
+                  {result.factualAddress.region}
                 </td>
                 <td className={cellClassName}>
-                  {result.activities[0]?.name}
+                  {result.factualAddress.address}
                 </td>
+                <td className={cellClassName}>{result.activities[0]?.code}</td>
+                <td className={cellClassName}>{result.activities[0]?.name}</td>
                 <td className={cellClassName}>{result.head}</td>
                 <td className={cellClassName}>{result.phone}</td>
                 <td className={cellClassName}>{result.partner}</td>
                 <td className={cellClassName}>{result.email}</td>
                 <td className={cellClassName}>{result.ownershipType}</td>
-                <td className={cellClassName}>
-                  {result.isActive ? "✓" : "✗"}
-                </td>
+                <td className={cellClassName}>{result.isActive ? "✓" : "✗"}</td>
                 <td className={cellClassName}>{result.size}</td>
               </tr>
             ))}
@@ -357,22 +381,33 @@ function SearchResults({ results, isEnglish }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <select 
-                value={itemsPerPage} 
+              <span className="mr-2 font-bpg-nino">{t.perPage}</span>
+              <select
+                value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
                 className="appearance-none bg-white pl-3 pr-10 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium hover:border-[#0080BE] focus:outline-none focus:border-[#0080BE] focus:ring-2 focus:ring-[#0080BE]/20 transition-all"
               >
-                <option value={10}>10 {t.perPage}</option>
-                <option value={25}>25 {t.perPage}</option>
-                <option value={50}>50 {t.perPage}</option>
-                <option value={100}>100 {t.perPage}</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
@@ -380,16 +415,23 @@ function SearchResults({ results, isEnglish }) {
               <div className="hidden sm:block">
                 <div className="inline-flex items-center gap-2 text-sm text-gray-500">
                   <span>{t.page}</span>
-                  <span className="font-medium text-gray-900">{currentPage}</span>
+                  <span className="font-medium text-gray-900">
+                    {currentPage}
+                  </span>
                   <span>{t.of}</span>
-                  <span className="font-medium text-gray-900">{totalPages}</span>
+                  <span className="font-medium text-gray-900">
+                    {totalPages}
+                  </span>
                 </div>
               </div>
             )}
           </div>
           {totalPages > 1 && (
             <div className="flex-1 flex justify-center sm:justify-end">
-              <nav className="relative z-0 inline-flex shadow-sm rounded-lg -space-x-px" aria-label="Pagination">
+              <nav
+                className="relative z-0 inline-flex shadow-sm rounded-lg -space-x-px"
+                aria-label="Pagination"
+              >
                 <button
                   onClick={() => setCurrentPage(1)}
                   disabled={currentPage === 1}
@@ -397,24 +439,40 @@ function SearchResults({ results, isEnglish }) {
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
                   <span className="sr-only">{t.first}</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0L9 10.414V13a1 1 0 11-2 0V7a1 1 0 011-1h6a1 1 0 110 2h-2.586l5.293 5.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M15.707 15.707a1 1 0 01-1.414 0L9 10.414V13a1 1 0 11-2 0V7a1 1 0 011-1h6a1 1 0 110 2h-2.586l5.293 5.293a1 1 0 010 1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
                 <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
                   <span className="sr-only">{t.previous}</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
-                
-                {getPageNumbers().map((pageNum, idx) => (
-                  pageNum === '...' ? (
+
+                {getPageNumbers().map((pageNum, idx) =>
+                  pageNum === "..." ? (
                     <span
                       key={`ellipsis-${idx}`}
                       className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
@@ -428,26 +486,39 @@ function SearchResults({ results, isEnglish }) {
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors
-                        ${currentPage === pageNum
-                          ? 'z-10 bg-[#0080BE] border-[#0080BE] text-white hover:bg-[#0070aa]'
-                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        ${
+                          currentPage === pageNum
+                            ? "z-10 bg-[#0080BE] border-[#0080BE] text-white hover:bg-[#0070aa]"
+                            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                         }`}
-                      aria-current={currentPage === pageNum ? 'page' : undefined}
+                      aria-current={
+                        currentPage === pageNum ? "page" : undefined
+                      }
                     >
                       {pageNum}
                     </button>
                   )
-                ))}
+                )}
 
                 <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
                   <span className="sr-only">{t.next}</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
                 <button
@@ -457,8 +528,16 @@ function SearchResults({ results, isEnglish }) {
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
                   <span className="sr-only">{t.last}</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 15.707a1 1 0 001.414 0L11 10.414V13a1 1 0 102 0V7a1 1 0 00-1-1H6a1 1 0 100 2h2.586l-5.293 5.293a1 1 0 000 1.414z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 15.707a1 1 0 001.414 0L11 10.414V13a1 1 0 102 0V7a1 1 0 00-1-1H6a1 1 0 100 2h2.586l-5.293 5.293a1 1 0 000 1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
               </nav>
