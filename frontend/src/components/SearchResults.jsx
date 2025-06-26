@@ -39,50 +39,102 @@ function SearchResults({ results, isEnglish }) {
     }));
   };
 
-  const exportToCSV = () => {
-    const headers = [
-      "identificationNumber",
-      "personalNumber",
-      "legalForm",
-      "name",
-      "legalAddress.region",
-      "legalAddress.address",
-      "factualAddress.region",
-      "factualAddress.address",
-      "activities[0].code",
-      "activities[0].name",
-      "head",
-      "phone",
-      "partner",
-      "email",
-      "ownershipType",
-      "isActive",
-      "size",
-    ];
+  const headers = [
+    {
+      label: "identificationNumber",
+      path: "identificationNumber"
+    },
+    {
+      label: "personalNumber",
+      path: "personalNumber"
+    },
+    {
+      label: "organizationalLegalForm",
+      path: "legalForm"
+    },
+    {
+      label: "organizationName",
+      path: "name"
+    },
+    {
+      label: "legalAddress",
+      path: "legalAddress.region"
+    },
+    {
+      label: "legalAddress",
+      path: "legalAddress.address"
+    },
+    {
+      label: "factualAddress",
+      path: "factualAddress.region"
+    },
+    {
+      label: "factualAddress",
+      path: "factualAddress.address"
+    },
+    {
+      label: "activityCode",
+      path: "activities[0].code"
+    },
+    {
+      label: "activityDescription",
+      path: "activities[0].name"
+    },
+    {
+      label: "head",
+      path: "head"
+    },
+    {
+      label: "phone",
+      path: "phone"
+    },
+    {
+      label: "partner",
+      path: "partner"
+    },
+    {
+      label: "email",
+      path: "email"
+    },
+    {
+      label: "ownershipForm",
+      path: "ownershipType"
+    },
+    {
+      label: "activeSubject",
+      path: "isActive"
+    },
+    {
+      label: "businessSize",
+      path: "size"
+    }
+  ];
 
+  const exportToCSV = () => {
     const csvContent = "\ufeff" + [
+      // Headers row with translated labels
       headers
-        .map((header) => {
-          let label;
-          if (header.includes(".")) {
-            label = t[header.split(".")[0]];
-          } else if (header.includes("[")) {
-            label = t[header.split("[")[0]];
-          } else {
-            label = t[header];
-          }
-          return `"${label || header}"`;
-        })
+        .map(header => `"${t[header.label]}"`)
         .join(","),
+      // Data rows
       ...sortedResults.map((row) =>
         headers
           .map((header) => {
-            let value = header.includes("[")
-              ? row.activities[0]?.[header.split(".")[1]] || ""
-              : header.includes(".")
-              ? row[header.split(".")[0]][header.split(".")[1]]
-              : row[header];
-            if (header === "isActive") value = value ? "✓" : "✗";
+            let value;
+            const path = header.path;
+            if (path.includes("[")) {
+              // Handle array paths (activities)
+              const [arrayPath, arrayKey] = path.split(".");
+              value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
+            } else if (path.includes(".")) {
+              // Handle nested object paths (addresses)
+              const [objPath, key] = path.split(".");
+              value = row[objPath][key];
+            } else {
+              // Handle direct properties
+              value = row[path];
+            }
+            if (path === "isActive") value = value ? "✓" : "✗";
             return `"${value || ""}"`;
           })
           .join(",")
