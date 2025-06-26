@@ -2,6 +2,7 @@ export const translations = {
   ge: {
     title: "ეკონომიკური სუბიექტების ძებნა",
     identificationNumber: "საიდენტიფიკაციო ნომერი",
+    personalNumber: "პირადი ნომერი",
     organizationName: "ორგანიზაციის დასახელება",
     organizationalLegalForm: "ორგანიზაციულ-სამართლებრივი ფორმა",
     head: "ხელმძღვანელი",
@@ -20,6 +21,10 @@ export const translations = {
     search: "ძიება",
     stopSearch: "ძიების შეჩერება",
     cancel: "გაუქმება",
+    backToSearch: "ძიების ფორმაზე დაბრუნება",
+    searchResults: "ეკონომიკური სუბიექტების ჩამონათვალი",
+    phone: "ტელეფონი",
+    email: "ელ-ფოსტა",
     activeTooltip: `ეკონომიკური ერთეული აქტიურია, თუ იგი აკმაყოფილებს ქვემოთ ჩამოთვლილი კრიტერიუმებიდან ერთ-ერთს:
 1) ბრუნვა > 0 (დღგ-ს, ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
 2) ხელფასი ან დასაქმებულთა რაოდენობა > 0 (ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
@@ -29,6 +34,7 @@ export const translations = {
   en: {
     title: "Economic Entity Search",
     identificationNumber: "Identification Number",
+    personalNumber: "Personal Number",
     organizationName: "Organization Name",
     organizationalLegalForm: "Organizational Legal Form",
     head: "Head",
@@ -47,6 +53,10 @@ export const translations = {
     search: "Search",
     stopSearch: "Stop Search",
     cancel: "Cancel",
+    backToSearch: "Back to Search",
+    searchResults: "List of Economic Entities",
+    phone: "Phone",
+    email: "Email",
     activeTooltip: `The economic unit is active if it meets one of the criteria listed below:
 1) Turnover > 0 (VAT, monthly income and other declarations);
 2) Salary or number of employees > 0 (monthly income and other declarations);
