@@ -170,27 +170,7 @@ function SearchResults({ results, isEnglish }) {
       {/* Modern Header Section */}
       <div className="p-4 sm:p-6 border-b border-gray-100">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="relative">
-              <select 
-                value={itemsPerPage} 
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="appearance-none bg-white pl-3 pr-10 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium hover:border-[#0080BE] focus:outline-none focus:border-[#0080BE] focus:ring-2 focus:ring-[#0080BE]/20 transition-all"
-              >
-                <option value={10}>10 {t.perPage}</option>
-                <option value={25}>25 {t.perPage}</option>
-                <option value={50}>50 {t.perPage}</option>
-                <option value={100}>100 {t.perPage}</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+          <div className="flex items-center gap-4">
             <button
               onClick={exportToCSV}
               className="inline-flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium group"
@@ -372,18 +352,42 @@ function SearchResults({ results, isEnglish }) {
         </table>
       </div>
 
-      {/* Modern Pagination */}
-      {totalPages > 1 && (
-        <div className="px-4 py-3 sm:px-6 border-t border-gray-100">
-          <div className="flex items-center justify-between">
-            <div className="hidden sm:block">
-              <div className="inline-flex items-center gap-2 text-sm text-gray-500">
-                <span>{t.page}</span>
-                <span className="font-medium text-gray-900">{currentPage}</span>
-                <span>{t.of}</span>
-                <span className="font-medium text-gray-900">{totalPages}</span>
+      {/* Pagination and Items Per Page */}
+      <div className="px-4 py-3 sm:px-6 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <select 
+                value={itemsPerPage} 
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="appearance-none bg-white pl-3 pr-10 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium hover:border-[#0080BE] focus:outline-none focus:border-[#0080BE] focus:ring-2 focus:ring-[#0080BE]/20 transition-all"
+              >
+                <option value={10}>10 {t.perPage}</option>
+                <option value={25}>25 {t.perPage}</option>
+                <option value={50}>50 {t.perPage}</option>
+                <option value={100}>100 {t.perPage}</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
             </div>
+            {totalPages > 1 && (
+              <div className="hidden sm:block">
+                <div className="inline-flex items-center gap-2 text-sm text-gray-500">
+                  <span>{t.page}</span>
+                  <span className="font-medium text-gray-900">{currentPage}</span>
+                  <span>{t.of}</span>
+                  <span className="font-medium text-gray-900">{totalPages}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          {totalPages > 1 && (
             <div className="flex-1 flex justify-center sm:justify-end">
               <nav className="relative z-0 inline-flex shadow-sm rounded-lg -space-x-px" aria-label="Pagination">
                 <button
@@ -459,9 +463,9 @@ function SearchResults({ results, isEnglish }) {
                 </button>
               </nav>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
