@@ -1,6 +1,7 @@
 import { translations } from "../translations/searchForm";
 import { useState, useMemo } from "react";
 import "../styles/scrollbar.css";
+import georgianFont from '../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf';
 
 function SearchResults({ results, isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
@@ -59,7 +60,7 @@ function SearchResults({ results, isEnglish }) {
       "size",
     ];
 
-    const csvContent = [
+    const csvContent = "\ufeff" + [
       headers
         .map((header) => {
           const label =
@@ -189,6 +190,7 @@ function SearchResults({ results, isEnglish }) {
           <div className="flex items-center gap-4">
             <button
               onClick={exportToCSV}
+              style={{ fontFamily: georgianFont }}
               className="inline-flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium group"
             >
               <svg
