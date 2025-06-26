@@ -268,10 +268,18 @@ function SearchResults({ results, isEnglish }) {
         </table>
       </div>
 
-      {/* Pagination and Items Per Page */}
+      {/* Results Count, Pagination and Items Per Page */}
       <div className="px-4 py-3 sm:px-6 border-t border-gray-100">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4 text-sm">
+              <div>
+                <span className="font-bpg-nino">{t.total}:</span>{" "}
+                <span className="font-medium text-gray-900">
+                  {results.length}
+                </span>
+              </div>
+            </div>
             <div className="relative">
               <span className="mr-2 font-bpg-nino">{t.perPage}</span>
               <select
