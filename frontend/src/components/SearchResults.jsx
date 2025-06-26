@@ -223,7 +223,7 @@ function SearchResults({ results, isEnglish }) {
       </div>
 
       {/* Table Container */}
-      <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+      <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-500px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
             <tr>
