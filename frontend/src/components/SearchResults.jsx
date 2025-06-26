@@ -63,11 +63,15 @@ function SearchResults({ results, isEnglish }) {
     const csvContent = "\ufeff" + [
       headers
         .map((header) => {
-          const label =
-            header.includes(".") || header.includes("[")
-              ? t[header.split(".")[0]]
-              : t[header] || header;
-          return `"${label}"`;
+          let label;
+          if (header.includes(".")) {
+            label = t[header.split(".")[0]];
+          } else if (header.includes("[")) {
+            label = t[header.split("[")[0]];
+          } else {
+            label = t[header];
+          }
+          return `"${label || header}"`;
         })
         .join(","),
       ...sortedResults.map((row) =>
