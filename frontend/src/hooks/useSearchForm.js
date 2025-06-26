@@ -114,6 +114,15 @@ export function useSearchForm(isEnglish) {
   }, [formData.legalAddress.region, fetchMunicipalities]);
 
   const handleInputChange = (e, section = null, field = null) => {
+    // Handle checkbox inputs separately
+    if (e.target.type === 'checkbox') {
+      const { name, checked } = e.target;
+      return setFormData((prev) => ({
+        ...prev,
+        [name]: checked,
+      }));
+    }
+
     const { name, value } = e.target;
 
     if (section) {

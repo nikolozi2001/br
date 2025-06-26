@@ -1,5 +1,6 @@
 import { translations } from "../translations/searchForm";
 import { useState, useMemo } from "react";
+import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import "../styles/scrollbar.css";
 
 function SearchResults({ results, isEnglish }) {

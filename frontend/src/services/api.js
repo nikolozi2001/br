@@ -153,7 +153,7 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
       ...(searchParams.economicActivity?.selectedActivities?.length && { activityCode: searchParams.economicActivity.selectedActivities.join(',') }),
       ...(searchParams.ownershipForm?.value && { ownershipForm: searchParams.ownershipForm.value }),
       ...(searchParams.businessForm?.value && { businessForm: searchParams.businessForm.value }),
-      ...(searchParams.isActive && { isActive: searchParams.isActive })
+      isActive: searchParams.isActive
     });
 
     console.log('Full query string being sent:', `${API_BASE_URL}/documents?${queryParams}`);
