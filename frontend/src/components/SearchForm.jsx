@@ -8,6 +8,7 @@ import { EconomicActivitySection } from "./EconomicActivitySection";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { FormActions } from "./FormActions";
 import SearchResults from "./SearchResults";
+import georgianFont from '../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf';
 
 function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
@@ -40,6 +41,78 @@ function SearchForm({ isEnglish }) {
     }
   };
 
+  const exportToCSV = () => {
+    const headers = [
+      { label: "identificationNumber", path: "identificationNumber" },
+      { label: "personalNumber", path: "personalNumber" },
+      { label: "organizationalLegalForm", path: "legalForm" },
+      { label: "organizationName", path: "name" },
+      { label: "legalRegion", path: "legalAddress.region" },
+      { label: "legalAddress", path: "legalAddress.address" },
+      { label: "factualRegion", path: "factualAddress.region" },
+      { label: "factualAddress", path: "factualAddress.address" },
+      { label: "activityCode", path: "activities[0].code" },
+      { label: "activityDescription", path: "activities[0].name" },
+      { label: "head", path: "head" },
+      { label: "phone", path: "phone" },
+      { label: "partner", path: "partner" },
+      { label: "email", path: "email" },
+      { label: "ownershipForm", path: "ownershipType" },
+      { label: "activeSubject", path: "isActive" },
+      { label: "businessSize", path: "size" }
+    ];
+
+    const csvContent = "\ufeff" + [
+      // Headers row with translated labels
+      headers
+        .map(header => {
+          // Handle special cases for addresses
+          if (header.label === "legalRegion") {
+            return `"${t.region} (${t.legalAddress})"`;
+          } else if (header.label === "factualRegion") {
+            return `"${t.region} (${t.factualAddress})"`;
+          }
+          // Normal translation
+          return `"${t[header.label]}"`;
+        })
+        .join(","),
+      // Data rows
+      ...searchResults.map((row) =>
+        headers
+          .map((header) => {
+            let value;
+            const path = header.path;
+            if (path.includes("[")) {
+              // Handle array paths (activities)
+              const [arrayPath, arrayKey] = path.split(".");
+              value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
+            } else if (path.includes(".")) {
+              // Handle nested object paths (addresses)
+              const [objPath, key] = path.split(".");
+              value = row[objPath][key];
+            } else {
+              // Handle direct properties
+              value = row[path];
+            }
+            if (path === "isActive") value = value ? "✓" : "✗";
+            return `"${value || ""}"`;
+          })
+          .join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute(
+      "download",
+      `business_registry_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleBackToSearch = () => {
     setShowResults(false);
     setSearchResults([]);
@@ -66,13 +139,36 @@ function SearchForm({ isEnglish }) {
                     <h2 className="text-base sm:text-lg font-bpg-nino font-bold">
                       {t.searchResults}
                     </h2>
-                    <button
-                      onClick={handleBackToSearch}
-                      disabled={isLoading}
-                      className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#006698] transition-colors font-bpg-nino disabled:opacity-50"
-                    >
-                      {t.backToSearch}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={exportToCSV}
+                        style={{ fontFamily: georgianFont }}
+                        className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer"
+                        disabled={!searchResults?.length || isLoading}
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2 transform group-hover:translate-y-0.5 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                        {t.exportToCSV}
+                      </button>
+                      <button
+                        onClick={handleBackToSearch}
+                        disabled={isLoading}
+                        className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#006698] transition-colors font-bpg-nino disabled:opacity-50 cursor-pointer"
+                      >
+                        {t.backToSearch}
+                      </button>
+                    </div>
                   </div>
                   {isLoading ? (
                     <div className="flex justify-center items-center py-8">

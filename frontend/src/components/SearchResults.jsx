@@ -1,7 +1,6 @@
 import { translations } from "../translations/searchForm";
 import { useState, useMemo } from "react";
 import "../styles/scrollbar.css";
-import georgianFont from '../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf';
 
 function SearchResults({ results, isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
@@ -37,120 +36,6 @@ function SearchResults({ results, isEnglish }) {
           ? "desc"
           : "asc",
     }));
-  };
-
-  const headers = [
-    {
-      label: "identificationNumber",
-      path: "identificationNumber"
-    },
-    {
-      label: "personalNumber",
-      path: "personalNumber"
-    },
-    {
-      label: "organizationalLegalForm",
-      path: "legalForm"
-    },
-    {
-      label: "organizationName",
-      path: "name"
-    },
-    {
-      label: "legalAddress",
-      path: "legalAddress.region"
-    },
-    {
-      label: "legalAddress",
-      path: "legalAddress.address"
-    },
-    {
-      label: "factualAddress",
-      path: "factualAddress.region"
-    },
-    {
-      label: "factualAddress",
-      path: "factualAddress.address"
-    },
-    {
-      label: "activityCode",
-      path: "activities[0].code"
-    },
-    {
-      label: "activityDescription",
-      path: "activities[0].name"
-    },
-    {
-      label: "head",
-      path: "head"
-    },
-    {
-      label: "phone",
-      path: "phone"
-    },
-    {
-      label: "partner",
-      path: "partner"
-    },
-    {
-      label: "email",
-      path: "email"
-    },
-    {
-      label: "ownershipForm",
-      path: "ownershipType"
-    },
-    {
-      label: "activeSubject",
-      path: "isActive"
-    },
-    {
-      label: "businessSize",
-      path: "size"
-    }
-  ];
-
-  const exportToCSV = () => {
-    const csvContent = "\ufeff" + [
-      // Headers row with translated labels
-      headers
-        .map(header => `"${t[header.label]}"`)
-        .join(","),
-      // Data rows
-      ...sortedResults.map((row) =>
-        headers
-          .map((header) => {
-            let value;
-            const path = header.path;
-            if (path.includes("[")) {
-              // Handle array paths (activities)
-              const [arrayPath, arrayKey] = path.split(".");
-              value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
-            } else if (path.includes(".")) {
-              // Handle nested object paths (addresses)
-              const [objPath, key] = path.split(".");
-              value = row[objPath][key];
-            } else {
-              // Handle direct properties
-              value = row[path];
-            }
-            if (path === "isActive") value = value ? "✓" : "✗";
-            return `"${value || ""}"`;
-          })
-          .join(",")
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute(
-      "download",
-      `business_registry_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleRowSelect = (id) => {
@@ -240,36 +125,8 @@ function SearchResults({ results, isEnglish }) {
 
   return (
     <div className="w-full mt-4 bg-white rounded-lg shadow-sm border border-gray-100">
-      {/* Modern Header Section */}
-      <div className="p-4 sm:p-6 border-b border-gray-100">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={exportToCSV}
-              style={{ fontFamily: georgianFont }}
-              className="inline-flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium group"
-            >
-              <svg
-                className="w-4 h-4 mr-2 transform group-hover:translate-y-0.5 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              {t.exportToCSV}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Table Container */}
-      <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-500px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+      <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="sticky top-0 z-20 bg-[#0080BE] shadow-sm">
             <tr>
@@ -345,15 +202,9 @@ function SearchResults({ results, isEnglish }) {
               >
                 {t.head} {getSortIndicator("head")}
               </th>
-              <th className={headerClassName}>
-                {t.phone}
-              </th>
-              <th className={headerClassName}>
-                {t.partner}
-              </th>
-              <th className={headerClassName}>
-                {t.email}
-              </th>
+              <th className={headerClassName}>{t.phone}</th>
+              <th className={headerClassName}>{t.partner}</th>
+              <th className={headerClassName}>{t.email}</th>
               <th
                 onClick={() => handleSort("ownershipType")}
                 className={headerClassName}
