@@ -207,21 +207,6 @@ function SearchResults({ results, isEnglish }) {
               {t.exportToCSV}
             </button>
           </div>
-          <div className="text-sm bg-gray-50 px-4 py-2 rounded-lg text-gray-600 font-medium">
-            {t.showing}{" "}
-            <span className="text-gray-900">
-              {Math.min(
-                (currentPage - 1) * itemsPerPage + 1,
-                sortedResults.length
-              )}
-            </span>{" "}
-            {t.to}{" "}
-            <span className="text-gray-900">
-              {Math.min(currentPage * itemsPerPage, sortedResults.length)}
-            </span>{" "}
-            {t.of} <span className="text-gray-900">{sortedResults.length}</span>{" "}
-            {t.results}
-          </div>
         </div>
       </div>
 
