@@ -16,6 +16,7 @@ const locationsRouter = require('./routes/locations');
 const activitiesRouter = require('./routes/activities');
 const ownershipTypesRouter = require('./routes/ownershipTypes');
 const sizesRouter = require('./routes/sizes');
+const documentsRouter = require('./routes/documents');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -23,6 +24,7 @@ app.use('/api/locations', locationsRouter);
 app.use('/api/activities', activitiesRouter);
 app.use('/api/ownership-types', ownershipTypesRouter);
 app.use('/api/sizes', sizesRouter);
+app.use('/api/documents', documentsRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

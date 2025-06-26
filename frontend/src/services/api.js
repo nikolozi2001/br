@@ -121,6 +121,25 @@ export const fetchSizes = async (lang) => {
   }
 };
 
+// documents API
+export const fetchDocuments = async (lang = "ge") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    
+    return data.map((doc) => ({
+      value: doc.Stat_ID.toString(),
+      label: `${doc.Full_Name} (${doc.Legal_Code})`
+    }));
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -128,6 +147,7 @@ export const API = {
   fetchActivities,
   fetchOwnershipTypes,
   fetchSizes,
+  fetchDocuments,
 };
 
 export default API;
