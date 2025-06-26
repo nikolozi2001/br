@@ -44,6 +44,7 @@ export const translations = {
     page: "გვერდი",
     first: "პირველი გვერდი",
     last: "ბოლო გვერდი",
+    print: "ბეჭდვა",
   },
   en: {
     title: "Economic Entity Search",
@@ -90,5 +91,6 @@ export const translations = {
     page: "Page",
     first: "First page",
     last: "Last page",
+    print: "Print",
   },
 };
