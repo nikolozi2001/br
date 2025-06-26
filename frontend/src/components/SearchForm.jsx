@@ -141,6 +141,157 @@ function SearchForm({ isEnglish }) {
                     </h2>
                     <div className="flex items-center gap-3">
                       <button
+                        onClick={() => {
+                          const printContent = document.createElement('div');
+                          printContent.innerHTML = `
+                            <style>
+                              @media print {
+                                body { padding: 20px; font-family: Arial, sans-serif; }
+                                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                                th { background-color: #f8f8f8; }
+                                @page { size: landscape; }
+                              }
+                            </style>
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>${t.identificationNumber}</th>
+                                  <th>${t.personalNumber}</th>
+                                  <th>${t.organizationalLegalForm}</th>
+                                  <th>${t.organizationName}</th>
+                                  <th>${t.region} (${t.legalAddress})</th>
+                                  <th>${t.legalAddress}</th>
+                                  <th>${t.region} (${t.factualAddress})</th>
+                                  <th>${t.factualAddress}</th>
+                                  <th>NACE 2</th>
+                                  <th>${t.activityDescription}</th>
+                                  <th>${t.head}</th>
+                                  <th>${t.phone}</th>
+                                  <th>${t.partner}</th>
+                                  <th>${t.email}</th>
+                                  <th>${t.ownershipForm}</th>
+                                  <th>${t.activeSubject}</th>
+                                  <th>${t.businessSize}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                ${searchResults.map(result => `
+                                  <tr>
+                                    <td>${result.identificationNumber || ''}</td>
+                                    <td>${result.personalNumber || ''}</td>
+                                    <td>${result.legalForm || ''}</td>
+                                    <td>${result.name || ''}</td>
+                                    <td>${result.legalAddress?.region || ''}</td>
+                                    <td>${result.legalAddress?.address || ''}</td>
+                                    <td>${result.factualAddress?.region || ''}</td>
+                                    <td>${result.factualAddress?.address || ''}</td>
+                                    <td>${result.activities?.[0]?.code || ''}</td>
+                                    <td>${result.activities?.[0]?.name || ''}</td>
+                                    <td>${result.head || ''}</td>
+                                    <td>${result.phone || ''}</td>
+                                    <td>${result.partner || ''}</td>
+                                    <td>${result.email || ''}</td>
+                                    <td>${result.ownershipType || ''}</td>
+                                    <td>${result.isActive ? '✓' : '✗'}</td>
+                                    <td>${result.size || ''}</td>
+                                  </tr>
+                                `).join('')}
+                              </tbody>
+                            </table>
+                          `;
+
+                          const printWindow = window.open('', '_blank', 'height=600,width=800');
+                          
+                          // Add base styles to ensure fonts are loaded
+                          const baseStyles = `
+                            @import url('https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap');
+                            @font-face {
+                              font-family: 'BPG Nino Mtavruli';
+                              src: url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.woff2') format('woff2'),
+                                   url('/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.woff') format('woff');
+                              font-weight: normal;
+                              font-style: normal;
+                            }
+                          `;
+                          
+                          // Combine base styles with content
+                          const fullContent = `
+                            <html>
+                              <head>
+                                <style>${baseStyles}</style>
+                                ${printContent.innerHTML}
+                              </head>
+                              <body>
+                                <div id="printableContent"></div>
+                              </body>
+                            </html>
+                          `;
+                          
+                          printWindow.document.write(fullContent);
+                          
+                          // Get the content div in the new window
+                          const contentDiv = printWindow.document.getElementById('printableContent');
+                          
+                          // Create a temporary div to parse the HTML string
+                          const tempDiv = document.createElement('div');
+                          tempDiv.innerHTML = printContent.innerHTML;
+                          
+                          // Find the table in the parsed content
+                          const table = tempDiv.querySelector('table');
+                          if (table) {
+                            contentDiv.appendChild(table);
+                          }
+                          
+                          printWindow.document.close();
+                          
+                          // Wait for all resources to load before printing
+                          if (printWindow.document.readyState === 'loading') {
+                            printWindow.document.addEventListener('DOMContentLoaded', handlePrint);
+                          } else {
+                            handlePrint();
+                          }
+                          
+                          function handlePrint() {
+                            // Give extra time for fonts to load
+                            setTimeout(() => {
+                              printWindow.focus();
+                              printWindow.print();
+                              
+                              // Close window after printing is done
+                              printWindow.onafterprint = function() {
+                                printWindow.close();
+                              };
+                              
+                              // Fallback for browsers that don't support onafterprint
+                              setTimeout(() => {
+                                if (!printWindow.closed) {
+                                  printWindow.close();
+                                }
+                              }, 5000);
+                            }, 1000);
+                          };
+                        }}
+                        style={{ fontFamily: georgianFont }}
+                        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-indigo-600 cursor-pointer"
+                        disabled={!searchResults?.length || isLoading}
+                      >
+                        <svg
+                          className="w-5 h-5 mr-2 transform group-hover:translate-y-0.5 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                          />
+                        </svg>
+                        {t.print || "Print"}
+                      </button>
+                      <button
                         onClick={exportToCSV}
                         style={{ fontFamily: georgianFont }}
                         className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer"
