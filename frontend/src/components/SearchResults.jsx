@@ -1,5 +1,6 @@
 import { translations } from "../translations/searchForm";
 import { useState, useMemo } from "react";
+import "../styles/scrollbar.css";
 
 function SearchResults({ results, isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
@@ -161,95 +162,124 @@ function SearchResults({ results, isEnglish }) {
     return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
+  const headerClassName = "sticky top-0 z-20 px-4 py-3 text-sm font-bpg-nino cursor-pointer bg-gray-50 text-center transition-colors border-b border-gray-200 first:rounded-tl-lg last:rounded-tr-lg hover:bg-gray-100";
+  const cellClassName = "px-4 py-3 text-sm whitespace-nowrap text-center border-b border-gray-200 group-hover:bg-blue-50/50";
+
   return (
-    <div className="w-full mt-4">
-      <div className="mb-4 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <select 
-            value={itemsPerPage} 
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            className="px-3 py-1 border rounded text-sm"
-          >
-            <option value={10}>10 {t.perPage}</option>
-            <option value={25}>25 {t.perPage}</option>
-            <option value={50}>50 {t.perPage}</option>
-            <option value={100}>100 {t.perPage}</option>
-          </select>
-          <button
-            onClick={exportToCSV}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {t.exportToCSV}
-          </button>
-        </div>
-        <div className="text-sm text-gray-600">
-          {t.showing} {Math.min((currentPage - 1) * itemsPerPage + 1, sortedResults.length)}-
-          {Math.min(currentPage * itemsPerPage, sortedResults.length)} {t.of} {sortedResults.length}
+    <div className="w-full mt-4 bg-white rounded-lg shadow-sm border border-gray-100">
+      {/* Modern Header Section */}
+      <div className="p-4 sm:p-6 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative">
+              <select 
+                value={itemsPerPage} 
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="appearance-none bg-white pl-3 pr-10 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium hover:border-[#0080BE] focus:outline-none focus:border-[#0080BE] focus:ring-2 focus:ring-[#0080BE]/20 transition-all"
+              >
+                <option value={10}>10 {t.perPage}</option>
+                <option value={25}>25 {t.perPage}</option>
+                <option value={50}>50 {t.perPage}</option>
+                <option value={100}>100 {t.perPage}</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            <button
+              onClick={exportToCSV}
+              className="inline-flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium group"
+            >
+              <svg 
+                className="w-4 h-4 mr-2 transform group-hover:translate-y-0.5 transition-transform" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              {t.exportToCSV}
+            </button>
+          </div>
+          <div className="text-sm bg-gray-50 px-4 py-2 rounded-lg text-gray-600 font-medium">
+            {t.showing}{' '}
+            <span className="text-gray-900">
+              {Math.min((currentPage - 1) * itemsPerPage + 1, sortedResults.length)}
+            </span>{' '}
+            {t.to}{' '}
+            <span className="text-gray-900">
+              {Math.min(currentPage * itemsPerPage, sortedResults.length)}
+            </span>{' '}
+            {t.of}{' '}
+            <span className="text-gray-900">{sortedResults.length}</span>{' '}
+            {t.results}
+          </div>
         </div>
       </div>
-      <div className="overflow-x-auto border rounded">
-        <table className="min-w-full bg-white">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="w-8 px-4 py-2">
+
+      {/* Table Container */}
+      <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-300px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
+            <tr>
+              <th className="sticky top-0 left-0 z-30 px-4 py-3 bg-gray-50 shadow-[1px_0_0_0_#e5e7eb]">
                 <input
                   type="checkbox"
                   checked={selectedRows.size === paginatedResults.length}
                   onChange={handleSelectAll}
-                  className="w-4 h-4 rounded border-gray-300 text-[#0080BE] focus:ring-[#0080BE]"
+                  className="w-4 h-4 rounded border-gray-300 text-[#0080BE] focus:ring-[#0080BE] transition-colors"
                 />
               </th>
               <th 
                 onClick={() => handleSort('identificationNumber')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.identificationNumber} {getSortIndicator('identificationNumber')}
               </th>
               <th 
                 onClick={() => handleSort('personalNumber')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.personalNumber} {getSortIndicator('personalNumber')}
               </th>
               <th 
                 onClick={() => handleSort('legalForm')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.organizationalLegalForm} {getSortIndicator('legalForm')}
               </th>
               <th 
                 onClick={() => handleSort('name')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.organizationName} {getSortIndicator('name')}
               </th>
               <th 
                 onClick={() => handleSort('legalAddress.region')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.region} ({t.legalAddress}) {getSortIndicator('legalAddress.region')}
               </th>
               <th 
                 onClick={() => handleSort('legalAddress.address')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.legalAddress} {getSortIndicator('legalAddress.address')}
               </th>
               <th 
                 onClick={() => handleSort('factualAddress.region')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.region} ({t.factualAddress}) {getSortIndicator('factualAddress.region')}
               </th>
               <th 
                 onClick={() => handleSort('factualAddress.address')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.factualAddress} {getSortIndicator('factualAddress.address')}
               </th>
@@ -258,13 +288,13 @@ function SearchResults({ results, isEnglish }) {
               </th>
               <th 
                 onClick={() => handleSort('activities.0.name')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.activityDescription} {getSortIndicator('activities.0.name')}
               </th>
               <th 
                 onClick={() => handleSort('head')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.head} {getSortIndicator('head')}
               </th>
@@ -279,112 +309,103 @@ function SearchResults({ results, isEnglish }) {
               </th>
               <th 
                 onClick={() => handleSort('ownershipType')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.ownershipForm} {getSortIndicator('ownershipType')}
               </th>
               <th 
                 onClick={() => handleSort('isActive')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.activeSubject} {getSortIndicator('isActive')}
               </th>
               <th 
                 onClick={() => handleSort('size')}
-                className="text-center px-4 py-2 text-sm font-bpg-nino cursor-pointer hover:bg-gray-200"
+                className={headerClassName}
               >
                 {t.businessSize} {getSortIndicator('size')}
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white divide-y divide-gray-200">
             {paginatedResults.map((result) => (
               <tr
                 key={result.id}
-                className={`border-b hover:bg-gray-50 transition-colors ${
+                className={`group transition-colors ${
                   selectedRows.has(result.id) ? 'bg-blue-50' : ''
                 }`}
               >
-                <td className="px-4 py-2">
+                <td className={`sticky left-0 z-10 bg-white ${cellClassName}`}>
                   <input
                     type="checkbox"
                     checked={selectedRows.has(result.id)}
                     onChange={() => handleRowSelect(result.id)}
-                    className="w-4 h-4 rounded border-gray-300 text-[#0080BE] focus:ring-[#0080BE]"
+                    className="w-4 h-4 rounded border-gray-300 text-[#0080BE] focus:ring-[#0080BE] transition-colors"
                   />
                 </td>
-                <td className="text-center px-4 py-2 text-sm">{result.identificationNumber}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.personalNumber}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.legalForm}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.name}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.legalAddress.region}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.legalAddress.address}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.factualAddress.region}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.factualAddress.address}</td>
-                <td className="text-center px-4 py-2 text-sm">
+                <td className={cellClassName}>{result.identificationNumber}</td>
+                <td className={cellClassName}>{result.personalNumber}</td>
+                <td className={cellClassName}>{result.legalForm}</td>
+                <td className={cellClassName}>{result.name}</td>
+                <td className={cellClassName}>{result.legalAddress.region}</td>
+                <td className={cellClassName}>{result.legalAddress.address}</td>
+                <td className={cellClassName}>{result.factualAddress.region}</td>
+                <td className={cellClassName}>{result.factualAddress.address}</td>
+                <td className={cellClassName}>
                   {result.activities[0]?.code}
                 </td>
-                <td className="text-center px-4 py-2 text-sm">
+                <td className={cellClassName}>
                   {result.activities[0]?.name}
                 </td>
-                <td className="text-center px-4 py-2 text-sm">{result.head}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.phone}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.partner}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.email}</td>
-                <td className="text-center px-4 py-2 text-sm">{result.ownershipType}</td>
-                <td className="text-center px-4 py-2 text-sm">
+                <td className={cellClassName}>{result.head}</td>
+                <td className={cellClassName}>{result.phone}</td>
+                <td className={cellClassName}>{result.partner}</td>
+                <td className={cellClassName}>{result.email}</td>
+                <td className={cellClassName}>{result.ownershipType}</td>
+                <td className={cellClassName}>
                   {result.isActive ? "✓" : "✗"}
                 </td>
-                <td className="text-center px-4 py-2 text-sm">{result.size}</td>
+                <td className={cellClassName}>{result.size}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Modern Pagination */}
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-          <div className="flex flex-1 justify-between sm:hidden">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t.previous}
-            </button>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t.next}
-            </button>
-          </div>
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                {t.showing}{' '}
-                <span className="font-medium">
-                  {Math.min((currentPage - 1) * itemsPerPage + 1, sortedResults.length)}
-                </span>{' '}
-                {t.to}{' '}
-                <span className="font-medium">
-                  {Math.min(currentPage * itemsPerPage, sortedResults.length)}
-                </span>{' '}
-                {t.of}{' '}
-                <span className="font-medium">{sortedResults.length}</span>{' '}
-                {t.results}
-              </p>
+        <div className="px-4 py-3 sm:px-6 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="hidden sm:block">
+              <div className="inline-flex items-center gap-2 text-sm text-gray-500">
+                <span>{t.page}</span>
+                <span className="font-medium text-gray-900">{currentPage}</span>
+                <span>{t.of}</span>
+                <span className="font-medium text-gray-900">{totalPages}</span>
+              </div>
             </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+            <div className="flex-1 flex justify-center sm:justify-end">
+              <nav className="relative z-0 inline-flex shadow-sm rounded-lg -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
+                >
+                  <span className="sr-only">{t.first}</span>
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0L9 10.414V13a1 1 0 11-2 0V7a1 1 0 011-1h6a1 1 0 110 2h-2.586l5.293 5.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
                   <span className="sr-only">{t.previous}</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </button>
                 
@@ -392,19 +413,21 @@ function SearchResults({ results, isEnglish }) {
                   pageNum === '...' ? (
                     <span
                       key={`ellipsis-${idx}`}
-                      className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0"
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
                     >
-                      ...
+                      <span className="h-1 w-1 bg-gray-500 rounded-full"></span>
+                      <span className="h-1 w-1 bg-gray-500 rounded-full mx-0.5"></span>
+                      <span className="h-1 w-1 bg-gray-500 rounded-full"></span>
                     </span>
                   ) : (
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                        currentPage === pageNum
-                          ? 'z-10 bg-[#0080BE] text-white focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0080BE]'
-                          : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0'
-                      }`}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors
+                        ${currentPage === pageNum
+                          ? 'z-10 bg-[#0080BE] border-[#0080BE] text-white hover:bg-[#0070aa]'
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
                       aria-current={currentPage === pageNum ? 'page' : undefined}
                     >
                       {pageNum}
@@ -415,11 +438,23 @@ function SearchResults({ results, isEnglish }) {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
                   <span className="sr-only">{t.next}</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
+                >
+                  <span className="sr-only">{t.last}</span>
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 15.707a1 1 0 001.414 0L11 10.414V13a1 1 0 102 0V7a1 1 0 00-1-1H6a1 1 0 100 2h2.586l-5.293 5.293a1 1 0 000 1.414z" clipRule="evenodd" />
                   </svg>
                 </button>
               </nav>
