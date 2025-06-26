@@ -177,7 +177,7 @@ function SearchResults({ results, isEnglish }) {
   };
 
   const headerClassName =
-    "sticky top-0 z-20 px-4 py-3 text-sm font-bpg-nino cursor-pointer bg-gray-50 text-center transition-colors border-b border-gray-200 first:rounded-tl-lg last:rounded-tr-lg hover:bg-gray-100";
+    "sticky top-0 z-20 px-4 py-3 text-sm font-bpg-nino cursor-pointer bg-[#0080BE] text-center text-[#fff]  transition-colors border-b border-[#0080BE] first:rounded-tl-lg last:rounded-tr-lg hover:bg-[#006698]";
   const cellClassName =
     "px-4 py-3 text-sm whitespace-nowrap text-center border-b border-gray-200 group-hover:bg-blue-50/50";
 
@@ -213,9 +213,9 @@ function SearchResults({ results, isEnglish }) {
       {/* Table Container */}
       <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-500px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
+          <thead className="sticky top-0 z-20 bg-[#0080BE] shadow-sm">
             <tr>
-              <th className="sticky top-0 left-0 z-30 px-4 py-3 bg-gray-50 shadow-[1px_0_0_0_#e5e7eb]">
+              <th className="sticky top-0 left-0 z-30 px-4 py-3 bg-[#0080BE] hover:bg-[#006698]">
                 <input
                   type="checkbox"
                   checked={selectedRows.size === paginatedResults.length}
@@ -274,9 +274,7 @@ function SearchResults({ results, isEnglish }) {
               >
                 {t.factualAddress} {getSortIndicator("factualAddress.address")}
               </th>
-              <th className="text-center px-4 py-2 text-sm font-bpg-nino">
-                NACE 2
-              </th>
+              <th className={headerClassName}>NACE 2</th>
               <th
                 onClick={() => handleSort("activities.0.name")}
                 className={headerClassName}
@@ -289,13 +287,13 @@ function SearchResults({ results, isEnglish }) {
               >
                 {t.head} {getSortIndicator("head")}
               </th>
-              <th className="text-center px-4 py-2 text-sm font-bpg-nino">
+              <th className={headerClassName}>
                 {t.phone}
               </th>
-              <th className="text-center px-4 py-2 text-sm font-bpg-nino">
+              <th className={headerClassName}>
                 {t.partner}
               </th>
-              <th className="text-center px-4 py-2 text-sm font-bpg-nino">
+              <th className={headerClassName}>
                 {t.email}
               </th>
               <th
