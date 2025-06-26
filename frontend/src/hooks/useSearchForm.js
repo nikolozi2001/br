@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchLegalForms } from "../services/api";
+import { fetchLegalForms, fetchDocuments } from "../services/api";
 
 const initialFormData = {
   identificationNumber: "",
@@ -132,6 +132,17 @@ export function useSearchForm(isEnglish) {
     }
   };
 
+  const handleSubmit = async () => {
+    try {
+      const documents = await fetchDocuments(formData, isEnglish ? "en" : "ge");
+      console.log("Search Results:", documents);
+      return documents;
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      return [];
+    }
+  };
+
   const handleReset = () => {
     setFormData(initialFormData);
   };
@@ -144,6 +155,7 @@ export function useSearchForm(isEnglish) {
     personalMunicipalityOptions,
     legalMunicipalityOptions,
     handleInputChange,
-    handleReset
+    handleReset,
+    handleSubmit
   };
 }

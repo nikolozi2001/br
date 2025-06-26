@@ -18,11 +18,14 @@ function SearchForm({ isEnglish }) {
     legalMunicipalityOptions,
     handleInputChange,
     handleReset,
+    handleSubmit,
   } = useSearchForm(isEnglish);
 
-  const handleSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
+    const results = await handleSubmit();
+    // Here you can handle the search results as needed
+    console.log("Search results:", results);
   };
 
   const handleLegalFormChange = (options) => {
@@ -42,7 +45,7 @@ function SearchForm({ isEnglish }) {
               <h2 className="text-base sm:text-lg mb-4 sm:mb-6 text-center font-bpg-nino font-bold">
                 {t.title}
               </h2>
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <form onSubmit={onSubmit} className="space-y-4 sm:space-y-6">
                 <BasicInfoSection
                   formData={formData}
                   handleInputChange={handleInputChange}

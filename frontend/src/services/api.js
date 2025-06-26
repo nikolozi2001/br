@@ -122,17 +122,61 @@ export const fetchSizes = async (lang) => {
 };
 
 // documents API
-export const fetchDocuments = async (lang = "ge") => {
+export const fetchDocuments = async (searchParams, lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/documents?lang=${lang}`);
+    const queryParams = new URLSearchParams({
+      lang,
+      ...(searchParams.identificationNumber && { identificationNumber: searchParams.identificationNumber }),
+      ...(searchParams.organizationName && { organizationName: searchParams.organizationName }),
+      ...(searchParams.organizationalLegalForm?.length && { organizationalLegalForm: searchParams.organizationalLegalForm.join(',') }),
+      ...(searchParams.head && { head: searchParams.head }),
+      ...(searchParams.partner && { partner: searchParams.partner }),
+      ...(searchParams.legalAddress?.region?.length && { legalRegion: searchParams.legalAddress.region.join(',') }),
+      ...(searchParams.legalAddress?.municipalityCity?.length && { legalMunicipality: searchParams.legalAddress.municipalityCity.join(',') }),
+      ...(searchParams.legalAddress?.address && { legalAddress: searchParams.legalAddress.address }),
+      ...(searchParams.personalAddress?.region?.length && { personalRegion: searchParams.personalAddress.region.join(',') }),
+      ...(searchParams.personalAddress?.municipalityCity?.length && { personalMunicipality: searchParams.personalAddress.municipalityCity.join(',') }),
+      ...(searchParams.personalAddress?.address && { personalAddress: searchParams.personalAddress.address }),
+      ...(searchParams.economicActivity?.selectedActivities?.length && { activityCode: searchParams.economicActivity.selectedActivities.join(',') }),
+      ...(searchParams.ownershipForm?.value && { ownershipForm: searchParams.ownershipForm.value }),
+      ...(searchParams.businessForm?.value && { businessForm: searchParams.businessForm.value }),
+      ...(searchParams.isActive && { isActive: searchParams.isActive })
+    });
+
+    const response = await fetch(`${API_BASE_URL}/documents?${queryParams}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
     
     return data.map((doc) => ({
-      value: doc.Stat_ID.toString(),
-      label: `${doc.Full_Name} (${doc.Legal_Code})`
+      id: doc.Stat_ID.toString(),
+      identificationNumber: doc.Legal_Code,
+      name: doc.Full_Name,
+      legalForm: doc.Legal_Form_ID,
+      ownershipType: doc.Ownership_Type,
+      head: doc.Head,
+      partner: doc.Partner,
+      legalAddress: {
+        region: doc.Region_name,
+        city: doc.City_name,
+        address: doc.Address
+      },
+      factualAddress: {
+        region: doc.Region_name2,
+        city: doc.City_name2,
+        address: doc.Address2
+      },
+      activities: [{
+        code: doc.Activity_Code,
+        name: doc.Activity_Name
+      },
+      doc.Activity_2_Code && {
+        code: doc.Activity_2_Code,
+        name: doc.Activity_2_Name
+      }].filter(Boolean),
+      size: doc.Zoma,
+      isActive: doc.ISActive === 1
     }));
   } catch (error) {
     console.error("Error fetching documents:", error);
