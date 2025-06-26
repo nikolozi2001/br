@@ -30,6 +30,13 @@ export const translations = {
 2) ხელფასი ან დასაქმებულთა რაოდენობა > 0 (ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
 3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
 4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ ქონების გადასახადისა`,
+    exportToCSV: "ექსპორტი CSV-ში",
+    perPage: "ჩანაწერი გვერდზე",
+    showing: "ნაჩვენებია",
+    of: "დან",
+    selectAll: "ყველას მონიშვნა",
+    selected: "მონიშნული",
+    noResults: "მონაცემები არ მოიძებნა",
   },
   en: {
     title: "Economic Entity Search",
@@ -62,5 +69,12 @@ export const translations = {
 2) Salary or number of employees > 0 (monthly income and other declarations);
 3) Has profit or loss (profit declaration);
 4) Paid any type of tax, except property tax only`,
+    exportToCSV: "Export to CSV",
+    perPage: "items per page",
+    showing: "Showing",
+    of: "of",
+    selectAll: "Select All",
+    selected: "selected",
+    noResults: "No results found",
   },
 };
