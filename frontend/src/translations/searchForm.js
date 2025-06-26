@@ -37,6 +37,10 @@ export const translations = {
     selectAll: "ყველას მონიშვნა",
     selected: "მონიშნული",
     noResults: "მონაცემები არ მოიძებნა",
+    previous: "წინა",
+    next: "შემდეგი",
+    to: "დან",
+    results: "შედეგი",
   },
   en: {
     title: "Economic Entity Search",
@@ -76,5 +80,9 @@ export const translations = {
     selectAll: "Select All",
     selected: "selected",
     noResults: "No results found",
+    previous: "Previous",
+    next: "Next",
+    to: "to",
+    results: "results",
   },
 };
