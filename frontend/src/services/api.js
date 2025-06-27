@@ -168,31 +168,60 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     return data.map((doc) => ({
       id: doc.Stat_ID.toString(),
       identificationNumber: doc.Legal_Code,
+      personalNumber: doc.Personal_no,
+      legalFormId: doc.Legal_Form_ID,
+      abbreviation: doc.Abbreviation,
       name: doc.Full_Name,
-      legalForm: doc.Legal_Form_ID,
+      ownershipTypeId: doc.Ownership_Type_ID,
       ownershipType: doc.Ownership_Type,
-      head: doc.Head,
-      partner: doc.Partner,
       legalAddress: {
+        regionCode: doc.Region_Code,
         region: doc.Region_name,
+        cityCode: doc.City_Code,
         city: doc.City_name,
+        communityCode: doc.Comunity_Code,
+        community: doc.Community_name,
+        villageCode: doc.Village_Code,
+        village: doc.Village_name,
         address: doc.Address
       },
       factualAddress: {
+        regionCode: doc.Region_Code2,
         region: doc.Region_name2,
+        cityCode: doc.City_Code2,
         city: doc.City_name2,
+        communityCode: doc.Comunity_Code2,
+        community: doc.Community_name2,
+        villageCode: doc.Village_Code2,
+        village: doc.Village_name2,
         address: doc.Address2
       },
       activities: [{
+        id: doc.Activity_ID,
         code: doc.Activity_Code,
         name: doc.Activity_Name
       },
       doc.Activity_2_Code && {
+        id: doc.Activity_2_ID,
         code: doc.Activity_2_Code,
         name: doc.Activity_2_Name
       }].filter(Boolean),
+      head: doc.Head,
+      mobile: doc.mob,
+      email: doc.Email,
+      isActive: doc.ISActive === 1,
       size: doc.Zoma,
-      isActive: doc.ISActive === 1
+      sizeOld: doc.Zoma_old,
+      coordinates: {
+        x: doc.X,
+        y: doc.Y
+      },
+      change: doc.Change,
+      registrationDate: doc.Reg_Date,
+      partner: doc.Partner,
+      headPersonalNumber: doc.Head_PN,
+      partnerPersonalNumber: doc.Partner_PN,
+      initialRegistrationDate: doc.Init_Reg_date
     }));
   } catch (error) {
     console.error("Error fetching documents:", error);

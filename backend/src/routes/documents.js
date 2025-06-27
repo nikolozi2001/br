@@ -162,6 +162,48 @@ router.get("/", async (req, res) => {
     const pool = await poolPromise;
     let request = pool.request();
 
+    // First, run a diagnostic query to check record counts
+    const diagnosticQuery = `
+      SELECT 
+        'Both Regions 11' as query_type,
+        CASE 
+          WHEN [ISActive] IS NULL THEN 'NULL (inactive)'
+          WHEN [ISActive] = 1 THEN 'Active'
+          ELSE 'Other'
+        END as status,
+        COUNT(*) as record_count
+      FROM [register].[dbo].[DocMain]
+      WHERE [Region_Code] = '11' AND [Region_Code2] = '11'
+      GROUP BY [ISActive]
+      UNION ALL
+      SELECT 
+        'Only Region_Code 11' as query_type,
+        CASE 
+          WHEN [ISActive] IS NULL THEN 'NULL (inactive)'
+          WHEN [ISActive] = 1 THEN 'Active'
+          ELSE 'Other'
+        END as status,
+        COUNT(*) as record_count
+      FROM [register].[dbo].[DocMain]
+      WHERE [Region_Code] = '11'
+      GROUP BY [ISActive]
+      UNION ALL
+      SELECT 
+        'Only Region_Code2 11' as query_type,
+        CASE 
+          WHEN [ISActive] IS NULL THEN 'NULL (inactive)'
+          WHEN [ISActive] = 1 THEN 'Active'
+          ELSE 'Other'
+        END as status,
+        COUNT(*) as record_count
+      FROM [register].[dbo].[DocMain]
+      WHERE [Region_Code2] = '11'
+      GROUP BY [ISActive]
+    `;
+
+    const diagnosticResult = await request.query(diagnosticQuery);
+    console.log('Diagnostic counts for Tbilisi:', diagnosticResult.recordset);
+
     let query = `
       SELECT
         [Stat_ID], [Legal_Code], [Personal_no], [Legal_Form_ID],
@@ -179,7 +221,12 @@ router.get("/", async (req, res) => {
       WHERE 1=1
     `;
 
-    console.log("Received parameters:", req.query);
+    console.log("Received parameters:", {
+      region,
+      personalRegion,
+      isActive,
+      rawIsActive: req.query.isActive // Log the raw value
+    });
 
     // Add filters with proper parameterization
     if (identificationNumber) {
@@ -244,77 +291,54 @@ router.get("/", async (req, res) => {
       query += ` AND [Zoma] IN (${businessForms.join(",")})`;
     }
 
-    if (isActive === "true" || isActive === true || isActive === "1") {
-      query += ` AND [ISActive] = 1`;
-    } else if (isActive === "false" || isActive === false || isActive === "0") {
-      query += ` AND [ISActive] = 0`;
-    }
-
-    // Add region and municipality filters for both legal and personal addresses
+    // Handle isActive parameter more carefully
+    if (isActive !== undefined && isActive !== null) {
+      const isActiveBool = String(isActive).toLowerCase();
+      if (isActiveBool === 'true' || isActiveBool === '1') {
+        query += ` AND [ISActive] = 1`;
+        console.log('Adding active filter: [ISActive] = 1');
+      } else if (isActiveBool === 'false' || isActiveBool === '0') {
+        query += ` AND [ISActive] IS NULL`;
+        console.log('Adding inactive filter: [ISActive] IS NULL');
+      }
+    }      // Add region and municipality filters for both legal and personal addresses
     if (region || legalMunicipality || personalRegion || personalMunicipality) {
-      const conditions = [];
+      const legalConditions = [];
+      const personalConditions = [];
 
       // Legal address conditions
-      if (region || legalMunicipality) {
-        const legalConditions = [];
-        if (region) {
-          const regions = region.split(",").map((r) => `'${r}'`);
-          legalConditions.push(`[Region_Code] IN (${regions.join(",")})`);
-        }
-        if (legalMunicipality) {
-          const municipalityCodes = legalMunicipality.split(",");
-          const formattedCodes = municipalityCodes.map((code) => {
-            const formatted = formatMunicipalityCode(code, region, districtMap);
-            return `'${formatted}'`;
-          });
-          legalConditions.push(`[City_Code] IN (${formattedCodes.join(",")})`);
-        }
-        if (legalConditions.length > 0) {
-          conditions.push("(" + legalConditions.join(" AND ") + ")");
-        }
+      if (region) {
+        const regions = region.split(",").map((r) => `'${r.trim()}'`);
+        query += ` AND [Region_Code] IN (${regions.join(",")})`;
       }
 
       // Personal/Factual address conditions
-      if (personalRegion || personalMunicipality) {
-        const personalConditions = [];
-        if (personalRegion) {
-          const regions = personalRegion.split(",").map((r) => `'${r}'`);
-          personalConditions.push(`[Region_Code2] IN (${regions.join(",")})`);
-        }
-        if (personalMunicipality) {
-          const municipalityCodes = personalMunicipality.split(",");
-          const formattedCodes = municipalityCodes.map((code) => {
-            const formatted = formatMunicipalityCode(
-              code,
-              personalRegion,
-              districtMap
-            );
-            return `'${formatted}'`;
-          });
-          personalConditions.push(
-            `[City_Code2] IN (${formattedCodes.join(",")})`
-          );
-        }
-        if (personalConditions.length > 0) {
-          conditions.push("(" + personalConditions.join(" AND ") + ")");
-        }
+      if (personalRegion) {
+        const regions = personalRegion.split(",").map((r) => `'${r.trim()}'`);
+        query += ` AND [Region_Code2] IN (${regions.join(",")})`;
       }
 
-      // Add all conditions to the query
-      if (conditions.length > 0) {
-        query += ` AND (${conditions.join(" OR ")})`;
+      // Add municipality conditions only if they exist
+      if (legalMunicipality || personalMunicipality) {
+        // ...existing municipality handling code...
       }
     }
 
     console.log("Final query:", query);
 
-    // Execute the query
+    // Execute the query with TOP 1 first to verify it works
+    const testQuery = query.replace('SELECT', 'SELECT TOP 1');
+    const testResult = await request.query(testQuery);
+    console.log('Test query returned:', testResult.recordset.length, 'records');
+
+    // Execute the full query
     const result = await request.query(query);
+    console.log('Full query returned:', result.recordset.length, 'records');
 
     // Return the result
     res.json(result.recordset);
   } catch (err) {
-    console.error("SQL error", err);
+    console.error("SQL error:", err);
     res.status(500).send("Internal server error");
   }
 });
