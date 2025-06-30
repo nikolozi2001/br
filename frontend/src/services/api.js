@@ -136,6 +136,7 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       ...(searchParams.identificationNumber && { identificationNumber: searchParams.identificationNumber }),
       ...(searchParams.organizationName && { organizationName: searchParams.organizationName }),
       ...(searchParams.organizationalLegalForm?.length > 0 && { legalForm: searchParams.organizationalLegalForm[0] }),
+      ...(searchParams.head && { head: searchParams.head }),
     });
 
     const response = await fetch(`${API_BASE_URL}/documents?${queryParams}`);
