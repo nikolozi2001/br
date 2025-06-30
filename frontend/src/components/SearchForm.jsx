@@ -296,9 +296,7 @@ function SearchForm({ isEnglish }) {
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div
-            className={`bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px] ${
-              isLoading ? "bg-[#fafafa]/50" : ""
-            }`}
+            className={`bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px] `}
           >
             <div className="p-3 sm:p-6">
               {isLoading && (
@@ -382,7 +380,12 @@ function SearchForm({ isEnglish }) {
                   <h2 className="text-base sm:text-lg mb-4 sm:mb-6 text-center font-bpg-nino font-bold">
                     {t.title}
                   </h2>
-                  <form onSubmit={onSubmit} className="space-y-4 sm:space-y-6">
+                  <form
+                    onSubmit={onSubmit}
+                    className={`space-y-4 sm:space-y-6 ${
+                      isLoading ? "opacity-50" : ""
+                    }`}
+                  >
                     <BasicInfoSection
                       formData={formData}
                       handleInputChange={handleInputChange}
