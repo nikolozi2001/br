@@ -39,7 +39,7 @@ router.get("/legal_code/:legalCode", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const { identificationNumber, organizationName, legalForm, head } = req.query;
+    const { identificationNumber, organizationName, legalForm, head, isActive } = req.query;
     const pool = await poolPromise;
 
     let query = `
@@ -79,6 +79,10 @@ router.get("/", async (req, res) => {
     if (head) {
       query += " AND Head LIKE @head";
       request.input("head", sql.NVarChar, `%${head}%`);
+    }
+    if (isActive) {
+      query += " AND ISActive = @isActive";
+      request.input("isActive", sql.Int, isActive ? 1 : null);
     }
 
     const result = await request.query(query);
