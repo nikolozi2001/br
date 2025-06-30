@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const sql = require('mssql');
+const sql = require("mssql");
 const { poolPromise } = require("../config/database");
 
 // Cache for district mappings
@@ -14,9 +14,9 @@ router.get("/legal_code/:legalCode", async (req, res) => {
   try {
     const { legalCode } = req.params;
     const pool = await poolPromise;
-    const result = await pool.request()
-      .input('legalCode', sql.BigInt, legalCode)
-      .query(`
+    const result = await pool
+      .request()
+      .input("legalCode", sql.BigInt, legalCode).query(`
         SELECT [Stat_ID], [Legal_Code], [Personal_no], [Legal_Form_ID],
           [Abbreviation], [Full_Name], [Ownership_Type_ID], [Ownership_Type],
           [Region_Code], [Region_name], [City_Code], [City_name],
@@ -29,8 +29,7 @@ router.get("/legal_code/:legalCode", async (req, res) => {
           [X], [Y], [Change], [Reg_Date], [Partner], [Head_PN],
           [Partner_PN], [Init_Reg_date]
         FROM [register].[dbo].[DocMain]
-        WHERE Legal_Code = @legalCode`
-      );
+        WHERE Legal_Code = @legalCode`);
     res.json(result.recordset);
   } catch (error) {
     console.error("Error fetching legal code details:", error);
@@ -40,9 +39,9 @@ router.get("/legal_code/:legalCode", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const { identificationNumber, organizationName, lang } = req.query;
+    const { identificationNumber, organizationName, legalForm } = req.query;
     const pool = await poolPromise;
-    
+
     let query = `
       SELECT [Stat_ID], [Legal_Code], [Personal_no], [Legal_Form_ID],
         [Abbreviation], [Full_Name], [Ownership_Type_ID], [Ownership_Type],
@@ -63,12 +62,18 @@ router.get("/", async (req, res) => {
 
     if (identificationNumber) {
       query += " AND Legal_Code = @identificationNumber";
-      request.input('identificationNumber', sql.BigInt, identificationNumber);
+      request.input("identificationNumber", sql.BigInt, identificationNumber);
     }
 
     if (organizationName) {
-      query += " AND (Full_Name LIKE @organizationName OR Abbreviation LIKE @organizationName)";
-      request.input('organizationName', sql.NVarChar, `%${organizationName}%`);
+      query +=
+        " AND (Full_Name LIKE @organizationName OR Abbreviation LIKE @organizationName)";
+      request.input("organizationName", sql.NVarChar, `%${organizationName}%`);
+    }
+
+    if (legalForm) {
+      query += " AND Legal_Form_ID = @legalForm";
+      request.input("legalForm", sql.SmallInt, legalForm);
     }
 
     const result = await request.query(query);

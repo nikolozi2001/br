@@ -244,7 +244,7 @@ function SearchResults({ results, isEnglish }) {
                 </td>
                 <td className={cellClassName}>{result.identificationNumber}</td>
                 <td className={cellClassName}>{result.personalNumber}</td>
-                <td className={cellClassName}>{result.legalForm}</td>
+                <td className={cellClassName}>{result.abbreviation}</td>
                 <td className={cellClassName}>{result.name}</td>
                 <td className={cellClassName}>{result.legalAddress.region}</td>
                 <td className={cellClassName}>{result.legalAddress.address}</td>
