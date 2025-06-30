@@ -9,7 +9,8 @@ import { EconomicActivitySection } from "./EconomicActivitySection";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { FormActions } from "./FormActions";
 import SearchResults from "./SearchResults";
-import georgianFont from '../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf';
+import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
+import loaderIcon from "../assets/images/equalizer.svg";
 
 function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
@@ -60,47 +61,49 @@ function SearchForm({ isEnglish }) {
       { label: "email", path: "email" },
       { label: "ownershipForm", path: "ownershipType" },
       { label: "activeSubject", path: "isActive" },
-      { label: "businessSize", path: "size" }
+      { label: "businessSize", path: "size" },
     ];
 
-    const csvContent = "\ufeff" + [
-      // Headers row with translated labels
-      headers
-        .map(header => {
-          // Handle special cases for addresses
-          if (header.label === "legalRegion") {
-            return `"${t.region} (${t.legalAddress})"`;
-          } else if (header.label === "factualRegion") {
-            return `"${t.region} (${t.factualAddress})"`;
-          }
-          // Normal translation
-          return `"${t[header.label]}"`;
-        })
-        .join(","),
-      // Data rows
-      ...searchResults.map((row) =>
+    const csvContent =
+      "\ufeff" +
+      [
+        // Headers row with translated labels
         headers
           .map((header) => {
-            let value;
-            const path = header.path;
-            if (path.includes("[")) {
-              // Handle array paths (activities)
-              const [arrayPath, arrayKey] = path.split(".");
-              value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
-            } else if (path.includes(".")) {
-              // Handle nested object paths (addresses)
-              const [objPath, key] = path.split(".");
-              value = row[objPath][key];
-            } else {
-              // Handle direct properties
-              value = row[path];
+            // Handle special cases for addresses
+            if (header.label === "legalRegion") {
+              return `"${t.region} (${t.legalAddress})"`;
+            } else if (header.label === "factualRegion") {
+              return `"${t.region} (${t.factualAddress})"`;
             }
-            if (path === "isActive") value = value ? "✓" : "✗";
-            return `"${value || ""}"`;
+            // Normal translation
+            return `"${t[header.label]}"`;
           })
-          .join(",")
-      ),
-    ].join("\n");
+          .join(","),
+        // Data rows
+        ...searchResults.map((row) =>
+          headers
+            .map((header) => {
+              let value;
+              const path = header.path;
+              if (path.includes("[")) {
+                // Handle array paths (activities)
+                const [arrayPath, arrayKey] = path.split(".");
+                value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
+              } else if (path.includes(".")) {
+                // Handle nested object paths (addresses)
+                const [objPath, key] = path.split(".");
+                value = row[objPath][key];
+              } else {
+                // Handle direct properties
+                value = row[path];
+              }
+              if (path === "isActive") value = value ? "✓" : "✗";
+              return `"${value || ""}"`;
+            })
+            .join(",")
+        ),
+      ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -139,27 +142,31 @@ function SearchForm({ isEnglish }) {
           </tr>
         </thead>
         <tbody>
-          ${searchResults.map(result => `
+          ${searchResults
+            .map(
+              (result) => `
             <tr>
-              <td>${result.identificationNumber || ''}</td>
-              <td>${result.personalNumber || ''}</td>
-              <td>${result.legalForm || ''}</td>
-              <td>${result.name || ''}</td>
-              <td>${result.legalAddress?.region || ''}</td>
-              <td>${result.legalAddress?.address || ''}</td>
-              <td>${result.factualAddress?.region || ''}</td>
-              <td>${result.factualAddress?.address || ''}</td>
-              <td>${result.activities?.[0]?.code || ''}</td>
-              <td>${result.activities?.[0]?.name || ''}</td>
-              <td>${result.head || ''}</td>
-              <td>${result.phone || ''}</td>
-              <td>${result.partner || ''}</td>
-              <td>${result.email || ''}</td>
-              <td>${result.ownershipType || ''}</td>
-              <td>${result.isActive ? '✓' : '✗'}</td>
-              <td>${result.size || ''}</td>
+              <td>${result.identificationNumber || ""}</td>
+              <td>${result.personalNumber || ""}</td>
+              <td>${result.legalForm || ""}</td>
+              <td>${result.name || ""}</td>
+              <td>${result.legalAddress?.region || ""}</td>
+              <td>${result.legalAddress?.address || ""}</td>
+              <td>${result.factualAddress?.region || ""}</td>
+              <td>${result.factualAddress?.address || ""}</td>
+              <td>${result.activities?.[0]?.code || ""}</td>
+              <td>${result.activities?.[0]?.name || ""}</td>
+              <td>${result.head || ""}</td>
+              <td>${result.phone || ""}</td>
+              <td>${result.partner || ""}</td>
+              <td>${result.email || ""}</td>
+              <td>${result.ownershipType || ""}</td>
+              <td>${result.isActive ? "✓" : "✗"}</td>
+              <td>${result.size || ""}</td>
             </tr>
-          `).join('')}
+          `
+            )
+            .join("")}
         </tbody>
       </table>
     `;
@@ -234,10 +241,10 @@ function SearchForm({ isEnglish }) {
   };
 
   const printResults = async () => {
-    const printWindow = window.open('', '_blank', 'height=600,width=800');
-    
+    const printWindow = window.open("", "_blank", "height=600,width=800");
+
     if (!printWindow) {
-      alert('Please allow pop-ups to print the results.');
+      alert("Please allow pop-ups to print the results.");
       return;
     }
 
@@ -263,7 +270,7 @@ function SearchForm({ isEnglish }) {
     try {
       await handlePrint(printWindow);
     } catch (error) {
-      console.error('Print failed:', error);
+      console.error("Print failed:", error);
       if (!printWindow.closed) {
         printWindow.close();
       }
@@ -288,8 +295,17 @@ function SearchForm({ isEnglish }) {
     <div className="w-full">
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px]">
+          <div
+            className={`bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px] ${
+              isLoading ? "bg-[#fafafa]/50" : ""
+            }`}
+          >
             <div className="p-3 sm:p-6">
+              {isLoading && (
+                <div className="geostat-loader">
+                  <img src={loaderIcon} alt="Loading..." />
+                </div>
+              )}
               {showResults ? (
                 <div>
                   <div className="flex justify-between items-center mb-4">
@@ -353,8 +369,8 @@ function SearchForm({ isEnglish }) {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0080BE]"></div>
                     </div>
                   ) : (
-                    <SearchResults 
-                      results={searchResults} 
+                    <SearchResults
+                      results={searchResults}
                       isEnglish={isEnglish}
                       formData={formData}
                       handleInputChange={handleInputChange}
@@ -467,7 +483,11 @@ function SearchForm({ isEnglish }) {
                         t={t}
                       />
                     </div>
-                    <FormActions t={t} onReset={handleReset} isLoading={isLoading} />
+                    <FormActions
+                      t={t}
+                      onReset={handleReset}
+                      isLoading={isLoading}
+                    />
                   </form>
                 </>
               )}
