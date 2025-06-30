@@ -129,99 +129,25 @@ export const fetchSizes = async (lang) => {
 };
 
 // documents API
-export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = []) => {
+export const fetchDocuments = async (searchParams, lang = "ge",) => {
   try {
-    console.log('Search params being sent:', {
-      organizationalLegalForm: searchParams.organizationalLegalForm,
-      legalRegion: searchParams.legalAddress?.region,
-      personalRegion: searchParams.personalAddress?.region
-    });
-
     const queryParams = new URLSearchParams({
       lang,
       ...(searchParams.identificationNumber && { identificationNumber: searchParams.identificationNumber }),
       ...(searchParams.organizationName && { organizationName: searchParams.organizationName }),
-      ...(searchParams.organizationalLegalForm?.length && { organizationalLegalForm: searchParams.organizationalLegalForm.join(',') }),
-      ...(searchParams.head && { head: searchParams.head }),
-      ...(searchParams.partner && { partner: searchParams.partner }),
-      ...(searchParams.legalAddress?.region?.length && { region: regionOptions?.find(r => r.value === searchParams.legalAddress.region[0])?.code || searchParams.legalAddress.region.join(',') }),
-      ...(searchParams.legalAddress?.municipalityCity?.length && { legalMunicipality: searchParams.legalAddress.municipalityCity.join(',') }),
-      ...(searchParams.legalAddress?.address && { legalAddress: searchParams.legalAddress.address }),
-      ...(searchParams.personalAddress?.region?.length && { personalRegion: regionOptions?.find(r => r.value === searchParams.personalAddress.region[0])?.code || searchParams.personalAddress.region.join(',') }),
-      ...(searchParams.personalAddress?.municipalityCity?.length && { personalMunicipality: searchParams.personalAddress.municipalityCity.join(',') }),
-      ...(searchParams.personalAddress?.address && { personalAddress: searchParams.personalAddress.address }),
-      ...(searchParams.economicActivity?.selectedActivities?.length && { activityCode: searchParams.economicActivity.selectedActivities.join(',') }),
-      ...(searchParams.ownershipForm?.value && { ownershipForm: searchParams.ownershipForm.value }),
-      ...(searchParams.businessForm?.value && { businessForm: searchParams.businessForm.value }),
-      isActive: searchParams.isActive
     });
 
-    console.log('Full query string being sent:', `${API_BASE_URL}/documents?${queryParams}`);
-    
     const response = await fetch(`${API_BASE_URL}/documents?${queryParams}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
     console.log('Raw response data:', data);
-    
+
     return data.map((doc) => ({
       id: doc.Stat_ID.toString(),
       identificationNumber: doc.Legal_Code,
-      personalNumber: doc.Personal_no,
-      legalFormId: doc.Legal_Form_ID,
-      abbreviation: doc.Abbreviation,
-      name: doc.Full_Name,
-      ownershipTypeId: doc.Ownership_Type_ID,
-      ownershipType: doc.Ownership_Type,
-      legalAddress: {
-        regionCode: doc.Region_Code,
-        region: doc.Region_name,
-        cityCode: doc.City_Code,
-        city: doc.City_name,
-        communityCode: doc.Comunity_Code,
-        community: doc.Community_name,
-        villageCode: doc.Village_Code,
-        village: doc.Village_name,
-        address: doc.Address
-      },
-      factualAddress: {
-        regionCode: doc.Region_Code2,
-        region: doc.Region_name2,
-        cityCode: doc.City_Code2,
-        city: doc.City_name2,
-        communityCode: doc.Comunity_Code2,
-        community: doc.Community_name2,
-        villageCode: doc.Village_Code2,
-        village: doc.Village_name2,
-        address: doc.Address2
-      },
-      activities: [{
-        id: doc.Activity_ID,
-        code: doc.Activity_Code,
-        name: doc.Activity_Name
-      },
-      doc.Activity_2_Code && {
-        id: doc.Activity_2_ID,
-        code: doc.Activity_2_Code,
-        name: doc.Activity_2_Name
-      }].filter(Boolean),
-      head: doc.Head,
-      mobile: doc.mob,
-      email: doc.Email,
-      isActive: doc.ISActive === 1,
-      size: doc.Zoma,
-      sizeOld: doc.Zoma_old,
-      coordinates: {
-        x: doc.X,
-        y: doc.Y
-      },
-      change: doc.Change,
-      registrationDate: doc.Reg_Date,
-      partner: doc.Partner,
-      headPersonalNumber: doc.Head_PN,
-      partnerPersonalNumber: doc.Partner_PN,
-      initialRegistrationDate: doc.Init_Reg_date
+      personalNumber: doc.Personal_no
     }));
   } catch (error) {
     console.error("Error fetching documents:", error);
