@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = "http://192.168.1.27:5000/api";
 
 // Legal Forms API
 export const fetchLegalForms = async (lang) => {
@@ -145,9 +145,34 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
     console.log('Raw response data:', data);
 
     return data.map((doc) => ({
-      id: doc.Stat_ID.toString(),
-      identificationNumber: doc.Legal_Code,
-      personalNumber: doc.Personal_no
+      id: doc.Stat_ID?.toString() || '',
+      identificationNumber: doc.Legal_Code || '',
+      personalNumber: doc.Personal_no || '',
+      legalForm: doc.Legal_Form_ID || '',
+      name: doc.Full_Name || '',
+      abbreviation: doc.Abbreviation || '',
+      head: doc.Head || '',
+      partner: doc.Partner || '',
+      email: doc.Email || '',
+      phone: doc.mob || '',
+      legalAddress: {
+        region: doc.Region_name || '',
+        municipalityCity: doc.City_name || '',
+        address: doc.Address || ''
+      },
+      factualAddress: {
+        region: doc.Region_name2 || '',
+        municipalityCity: doc.City_name2 || '',
+        address: doc.Address2 || ''
+      },
+      activities: [{
+        code: doc.Activity_Code || '',
+        name: doc.Activity_Name || ''
+      }],
+      ownershipType: doc.Ownership_Type || '',
+      isActive: doc.ISActive || false,
+      status: doc.ISActive ? 'Active' : 'Inactive',
+      size: doc.Zoma || ''
     }));
   } catch (error) {
     console.error("Error fetching documents:", error);
