@@ -14,28 +14,35 @@ export function EconomicActivitySection({ formData, setFormData, t, isEnglish })
     };
     loadActivities();
   }, [isEnglish]);
-  const selectedActivityCodes = formData.activities?.[0]?.code
-    ? activities.codesOnly.find(opt => opt.value === formData.activities[0].code)
-    : null;
+  const selectedActivityCodes = formData.activities
+    ? activities.codesOnly.filter(opt => 
+        formData.activities.some(activity => activity.code === opt.value)
+      )
+    : [];
 
-  const selectedActivitiesWithNames = formData.activities?.[0]?.code
-    ? activities.codesWithNames.find(opt => opt.value === formData.activities[0].code)
-    : null;
+  const selectedActivitiesWithNames = formData.activities
+    ? activities.codesWithNames.filter(opt => 
+        formData.activities.some(activity => activity.code === opt.value)
+      )
+    : [];
 
   const handleActivityCodeChange = (selected) => {
-    if (selected) {
-      const matchingNameOption = activities.codesWithNames.find(opt => opt.value === selected.value);
+    if (selected && selected.length > 0) {
+      const newActivities = selected.map(item => {
+        const matchingNameOption = activities.codesWithNames.find(opt => opt.value === item.value);
+        return {
+          code: item.value,
+          name: matchingNameOption ? matchingNameOption.label : ""
+        };
+      });
       setFormData(prev => ({
         ...prev,
-        activities: [{
-          code: selected.value,
-          name: matchingNameOption ? matchingNameOption.label : ""
-        }]
+        activities: newActivities
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        activities: [{ code: "", name: "" }]
+        activities: []
       }));
     }
   };
@@ -43,10 +50,10 @@ export function EconomicActivitySection({ formData, setFormData, t, isEnglish })
   const handleActivitiesChange = (selected) => {
     setFormData(prev => ({
       ...prev,
-      activities: selected ? [{
-        code: selected.value,
-        name: selected.label
-      }] : [{ code: "", name: "" }]
+      activities: selected ? selected.map(item => ({
+        code: item.value,
+        name: item.label
+      })) : []
     }));
   };
 
@@ -62,7 +69,7 @@ export function EconomicActivitySection({ formData, setFormData, t, isEnglish })
             value={selectedActivityCodes}
             onChange={handleActivityCodeChange}
             options={activities.codesOnly}
-            isMulti={false}
+            isMulti={true}
             className="w-full"
             isClearable={true}
           />
@@ -73,7 +80,7 @@ export function EconomicActivitySection({ formData, setFormData, t, isEnglish })
             value={selectedActivitiesWithNames}
             onChange={handleActivitiesChange}
             options={activities.codesWithNames}
-            isMulti={false}
+            isMulti={true}
             className="w-full"
             isClearable={true}
           />

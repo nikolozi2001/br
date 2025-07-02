@@ -93,13 +93,13 @@ router.get("/", async (req, res) => {
 
       if (activityCodes.length > 0) {
         const conditions = activityCodes.map((_, index) => 
-          `(Activity_Code = @activityCode${index} OR Activity_2_Code = @activityCode${index})`
+          `(Activity_2_Code LIKE @activityCode${index})`
         ).join(' OR ');
         
         query += ` AND (${conditions})`;
         
         activityCodes.forEach((code, index) => {
-          request.input(`activityCode${index}`, sql.NVarChar, code);
+          request.input(`activityCode${index}`, sql.NVarChar, `%${code}%`);
         });
       }
     }
