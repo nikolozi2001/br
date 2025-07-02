@@ -146,27 +146,7 @@ router.get("/", async (req, res) => {
       request.input("isActive", sql.Int, isActive ? 1 : null);
     }
 
-    // Debug logging
-    console.log('Final SQL Query:', query);
-    console.log('Query Parameters:', request.parameters);
-
-    // First do a diagnostic query to see what values exist
-    const diagnostic = await request.query(`
-      SELECT DISTINCT 
-        Ownership_Type_ID,
-        Ownership_Type,
-        Zoma,
-        ISActive
-      FROM [register].[dbo].[DocMain]
-      WHERE 
-        (Ownership_Type_ID = @ownershipType OR @ownershipType IS NULL)
-        OR (Zoma = @size OR @size IS NULL)
-        OR (ISActive = @isActive OR @isActive IS NULL)
-    `);
-    console.log('Available combinations:', diagnostic.recordset);
-    
     const result = await request.query(query);
-    console.log('Result count:', result.recordset.length);
 
     res.json(result.recordset);
   } catch (error) {
