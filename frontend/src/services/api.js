@@ -131,16 +131,37 @@ export const fetchSizes = async (lang) => {
 // documents API
 export const fetchDocuments = async (searchParams, lang = "ge",) => {
   try {
-    const queryParams = new URLSearchParams({
-      lang,
-      ...(searchParams.identificationNumber && { identificationNumber: searchParams.identificationNumber }),
-      ...(searchParams.organizationName && { organizationName: searchParams.organizationName }),
-      ...(searchParams.organizationalLegalForm?.length > 0 && { legalForm: searchParams.organizationalLegalForm[0] }),
-      ...(searchParams.head && { head: searchParams.head }),
-      ...(searchParams.partner && { partner: searchParams.partner }),
-      ...(searchParams.activities?.[0]?.code && { activityCode: searchParams.activities[0].code }),
-      ...(searchParams.isActive && { isActive: searchParams.isActive })
-    });
+    // First create the basic query params
+    const queryParams = new URLSearchParams();
+    queryParams.append('lang', lang);
+
+    if (searchParams.identificationNumber) {
+      queryParams.append('identificationNumber', searchParams.identificationNumber);
+    }
+    if (searchParams.organizationName) {
+      queryParams.append('organizationName', searchParams.organizationName);
+    }
+    if (searchParams.organizationalLegalForm?.length > 0) {
+      queryParams.append('legalForm', searchParams.organizationalLegalForm[0]);
+    }
+    if (searchParams.head) {
+      queryParams.append('head', searchParams.head);
+    }
+    if (searchParams.partner) {
+      queryParams.append('partner', searchParams.partner);
+    }
+    if (searchParams.isActive) {
+      queryParams.append('isActive', searchParams.isActive);
+    }
+
+    // Handle activities separately
+    if (searchParams.activities && searchParams.activities.length > 0) {
+      searchParams.activities.forEach(activity => {
+        if (activity.code) {
+          queryParams.append('activityCode', activity.code);
+        }
+      });
+    }
 
     const response = await fetch(`${API_BASE_URL}/documents?${queryParams}`);
     if (!response.ok) {
@@ -148,36 +169,34 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
     }
     const data = await response.json();
     console.log('Raw response data:', data);
-
-    return data.map((doc) => ({
-      id: doc.Stat_ID?.toString() || '',
-      identificationNumber: doc.Legal_Code || '',
-      personalNumber: doc.Personal_no || '',
-      legalForm: doc.Legal_Form_ID || '',
-      name: doc.Full_Name || '',
-      abbreviation: doc.Abbreviation || '',
-      head: doc.Head || '',
-      partner: doc.Partner || '',
-      email: doc.Email || '',
-      phone: doc.mob || '',
+    
+    // Transform the response data
+    return data.map(item => ({
+      ...item,
+      id: item.Stat_ID,
+      identificationNumber: item.Legal_Code,
+      personalNumber: item.Personal_no,
+      name: item.Full_Name,
+      abbreviation: item.Abbreviation,
       legalAddress: {
-        region: doc.Region_name || '',
-        municipalityCity: doc.City_name || '',
-        address: doc.Address || ''
+        region: item.Region_name,
+        address: item.Address
       },
       factualAddress: {
-        region: doc.Region_name2 || '',
-        municipalityCity: doc.City_name2 || '',
-        address: doc.Address2 || ''
+        region: item.Region_name2,
+        address: item.Address2
       },
       activities: [{
-        code: doc.Activity_Code || '',
-        name: doc.Activity_Name || ''
+        code: item.Activity_2_Code,
+        name: item.Activity_2_Name
       }],
-      ownershipType: doc.Ownership_Type || '',
-      isActive: doc.ISActive || false,
-      status: doc.ISActive ? 'Active' : 'Inactive',
-      size: doc.Zoma || ''
+      head: item.Head,
+      phone: item.mob,
+      partner: item.Partner,
+      email: item.Email,
+      ownershipType: item.Ownership_Type,
+      isActive: item.ISActive === 1,
+      size: item.Zoma
     }));
   } catch (error) {
     console.error("Error fetching documents:", error);

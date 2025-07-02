@@ -16,13 +16,13 @@ export function EconomicActivitySection({ formData, setFormData, t, isEnglish })
   }, [isEnglish]);
   const selectedActivityCodes = formData.activities
     ? activities.codesOnly.filter(opt => 
-        formData.activities.some(activity => activity.code === opt.value)
+        formData.activities.some(activity => activity.code === opt.value.replace('Activity_', 'Activity_2_'))
       )
     : [];
 
   const selectedActivitiesWithNames = formData.activities
     ? activities.codesWithNames.filter(opt => 
-        formData.activities.some(activity => activity.code === opt.value)
+        formData.activities.some(activity => activity.code === opt.value.replace('Activity_', 'Activity_2_'))
       )
     : [];
 
@@ -31,7 +31,7 @@ export function EconomicActivitySection({ formData, setFormData, t, isEnglish })
       const newActivities = selected.map(item => {
         const matchingNameOption = activities.codesWithNames.find(opt => opt.value === item.value);
         return {
-          code: item.value,
+          code: item.value.replace('Activity_', 'Activity_2_'),
           name: matchingNameOption ? matchingNameOption.label : ""
         };
       });
@@ -51,7 +51,7 @@ export function EconomicActivitySection({ formData, setFormData, t, isEnglish })
     setFormData(prev => ({
       ...prev,
       activities: selected ? selected.map(item => ({
-        code: item.value,
+        code: item.value.replace('Activity_', 'Activity_2_'),
         name: item.label
       })) : []
     }));

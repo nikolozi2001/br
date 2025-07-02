@@ -254,8 +254,8 @@ function SearchResults({ results, isEnglish }) {
                 <td className={cellClassName}>
                   {result.factualAddress.address}
                 </td>
-                <td className={cellClassName}>{result.activities[0]?.code}</td>
-                <td className={cellClassName}>{result.activities[0]?.name}</td>
+                <td className={cellClassName}>{result.activities?.[0]?.code}</td>
+                <td className={cellClassName}>{result.activities?.[0]?.name}</td>
                 <td className={cellClassName}>{result.head}</td>
                 <td className={cellClassName}>{result.phone}</td>
                 <td className={cellClassName}>{result.partner}</td>
