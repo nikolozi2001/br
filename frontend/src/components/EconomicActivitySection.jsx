@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import CustomSelect from "./common/CustomSelect";
 import { fetchActivities } from "../services/api";
 
-export function EconomicActivitySection({ formData, handleInputChange, t, isEnglish }) {
+export function EconomicActivitySection({ formData, setFormData, t, isEnglish }) {
   const [activities, setActivities] = useState({
     codesOnly: [],
     codesWithNames: [],
@@ -14,34 +14,40 @@ export function EconomicActivitySection({ formData, handleInputChange, t, isEngl
     };
     loadActivities();
   }, [isEnglish]);
-  const selectedActivityCodes = formData.selectedActivities
-    ? activities.codesOnly.filter((opt) =>
-        formData.selectedActivities.includes(opt.value)
-      )
-    : [];
+  const selectedActivityCodes = formData.activities?.[0]?.code
+    ? activities.codesOnly.find(opt => opt.value === formData.activities[0].code)
+    : null;
 
-  const selectedActivitiesWithNames = formData.selectedActivities
-    ? activities.codesWithNames.filter((opt) =>
-        formData.selectedActivities.includes(opt.value)
-      )
-    : [];
+  const selectedActivitiesWithNames = formData.activities?.[0]?.code
+    ? activities.codesWithNames.find(opt => opt.value === formData.activities[0].code)
+    : null;
 
   const handleActivityCodeChange = (selected) => {
-    const selectedValues = selected ? selected.map((item) => item.value) : [];
-    handleInputChange(
-      { target: { value: selectedValues } },
-      "economicActivity",
-      "selectedActivities"
-    );
+    if (selected) {
+      const matchingNameOption = activities.codesWithNames.find(opt => opt.value === selected.value);
+      setFormData(prev => ({
+        ...prev,
+        activities: [{
+          code: selected.value,
+          name: matchingNameOption ? matchingNameOption.label : ""
+        }]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        activities: [{ code: "", name: "" }]
+      }));
+    }
   };
 
   const handleActivitiesChange = (selected) => {
-    const selectedValues = selected ? selected.map((item) => item.value) : [];
-    handleInputChange(
-      { target: { value: selectedValues } },
-      "economicActivity",
-      "selectedActivities"
-    );
+    setFormData(prev => ({
+      ...prev,
+      activities: selected ? [{
+        code: selected.value,
+        name: selected.label
+      }] : [{ code: "", name: "" }]
+    }));
   };
 
   return (
@@ -56,8 +62,9 @@ export function EconomicActivitySection({ formData, handleInputChange, t, isEngl
             value={selectedActivityCodes}
             onChange={handleActivityCodeChange}
             options={activities.codesOnly}
-            isMulti={true}
+            isMulti={false}
             className="w-full"
+            isClearable={true}
           />
         </div>
         <div className="col-span-7">
@@ -66,8 +73,9 @@ export function EconomicActivitySection({ formData, handleInputChange, t, isEngl
             value={selectedActivitiesWithNames}
             onChange={handleActivitiesChange}
             options={activities.codesWithNames}
-            isMulti={true}
+            isMulti={false}
             className="w-full"
+            isClearable={true}
           />
         </div>
       </div>

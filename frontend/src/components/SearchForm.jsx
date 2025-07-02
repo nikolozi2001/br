@@ -463,8 +463,8 @@ function SearchForm({ isEnglish }) {
                       />
                     </div>{" "}
                     <EconomicActivitySection
-                      formData={formData.economicActivity}
-                      handleInputChange={handleInputChange}
+                      formData={formData}
+                      setFormData={setFormData}
                       t={t}
                       isEnglish={isEnglish}
                     />

@@ -19,10 +19,10 @@ const initialFormData = {
     municipalityCity: [],
     address: "",
   },
-  economicActivity: {
+  activities: [{
     code: "",
-    description: "",
-  },
+    name: ""
+  }],
   ownershipForm: "",
   businessForm: "",
 };
@@ -153,7 +153,13 @@ export function useSearchForm(isEnglish) {
   };
 
   const handleReset = () => {
-    setFormData(initialFormData);
+    setFormData({
+      ...initialFormData,
+      activities: [{
+        code: "",
+        name: ""
+      }]
+    });
   };
 
   return {

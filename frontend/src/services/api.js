@@ -138,6 +138,7 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       ...(searchParams.organizationalLegalForm?.length > 0 && { legalForm: searchParams.organizationalLegalForm[0] }),
       ...(searchParams.head && { head: searchParams.head }),
       ...(searchParams.partner && { partner: searchParams.partner }),
+      ...(searchParams.activities?.[0]?.code && { activityCode: searchParams.activities[0].code }),
       ...(searchParams.isActive && { isActive: searchParams.isActive })
     });
 

@@ -86,6 +86,24 @@ router.get("/", async (req, res) => {
       request.input("partner", sql.NVarChar, `%${partner}%`);
     }
 
+    if (req.query.activityCode) {
+      const activityCodes = Array.isArray(req.query.activityCode) 
+        ? req.query.activityCode 
+        : [req.query.activityCode];
+
+      if (activityCodes.length > 0) {
+        const conditions = activityCodes.map((_, index) => 
+          `(Activity_Code = @activityCode${index} OR Activity_2_Code = @activityCode${index})`
+        ).join(' OR ');
+        
+        query += ` AND (${conditions})`;
+        
+        activityCodes.forEach((code, index) => {
+          request.input(`activityCode${index}`, sql.NVarChar, code);
+        });
+      }
+    }
+
     if (isActive) {
       query += " AND ISActive = @isActive";
       request.input("isActive", sql.Int, isActive ? 1 : null);
