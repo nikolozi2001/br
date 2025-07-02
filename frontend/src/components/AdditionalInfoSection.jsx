@@ -19,10 +19,14 @@ export function AdditionalInfoSection({ formData, handleInputChange, t, isEnglis
   }, [isEnglish]);
 
   const handleOwnershipChange = (selectedOptions) => {
+    const value = selectedOptions ? [selectedOptions].flat().map(opt => ({
+      value: opt.value,
+      label: opt.label
+    })) : [];
     handleInputChange({
       target: {
         name: 'ownershipForm',
-        value: selectedOptions || []
+        value: value
       }
     });
   };

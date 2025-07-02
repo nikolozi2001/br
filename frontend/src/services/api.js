@@ -150,6 +150,13 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
     if (searchParams.partner) {
       queryParams.append('partner', searchParams.partner);
     }
+    // Handle ownershipType
+    if (searchParams.ownershipForm?.length > 0) {
+      const ownershipId = parseInt(searchParams.ownershipForm[0].value, 10);
+      if (!isNaN(ownershipId)) {
+        queryParams.append('ownershipType', ownershipId);
+      }
+    }
     if (searchParams.isActive) {
       queryParams.append('isActive', searchParams.isActive);
     }

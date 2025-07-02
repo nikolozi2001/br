@@ -39,7 +39,7 @@ router.get("/legal_code/:legalCode", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const { identificationNumber, organizationName, legalForm, head, partner, isActive } = req.query;
+    const { identificationNumber, organizationName, legalForm, head, partner, ownershipType, isActive } = req.query;
     const pool = await poolPromise;
 
     let query = `
@@ -102,13 +102,25 @@ router.get("/", async (req, res) => {
         });
       }
     }
+    // Handle ownershipType
+    if (ownershipType) {
+      console.log('Ownership Type from request:', ownershipType, typeof ownershipType);
+      query += " AND Ownership_Type_ID = @ownershipType";
+      request.input("ownershipType", sql.Int, parseInt(ownershipType, 10));
+    }
 
     if (isActive) {
       query += " AND ISActive = @isActive";
       request.input("isActive", sql.Int, isActive ? 1 : null);
     }
 
+    console.log('Final SQL Query:', query);
+    console.log('Query Parameters:', request.parameters);
+    
     const result = await request.query(query);
+    console.log('Query Results Count:', result.recordset.length);
+    console.log('First few results:', result.recordset.slice(0, 2));
+    
     res.json(result.recordset);
   } catch (error) {
     console.error("Error fetching documents:", error);

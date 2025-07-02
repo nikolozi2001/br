@@ -23,7 +23,7 @@ const initialFormData = {
     code: "",
     name: ""
   }],
-  ownershipForm: "",
+  ownershipForm: [],
   businessForm: "",
 };
 
