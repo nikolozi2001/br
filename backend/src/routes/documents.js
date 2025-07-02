@@ -39,7 +39,16 @@ router.get("/legal_code/:legalCode", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const { identificationNumber, organizationName, legalForm, head, partner, ownershipType, isActive } = req.query;
+    const {
+      identificationNumber,
+      organizationName,
+      legalForm,
+      head,
+      partner,
+      ownershipType,
+      isActive,
+      size,
+    } = req.query;
     const pool = await poolPromise;
 
     let query = `
@@ -79,24 +88,24 @@ router.get("/", async (req, res) => {
       query += " AND Head LIKE @head";
       request.input("head", sql.NVarChar, `%${head}%`);
     }
-    
+
     if (partner) {
       query += " AND Partner LIKE @partner";
       request.input("partner", sql.NVarChar, `%${partner}%`);
     }
 
     if (req.query.activityCode) {
-      const activityCodes = Array.isArray(req.query.activityCode) 
-        ? req.query.activityCode 
+      const activityCodes = Array.isArray(req.query.activityCode)
+        ? req.query.activityCode
         : [req.query.activityCode];
 
       if (activityCodes.length > 0) {
-        const conditions = activityCodes.map((_, index) => 
-          `(Activity_2_Code LIKE @activityCode${index})`
-        ).join(' OR ');
-        
+        const conditions = activityCodes
+          .map((_, index) => `(Activity_2_Code LIKE @activityCode${index})`)
+          .join(" OR ");
+
         query += ` AND (${conditions})`;
-        
+
         activityCodes.forEach((code, index) => {
           request.input(`activityCode${index}`, sql.NVarChar, `%${code}%`);
         });
@@ -104,9 +113,32 @@ router.get("/", async (req, res) => {
     }
     // Handle ownershipType
     if (ownershipType) {
-      console.log('Ownership Type from request:', ownershipType, typeof ownershipType);
       query += " AND Ownership_Type_ID = @ownershipType";
       request.input("ownershipType", sql.Int, parseInt(ownershipType, 10));
+    }
+
+    // Handle size/business form - size is a string value in Georgian
+    if (size) {
+      // Map size ID to Georgian text value
+      let sizeText;
+      switch (size) {
+        case '1':
+          sizeText = 'მცირე';
+          break;
+        case '2':
+          sizeText = 'საშუალო';
+          break;
+        case '3':
+          sizeText = 'მსხვილი';
+          break;
+        default:
+          console.warn('Unknown size value:', size);
+          break;
+      }
+      if (sizeText) {
+        query += " AND Zoma = @size";
+        request.input("size", sql.NVarChar, sizeText);
+      }
     }
 
     if (isActive) {
@@ -114,13 +146,28 @@ router.get("/", async (req, res) => {
       request.input("isActive", sql.Int, isActive ? 1 : null);
     }
 
+    // Debug logging
     console.log('Final SQL Query:', query);
     console.log('Query Parameters:', request.parameters);
+
+    // First do a diagnostic query to see what values exist
+    const diagnostic = await request.query(`
+      SELECT DISTINCT 
+        Ownership_Type_ID,
+        Ownership_Type,
+        Zoma,
+        ISActive
+      FROM [register].[dbo].[DocMain]
+      WHERE 
+        (Ownership_Type_ID = @ownershipType OR @ownershipType IS NULL)
+        OR (Zoma = @size OR @size IS NULL)
+        OR (ISActive = @isActive OR @isActive IS NULL)
+    `);
+    console.log('Available combinations:', diagnostic.recordset);
     
     const result = await request.query(query);
-    console.log('Query Results Count:', result.recordset.length);
-    console.log('First few results:', result.recordset.slice(0, 2));
-    
+    console.log('Result count:', result.recordset.length);
+
     res.json(result.recordset);
   } catch (error) {
     console.error("Error fetching documents:", error);

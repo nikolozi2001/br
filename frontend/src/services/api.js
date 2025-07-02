@@ -160,6 +160,19 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
     if (searchParams.isActive) {
       queryParams.append('isActive', searchParams.isActive);
     }
+    // Handle size/business form
+    if (searchParams.businessForm?.length > 0) {
+      const size = searchParams.businessForm[0];
+      // Ensure we're using the numeric ID value, not the label
+      if (size && size.value) {
+        const sizeId = parseInt(size.value, 10);
+        if (!isNaN(sizeId)) {
+          queryParams.append('size', sizeId);
+        } else {
+          console.warn('Invalid size ID:', size.value);
+        }
+      }
+    }
 
     // Handle activities separately
     if (searchParams.activities && searchParams.activities.length > 0) {
@@ -203,7 +216,7 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       email: item.Email,
       ownershipType: item.Ownership_Type,
       isActive: item.ISActive === 1,
-      size: item.Zoma
+      businessForm: item.Zoma ? [{ value: item.Zoma.toString(), label: item.Zoma }] : []
     }));
   } catch (error) {
     console.error("Error fetching documents:", error);
