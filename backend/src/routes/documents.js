@@ -111,6 +111,15 @@ router.get("/", async (req, res) => {
         });
       }
     }
+
+    // Handle legal address region
+    if (req.query.legalAddressRegion) {
+      console.log('Received region code:', req.query.legalAddressRegion);
+      query += " AND Region_Code = @regionCode";
+      request.input("regionCode", sql.NVarChar(50), req.query.legalAddressRegion);
+      console.log('Updated query:', query);
+    }
+
     // Handle ownershipType
     if (ownershipType) {
       query += " AND Ownership_Type_ID = @ownershipType";

@@ -48,7 +48,7 @@ export function useSearchForm(isEnglish) {
 
         const regions = await regionsResponse.json();
         const formattedRegions = regions.map((region) => ({
-          value: region.ID,
+          value: region.Location_Code,
           label: `${region.Location_Code} - ${region.Location_Name}`,
           code: region.Location_Code,
           level: region.Level,

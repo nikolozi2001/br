@@ -28,31 +28,6 @@ export const fetchLegalForms = async (lang) => {
   }
 };
 
-// Locations API
-export const fetchLocations = async (lang = "ge") => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/locations?lang=${lang}`);
-    const data = await response.json();
-    // Group and transform locations into regions for the select component
-    // Remove duplicates and transform into select options
-    const uniqueRegions = data.reduce((acc, location) => {
-      if (!acc.some(r => r.Location_Code === location.Location_Code)) {
-        acc.push(location);
-      }
-      return acc;
-    }, []);
-
-    return uniqueRegions.map((region) => ({
-      value: region.ID,
-      label: `${region.Location_Code} - ${region.Location_Name}`,
-      code: region.Location_Code,
-      level: region.Level,
-    }));
-  } catch (error) {
-    console.error("Error fetching locations:", error);
-    return [];
-  }
-};
 
 // Activities API
 export const fetchActivities = async (lang = "ge") => {
@@ -183,6 +158,15 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       });
     }
 
+    console.log("Search Params:", searchParams);
+    
+    // Handle legalAddress region
+    if (searchParams.legalAddress?.region?.length > 0) {
+      const regionValue = searchParams.legalAddress.region[0];
+      console.log("Region value to be sent:", regionValue);
+      queryParams.append('legalAddressRegion', regionValue);
+    }
+
     const response = await fetch(`${API_BASE_URL}/documents?${queryParams}`);
     if (!response.ok) {
       throw new Error("Network response was not ok");
@@ -227,7 +211,6 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
-  fetchLocations,
   fetchActivities,
   fetchOwnershipTypes,
   fetchSizes,
