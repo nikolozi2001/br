@@ -120,6 +120,15 @@ router.get("/", async (req, res) => {
       console.log('Updated query:', query);
     }
 
+    // Handle legal address city/municipality
+    if (req.query.legalAddressCity) {
+      console.log('Received city code:', req.query.legalAddressCity);
+      query += " AND City_Code = @cityCode";
+      request.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
+      console.log('Updated query with city:', query);
+      console.log('All query parameters:', request.parameters);
+    }
+
     // Handle ownershipType
     if (ownershipType) {
       query += " AND Ownership_Type_ID = @ownershipType";

@@ -83,7 +83,7 @@ export function useSearchForm(isEnglish) {
       const formattedMunicipalities = municipalitiesResults
         .flat()
         .map(municipality => ({
-          value: municipality.ID,
+          value: municipality.Location_Code,  // Changed from ID to Location_Code
           label: `${municipality.Location_Code} - ${municipality.Location_Name}`,
           code: municipality.Location_Code
         }));

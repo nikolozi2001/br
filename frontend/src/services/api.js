@@ -167,7 +167,18 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       queryParams.append('legalAddressRegion', regionValue);
     }
 
-    const response = await fetch(`${API_BASE_URL}/documents?${queryParams}`);
+    // Handle legalAddress municipalityCity
+    if (searchParams.legalAddress?.municipalityCity?.length > 0) {
+      const cityValue = searchParams.legalAddress.municipalityCity[0];
+      console.log("Municipality/City value to be sent:", cityValue);
+      queryParams.append('legalAddressCity', cityValue);
+    }
+
+    // Log the final URL and parameters
+    const finalUrl = `${API_BASE_URL}/documents?${queryParams}`;
+    console.log("Final request URL:", finalUrl);
+
+    const response = await fetch(finalUrl);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
