@@ -180,6 +180,26 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       queryParams.append('legalAddress', searchParams.legalAddress.address);
     }
 
+    // Handle factualAddress region
+    if (searchParams.personalAddress?.region?.length > 0) {
+      const regionValue = searchParams.personalAddress.region[0];
+      console.log("Factual region value to be sent:", regionValue);
+      queryParams.append('factualAddressRegion', regionValue);
+    }
+
+    // Handle factualAddress municipalityCity
+    if (searchParams.personalAddress?.municipalityCity?.length > 0) {
+      const cityValue = searchParams.personalAddress.municipalityCity[0];
+      console.log("Factual municipality/city value to be sent:", cityValue);
+      queryParams.append('factualAddressCity', cityValue);
+    }
+
+    // Handle factualAddress address
+    if (searchParams.personalAddress?.address) {
+      console.log("Factual address value to be sent:", searchParams.personalAddress.address);
+      queryParams.append('factualAddress', searchParams.personalAddress.address);
+    }
+
     // Log the final URL and parameters
     const finalUrl = `${API_BASE_URL}/documents?${queryParams}`;
     console.log("Final request URL:", finalUrl);
