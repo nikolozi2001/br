@@ -114,50 +114,38 @@ router.get("/", async (req, res) => {
 
     // Handle legal address region
     if (req.query.legalAddressRegion) {
-      console.log('Received region code:', req.query.legalAddressRegion);
       query += " AND Region_Code = @regionCode";
       request.input("regionCode", sql.NVarChar(50), req.query.legalAddressRegion);
-      console.log('Updated query:', query);
     }
 
     // Handle legal address city/municipality
     if (req.query.legalAddressCity) {
-      console.log('Received city code:', req.query.legalAddressCity);
       query += " AND City_Code = @cityCode";
       request.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
-      console.log('Updated query with city:', query);
     }
 
     // Handle legal address
     if (req.query.legalAddress) {
-      console.log('Received address:', req.query.legalAddress);
       query += " AND Address LIKE @address";
       request.input("address", sql.NVarChar, `%${req.query.legalAddress}%`);
-      console.log('Updated query with address:', query);
     }
 
     // Handle factual address region
     if (req.query.factualAddressRegion) {
-      console.log('Received factual region code:', req.query.factualAddressRegion);
       query += " AND Region_Code2 = @regionCode2";
       request.input("regionCode2", sql.NVarChar(50), req.query.factualAddressRegion);
-      console.log('Updated query with factual region:', query);
     }
 
     // Handle factual address city/municipality
     if (req.query.factualAddressCity) {
-      console.log('Received factual city code:', req.query.factualAddressCity);
       query += " AND City_Code2 = @cityCode2";
       request.input("cityCode2", sql.NVarChar(50), req.query.factualAddressCity);
-      console.log('Updated query with factual city:', query);
     }
 
     // Handle factual address
     if (req.query.factualAddress) {
-      console.log('Received factual address:', req.query.factualAddress);
       query += " AND Address2 LIKE @address2";
       request.input("address2", sql.NVarChar, `%${req.query.factualAddress}%`);
-      console.log('Updated query with factual address:', query);
     }
 
     // Handle ownershipType

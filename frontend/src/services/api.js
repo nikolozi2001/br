@@ -158,58 +158,52 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       });
     }
 
-    console.log("Search Params:", searchParams);
+    // console.log("Search Params:", searchParams);
     
     // Handle legalAddress region
     if (searchParams.legalAddress?.region?.length > 0) {
       const regionValue = searchParams.legalAddress.region[0];
-      console.log("Region value to be sent:", regionValue);
       queryParams.append('legalAddressRegion', regionValue);
     }
 
     // Handle legalAddress municipalityCity
     if (searchParams.legalAddress?.municipalityCity?.length > 0) {
       const cityValue = searchParams.legalAddress.municipalityCity[0];
-      console.log("Municipality/City value to be sent:", cityValue);
       queryParams.append('legalAddressCity', cityValue);
     }
 
     // Handle legalAddress address
     if (searchParams.legalAddress?.address) {
-      console.log("Address value to be sent:", searchParams.legalAddress.address);
       queryParams.append('legalAddress', searchParams.legalAddress.address);
     }
 
     // Handle factualAddress region
     if (searchParams.personalAddress?.region?.length > 0) {
       const regionValue = searchParams.personalAddress.region[0];
-      console.log("Factual region value to be sent:", regionValue);
       queryParams.append('factualAddressRegion', regionValue);
     }
 
     // Handle factualAddress municipalityCity
     if (searchParams.personalAddress?.municipalityCity?.length > 0) {
       const cityValue = searchParams.personalAddress.municipalityCity[0];
-      console.log("Factual municipality/city value to be sent:", cityValue);
       queryParams.append('factualAddressCity', cityValue);
     }
 
     // Handle factualAddress address
     if (searchParams.personalAddress?.address) {
-      console.log("Factual address value to be sent:", searchParams.personalAddress.address);
       queryParams.append('factualAddress', searchParams.personalAddress.address);
     }
 
     // Log the final URL and parameters
     const finalUrl = `${API_BASE_URL}/documents?${queryParams}`;
-    console.log("Final request URL:", finalUrl);
+    // console.log("Final request URL:", finalUrl);
 
     const response = await fetch(finalUrl);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    console.log('Raw response data:', data);
+    // console.log('Raw response data:', data);
     
     // Transform the response data
     return data.map(item => ({
