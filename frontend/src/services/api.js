@@ -174,6 +174,12 @@ export const fetchDocuments = async (searchParams, lang = "ge",) => {
       queryParams.append('legalAddressCity', cityValue);
     }
 
+    // Handle legalAddress address
+    if (searchParams.legalAddress?.address) {
+      console.log("Address value to be sent:", searchParams.legalAddress.address);
+      queryParams.append('legalAddress', searchParams.legalAddress.address);
+    }
+
     // Log the final URL and parameters
     const finalUrl = `${API_BASE_URL}/documents?${queryParams}`;
     console.log("Final request URL:", finalUrl);

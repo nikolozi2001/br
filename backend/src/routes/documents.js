@@ -126,7 +126,14 @@ router.get("/", async (req, res) => {
       query += " AND City_Code = @cityCode";
       request.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
       console.log('Updated query with city:', query);
-      console.log('All query parameters:', request.parameters);
+    }
+
+    // Handle legal address
+    if (req.query.legalAddress) {
+      console.log('Received address:', req.query.legalAddress);
+      query += " AND Address LIKE @address";
+      request.input("address", sql.NVarChar, `%${req.query.legalAddress}%`);
+      console.log('Updated query with address:', query);
     }
 
     // Handle ownershipType
