@@ -13,17 +13,17 @@ function App() {
   };
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Header isEnglish={isEnglish} />
-      <main>
-        <TopNavigation
-          isEnglish={isEnglish}
-          onLanguageChange={handleLanguageChange}
-        />
+      <TopNavigation
+        isEnglish={isEnglish}
+        onLanguageChange={handleLanguageChange}
+      />
+      <main className="flex-grow">
         <SearchForm isEnglish={isEnglish} />
-        <Footer isEnglish={isEnglish} />
       </main>
-    </>
+      <Footer isEnglish={isEnglish} />
+    </div>
   );
 }
 

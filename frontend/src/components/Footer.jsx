@@ -24,7 +24,7 @@ const Footer = ({ isEnglish }) => {
 
   const t = isEnglish ? content.en : content.ka;
   return (
-    <footer className="bg-white/50 mt-3 text-sm text-gray-700 py-4 sm:py-6 px-3 sm:px-4 font-bpg-nino font-bold">
+    <footer className="bg-white/50 mt-auto text-sm text-gray-700 py-4 sm:py-6 px-3 sm:px-4 font-bpg-nino font-bold">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-6 md:gap-4">
         {/* Left side */}
         <div className="text-center md:text-left">

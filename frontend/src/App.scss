@@ -27,4 +27,15 @@ body {
 
 #root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1 0 auto;
+  min-height: calc(100vh - 200px); /* Adjust this value based on your header and footer heights */
+}
+
+footer {
+  flex-shrink: 0;
 }

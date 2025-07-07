@@ -296,205 +296,206 @@ function SearchForm({ isEnglish }) {
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div
-            className={`bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px] `}
+            className={`bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px] ${
+              isLoading ? "bg-[red]" : ""
+            }`}
           >
-            <div className="p-3 sm:p-6">
-              {isLoading && (
-                <div className="geostat-loader">
-                  <img src={loaderIcon} alt="Loading..." />
-                </div>
-              )}
-              {showResults ? (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-base sm:text-lg font-bpg-nino font-bold">
-                      {t.searchResults}
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={printResults}
-                        style={{ fontFamily: georgianFont }}
-                        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-indigo-600 cursor-pointer"
-                        disabled={!searchResults?.length || isLoading}
-                      >
-                        <svg
-                          className="w-5 h-5 mr-2 transform group-hover:translate-y-0.5 transition-transform"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+            {isLoading ? (
+              <div className="geostat-loader">
+                <img src={loaderIcon} alt="Loading..." />
+              </div>
+            ) : (
+              <div className="p-3 sm:p-6">
+                {showResults ? (
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-base sm:text-lg font-bpg-nino font-bold">
+                        {t.searchResults}
+                      </h2>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={printResults}
+                          style={{ fontFamily: georgianFont }}
+                          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-indigo-600 cursor-pointer"
+                          disabled={!searchResults?.length || isLoading}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                          />
-                        </svg>
-                        {t.print || "Print"}
-                      </button>
-                      <button
-                        onClick={exportToCSV}
-                        style={{ fontFamily: georgianFont }}
-                        className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer"
-                        disabled={!searchResults?.length || isLoading}
-                      >
-                        <svg
-                          className="w-5 h-5 mr-2 transform group-hover:translate-y-0.5 transition-transform"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                          <svg
+                            className="w-5 h-5 mr-2 transform group-hover:translate-y-0.5 transition-transform"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                            />
+                          </svg>
+                          {t.print || "Print"}
+                        </button>
+                        <button
+                          onClick={exportToCSV}
+                          style={{ fontFamily: georgianFont }}
+                          className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer"
+                          disabled={!searchResults?.length || isLoading}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                        {t.exportToCSV}
-                      </button>
-                      <button
-                        onClick={handleBackToSearch}
-                        disabled={isLoading}
-                        className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#006698] transition-colors font-bpg-nino disabled:opacity-50 cursor-pointer"
-                      >
-                        {t.backToSearch}
-                      </button>
+                          <svg
+                            className="w-5 h-5 mr-2 transform group-hover:translate-y-0.5 transition-transform"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                          </svg>
+                          {t.exportToCSV}
+                        </button>
+                        <button
+                          onClick={handleBackToSearch}
+                          disabled={isLoading}
+                          className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#006698] transition-colors font-bpg-nino disabled:opacity-50 cursor-pointer"
+                        >
+                          {t.backToSearch}
+                        </button>
+                      </div>
                     </div>
+                    {isLoading ? (
+                      <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0080BE]"></div>
+                      </div>
+                    ) : (
+                      <SearchResults
+                        results={searchResults}
+                        isEnglish={isEnglish}
+                        formData={formData}
+                        handleInputChange={handleInputChange}
+                      />
+                    )}
                   </div>
-                  {isLoading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0080BE]"></div>
-                    </div>
-                  ) : (
-                    <SearchResults
-                      results={searchResults}
-                      isEnglish={isEnglish}
-                      formData={formData}
-                      handleInputChange={handleInputChange}
-                    />
-                  )}
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-base sm:text-lg mb-4 sm:mb-6 text-center font-bpg-nino font-bold">
-                    {t.title}
-                  </h2>
-                  <form
-                    onSubmit={onSubmit}
-                    className={`space-y-4 sm:space-y-6 ${
-                      isLoading ? "opacity-50" : ""
-                    }`}
-                  >
-                    <BasicInfoSection
-                      formData={formData}
-                      handleInputChange={handleInputChange}
-                      handleLegalFormChange={handleLegalFormChange}
-                      organizationalLegalFormOptions={
-                        organizationalLegalFormOptions
-                      }
-                      t={t}
-                    />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <AddressSection
-                        title={t.legalAddress}
-                        formData={formData.legalAddress}
-                        handleInputChange={(e) =>
-                          handleInputChange(e, "legalAddress", "address")
+                ) : (
+                  <>
+                    <h2 className="text-base sm:text-lg mb-4 sm:mb-6 text-center font-bpg-nino font-bold">
+                      {t.title}
+                    </h2>
+                    <form
+                      onSubmit={onSubmit}
+                      className={`space-y-4 sm:space-y-6`}
+                    >
+                      <BasicInfoSection
+                        formData={formData}
+                        handleInputChange={handleInputChange}
+                        handleLegalFormChange={handleLegalFormChange}
+                        organizationalLegalFormOptions={
+                          organizationalLegalFormOptions
                         }
-                        regionOptions={regionOptions}
-                        municipalityOptions={legalMunicipalityOptions}
-                        onRegionChange={(selected) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            legalAddress: {
-                              ...prev.legalAddress,
-                              region: selected
-                                ? selected.map((option) => option.value)
-                                : [],
-                            },
-                          }));
-                        }}
-                        onMunicipalityChange={(selected) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            legalAddress: {
-                              ...prev.legalAddress,
-                              municipalityCity: selected
-                                ? selected.map((option) => option.value)
-                                : [],
-                            },
-                          }));
-                        }}
                         t={t}
                       />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <AddressSection
+                          title={t.legalAddress}
+                          formData={formData.legalAddress}
+                          handleInputChange={(e) =>
+                            handleInputChange(e, "legalAddress", "address")
+                          }
+                          regionOptions={regionOptions}
+                          municipalityOptions={legalMunicipalityOptions}
+                          onRegionChange={(selected) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              legalAddress: {
+                                ...prev.legalAddress,
+                                region: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
+                              },
+                            }));
+                          }}
+                          onMunicipalityChange={(selected) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              legalAddress: {
+                                ...prev.legalAddress,
+                                municipalityCity: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
+                              },
+                            }));
+                          }}
+                          t={t}
+                        />
 
-                      <AddressSection
-                        title={t.factualAddress}
-                        formData={formData.personalAddress}
-                        handleInputChange={(e) =>
-                          handleInputChange(e, "personalAddress", "address")
-                        }
-                        regionOptions={regionOptions}
-                        municipalityOptions={personalMunicipalityOptions}
-                        onRegionChange={(selected) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            personalAddress: {
-                              ...prev.personalAddress,
-                              region: selected
-                                ? selected.map((option) => option.value)
-                                : [],
-                            },
-                          }));
-                        }}
-                        onMunicipalityChange={(selected) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            personalAddress: {
-                              ...prev.personalAddress,
-                              municipalityCity: selected
-                                ? selected.map((option) => option.value)
-                                : [],
-                            },
-                          }));
-                        }}
+                        <AddressSection
+                          title={t.factualAddress}
+                          formData={formData.personalAddress}
+                          handleInputChange={(e) =>
+                            handleInputChange(e, "personalAddress", "address")
+                          }
+                          regionOptions={regionOptions}
+                          municipalityOptions={personalMunicipalityOptions}
+                          onRegionChange={(selected) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              personalAddress: {
+                                ...prev.personalAddress,
+                                region: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
+                              },
+                            }));
+                          }}
+                          onMunicipalityChange={(selected) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              personalAddress: {
+                                ...prev.personalAddress,
+                                municipalityCity: selected
+                                  ? selected.map((option) => option.value)
+                                  : [],
+                              },
+                            }));
+                          }}
+                          t={t}
+                        />
+                      </div>{" "}
+                      <EconomicActivitySection
+                        formData={formData}
+                        setFormData={setFormData}
                         t={t}
+                        isEnglish={isEnglish}
                       />
-                    </div>{" "}
-                    <EconomicActivitySection
-                      formData={formData}
-                      setFormData={setFormData}
-                      t={t}
-                      isEnglish={isEnglish}
-                    />
-                    <AdditionalInfoSection
-                      formData={formData}
-                      handleInputChange={handleInputChange}
-                      t={t}
-                      isEnglish={isEnglish}
-                    />
-                    <div className="w-full mb-4">
-                      <ActiveFilterCheckbox
-                        isActive={formData.isActive}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            isActive: e.target.checked,
-                          }))
-                        }
+                      <AdditionalInfoSection
+                        formData={formData}
+                        handleInputChange={handleInputChange}
                         t={t}
+                        isEnglish={isEnglish}
                       />
-                    </div>
-                    <FormActions
-                      t={t}
-                      onReset={handleReset}
-                      isLoading={isLoading}
-                    />
-                  </form>
-                </>
-              )}
-            </div>
+                      <div className="w-full mb-4">
+                        <ActiveFilterCheckbox
+                          isActive={formData.isActive}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              isActive: e.target.checked,
+                            }))
+                          }
+                          t={t}
+                        />
+                      </div>
+                      <FormActions
+                        t={t}
+                        onReset={handleReset}
+                        isLoading={isLoading}
+                      />
+                    </form>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
