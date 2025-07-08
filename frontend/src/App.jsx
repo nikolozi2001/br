@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
+import Reports from "./components/Reports";
 import Footer from "./components/Footer";
 import "./App.scss";
 
@@ -13,17 +15,23 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header isEnglish={isEnglish} />
-      <TopNavigation
-        isEnglish={isEnglish}
-        onLanguageChange={handleLanguageChange}
-      />
-      <main className="flex-grow">
-        <SearchForm isEnglish={isEnglish} />
-      </main>
-      <Footer isEnglish={isEnglish} />
-    </div>
+    <Router>
+      <div className="flex flex-col min-h-screen">
+        <Header isEnglish={isEnglish} />
+        <TopNavigation
+          isEnglish={isEnglish}
+          onLanguageChange={handleLanguageChange}
+        />
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<SearchForm isEnglish={isEnglish} />} />
+            <Route path="/reports" element={<Reports isEnglish={isEnglish} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+        <Footer isEnglish={isEnglish} />
+      </div>
+    </Router>
   );
 }
 
