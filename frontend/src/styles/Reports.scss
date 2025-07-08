@@ -1,6 +1,11 @@
-@import "./variables";
+@use "./variables";
 
 .reports-list {
+    :hover {
+        background: variables.$blue-bg;
+        color: #f1f1f1;
+    }
+
   &::-webkit-scrollbar {
     width: 8px;
   }
