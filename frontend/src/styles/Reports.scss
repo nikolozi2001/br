@@ -1,10 +1,25 @@
 @use "./variables";
 
+.flipper-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+
+  .flipper {
+    transform: rotateY(-180deg);
+    transition: transform 0.8s ease-in-out;
+    transform-style: preserve-3d;
+  }
+
+  &.flipped .flipper {
+    transform: rotateY(0);
+  }
+}
+
 .reports-list {
-    :hover {
-        background: variables.$blue-bg;
-        color: #f1f1f1;
-    }
+  :hover {
+    background: variables.$blue-bg;
+    color: #f1f1f1;
+  }
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -22,5 +37,9 @@
     &:hover {
       background: #555;
     }
+  }
+
+  li {
+    backface-visibility: hidden;
   }
 }
