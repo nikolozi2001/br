@@ -296,8 +296,8 @@ function SearchForm({ isEnglish }) {
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div
-            className={`bg-[#fafafa] border border-[#0080BE] rounded-[0_5px_5px_5px] ${
-              isLoading ? "bg-[red]" : ""
+            className={`border border-[#0080BE] rounded-[0_5px_5px_5px] ${
+              isLoading ? "bg-red-500" : "bg-[#fafafa]"
             }`}
           >
             {isLoading ? (
