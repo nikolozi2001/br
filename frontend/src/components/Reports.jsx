@@ -111,12 +111,12 @@ function Reports({ isEnglish }) {
     <div className="w-full">
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="border border-[#0080BE] rounded-[0_5px_5px_5px] bg-[#fafafa] p-6">
-              <ul className="space-y-4 reports-list max-h-[calc(100vh-300px)] overflow-auto">
+          <div className="border border-[#0080BE] rounded-[0_5px_5px_5px] bg-[#fafafa] py-4 px-5">
+              <ul className="space-y-2.5 reports-list">
                 {reports[isEnglish ? "english" : "georgian"].map((report) => (
                   <li
                     key={report.id}
-                    className="p-4 bg-white border border-gray-200 rounded hover:bg-[#0080BE] transition-all cursor-pointer group"
+                    className="py-2.5 px-4 bg-white border border-gray-200 rounded hover:bg-[#0080BE] transition-all cursor-pointer group"
                   >
                     <div className="flex items-start">
                       <span className="font-bpg-nino mr-4 text-[#0080BE] group-hover:text-white transition-colors">
