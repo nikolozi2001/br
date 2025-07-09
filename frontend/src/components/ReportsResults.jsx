@@ -3,6 +3,7 @@ import "../styles/scrollbar.css";
 import { useParams, useNavigate } from "react-router-dom";
 import loaderIcon from "../assets/images/equalizer.svg";
 import { API } from "../services/api";
+import * as XLSX from "xlsx";
 
 function ReportsResults({ isEnglish }) {
   const { reportId } = useParams();
@@ -88,6 +89,90 @@ function ReportsResults({ isEnglish }) {
     });
   };
 
+  const exportToExcel = () => {
+    if (!reportData || reportData.length === 0) {
+      alert(isEnglish ? "No data available to export." : "ექსპორტისთვის მონაცემები არ არის ხელმისაწვდომი.");
+      return;
+    }
+
+    try {
+      // Prepare data for Excel
+      const excelData = sortedData.map((row) => ({
+        [isEnglish ? "Code" : "კოდი"]: row.ID,
+        [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: row.Legal_Form,
+        [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+        [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(row.Registered_Percent)}%`,
+        [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+        [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(row.Active_Percent)}%`,
+      }));
+
+      // Add total row
+      const totalRegistered = sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
+      const totalActive = sortedData.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
+      
+      excelData.push({
+        [isEnglish ? "Code" : "კოდი"]: "-",
+        [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: isEnglish ? "Total" : "ჯამი",
+        [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
+        [isEnglish ? "Registered %" : "რეგისტრირებული %"]: "100.0%",
+        [isEnglish ? "Active" : "აქტიური"]: totalActive,
+        [isEnglish ? "Active %" : "აქტიური %"]: "100.0%",
+      });
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 8 },   // Code
+        { wch: 40 },  // Legal Status
+        { wch: 15 },  // Registered
+        { wch: 15 },  // Registered %
+        { wch: 15 },  // Active
+        { wch: 15 },  // Active %
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add title and metadata
+      const title = isEnglish 
+        ? "Number of registered and active organizations by organizational-legal forms"
+        : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით";
+      
+      // Insert title row at the beginning
+      XLSX.utils.sheet_add_aoa(ws, [[`Report 2 - ${title}`]], { origin: "A1" });
+      XLSX.utils.sheet_add_aoa(ws, [[`${isEnglish ? "Date: 1 July 2025" : "თარიღი: 1 ივლისი 2025"}`]], { origin: "A2" });
+      XLSX.utils.sheet_add_aoa(ws, [[""]], { origin: "A3" }); // Empty row
+
+      // Adjust the data range
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      range.e.r += 3; // Extend range to include title rows
+      ws['!ref'] = XLSX.utils.encode_range(range);
+
+      // Add worksheet to workbook
+      const sheetName = isEnglish 
+        ? "Legal Forms Report" 
+        : "სამართლებრივი ფორმების ანგარიში";
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+      // Generate filename with current date
+      const currentDate = new Date().toISOString().split('T')[0];
+      const fileName = isEnglish 
+        ? `Legal_Forms_Report_${currentDate}.xlsx`
+        : `სამართლებრივი_ფორმების_ანგარიში_${currentDate}.xlsx`;
+
+      // Save the file
+      XLSX.writeFile(wb, fileName);
+      
+      // Show success message
+      alert(isEnglish ? "Excel file exported successfully!" : "Excel ფაილი წარმატებით ექსპორტირებულია!");
+      
+    } catch (error) {
+      console.error("Export error:", error);
+      alert(isEnglish ? "Error exporting to Excel. Please try again." : "Excel-ში ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა.");
+    }
+  };
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -110,12 +195,33 @@ function ReportsResults({ isEnglish }) {
     <div className="bg-gray-50">
       <div className="container mx-auto py-8 pb-16">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <button
-            onClick={() => navigate("/reports")}
-            className="mb-4 px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer"
-          >
-            ← {isEnglish ? "Back to Reports" : "უკან დაბრუნება"}
-          </button>
+          <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+            <button
+              onClick={() => navigate("/reports")}
+              className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer"
+            >
+              ← {isEnglish ? "Back to Reports" : "უკან დაბრუნება"}
+            </button>
+            <button
+              onClick={exportToExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-bpg-nino flex items-center cursor-pointer"
+            >
+              <svg 
+                className="w-4 h-4 mr-2" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                />
+              </svg>
+              {isEnglish ? "Export to Excel" : "Excel-ში ექსპორტი"}
+            </button>
+          </div>
           <div className="mb-6">
             <h1 className="text-xl font-bpg-nino mb-2 text-center text-gray-800">
               {Number(reportId) === 2 && (
