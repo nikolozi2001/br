@@ -39,3 +39,68 @@ body {
 footer {
   flex-shrink: 0;
 }
+
+
+// Reset and ensure proper scrolling
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  // Ensure scrolling is not blocked
+  overflow-x: hidden; // Prevent horizontal scroll
+  overflow-y: auto;   // Allow vertical scroll
+  height: auto;       // Allow content to define height
+  min-height: 100vh;  // Ensure at least viewport height
+}
+
+// Smooth scrolling behavior
+html {
+  scroll-behavior: smooth;
+}
+
+// Root app container
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+// Custom scrollbar styles
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0080BE;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0070aa;
+}
+
+// Firefox scrollbar
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #0080BE #f1f1f1;
+}
+
+// Ensure tables don't break layout
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
+}
+
+// Loading state centering
+.geostat-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
