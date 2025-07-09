@@ -125,9 +125,13 @@ function ReportsResults({ isEnglish }) {
                           <th
                             key={column.key}
                             onClick={() => handleSort(column.key)}
-                            className="px-4 py-2 text-left font-bpg-nino whitespace-nowrap cursor-pointer hover:bg-[#0070aa] transition-colors"
+                            className={`px-4 py-2 font-bpg-nino whitespace-nowrap cursor-pointer hover:bg-[#0070aa] transition-colors ${
+                              column.key === 'ID' || column.key === 'Legal_Form' 
+                                ? 'text-left' 
+                                : 'text-right'
+                            }`}
                           >
-                            <div className="flex items-center">
+                            <div className={`flex ${column.key === 'ID' || column.key === 'Legal_Form' ? 'justify-start' : 'justify-end'}`}>
                               {isEnglish ? column.en : column.ge}
                               {sortConfig.key === column.key && (
                                 <span className="ml-1">
