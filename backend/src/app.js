@@ -17,6 +17,7 @@ const activitiesRouter = require('./routes/activities');
 const ownershipTypesRouter = require('./routes/ownershipTypes');
 const sizesRouter = require('./routes/sizes');
 const documentsRouter = require('./routes/documents');
+const report1Router = require('./routes/report1');
 const report2Router = require('./routes/report2');
 
 // Route middlewares
@@ -26,6 +27,7 @@ app.use('/api/activities', activitiesRouter);
 app.use('/api/ownership-types', ownershipTypesRouter);
 app.use('/api/sizes', sizesRouter);
 app.use('/api/documents', documentsRouter);
+app.use('/api/report1', report1Router);
 app.use('/api/report2', report2Router);
 
 // Example API endpoint

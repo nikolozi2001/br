@@ -118,6 +118,21 @@ export const fetchSizes = async (lang) => {
   }
 };
 
+// Report 1 API
+export const fetchReport1Data = async (lang = "ge") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/report1?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    return data.recordset || data;
+  } catch (error) {
+    console.error("Error fetching report 1 data:", error);
+    return [];
+  }
+};
+
 // documents API
 export const fetchDocuments = async (searchParams, lang = "ge",) => {
   try {
@@ -261,6 +276,7 @@ export const API = {
   fetchOwnershipTypes,
   fetchSizes,
   fetchDocuments,
+  fetchReport1Data,
   fetchReport2Data,
 };
 

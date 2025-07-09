@@ -13,7 +13,16 @@ function ReportsResults({ isEnglish }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const columns = [
+  const report1Columns = [
+    { key: "Activity_Code", ge: "საქმიანობის კოდი", en: "Activity Code" },
+    { key: "Activity_Name", ge: "საქმიანობის სახე", en: "Activity Name" },
+    { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
+    { key: "pct", ge: "%", en: "%" },
+    { key: "Active_Qty", ge: "აქტიური", en: "Active" },
+    { key: "pct_act", ge: "%", en: "%" },
+  ];
+
+  const report2Columns = [
     { key: "ID", ge: "კოდი", en: "Code" },
     {
       key: "Legal_Form",
@@ -26,13 +35,24 @@ function ReportsResults({ isEnglish }) {
     { key: "Active_Pct", ge: "%", en: "%" },
   ];
 
+  const columns = Number(reportId) === 1 ? report1Columns : report2Columns;
+
   useEffect(() => {
     const fetchData = async () => {
-      if (Number(reportId) === 2) {
+      if (Number(reportId) === 1 || Number(reportId) === 2) {
         setLoading(true);
         try {
-          const response = await API.fetchReport2Data(isEnglish ? "en" : "ge");
-          const dataArray = Array.isArray(response.rows) ? response.rows : [];
+          let response;
+          if (Number(reportId) === 1) {
+            response = await API.fetchReport1Data(isEnglish ? "en" : "ge");
+          } else {
+            response = await API.fetchReport2Data(isEnglish ? "en" : "ge");
+          }
+          const dataArray = Array.isArray(response.rows)
+            ? response.rows
+            : Array.isArray(response)
+            ? response
+            : [];
           setReportData(dataArray);
         } catch (error) {
           console.error("Error fetching report data:", error);
@@ -91,33 +111,116 @@ function ReportsResults({ isEnglish }) {
 
   const exportToExcel = () => {
     if (!reportData || reportData.length === 0) {
-      alert(isEnglish ? "No data available to export." : "ექსპორტისთვის მონაცემები არ არის ხელმისაწვდომი.");
+      alert(
+        isEnglish
+          ? "No data available to export."
+          : "ექსპორტისთვის მონაცემები არ არის ხელმისაწვდომი."
+      );
       return;
     }
 
     try {
-      // Prepare data for Excel
-      const excelData = sortedData.map((row) => ({
-        [isEnglish ? "Code" : "კოდი"]: row.ID,
-        [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: row.Legal_Form,
-        [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-        [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(row.Registered_Percent)}%`,
-        [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-        [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(row.Active_Percent)}%`,
-      }));
+      let excelData, totalRegistered, totalActive, title, fileName, sheetName;
 
-      // Add total row
-      const totalRegistered = sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
-      const totalActive = sortedData.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
-      
-      excelData.push({
-        [isEnglish ? "Code" : "კოდი"]: "-",
-        [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: isEnglish ? "Total" : "ჯამი",
-        [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-        [isEnglish ? "Registered %" : "რეგისტრირებული %"]: "100.0%",
-        [isEnglish ? "Active" : "აქტიური"]: totalActive,
-        [isEnglish ? "Active %" : "აქტიური %"]: "100.0%",
-      });
+      if (Number(reportId) === 1) {
+        // Report 1: Activities
+        excelData = sortedData.map((row) => ({
+          [isEnglish ? "Activity Code" : "საქმიანობის კოდი"]: row.Activity_Code,
+          [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: row.Activity_Name,
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            row.pct
+          )}%`,
+          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            row.pct_act
+          )}%`,
+        }));
+
+        totalRegistered = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Qty),
+          0
+        );
+        totalActive = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Qty),
+          0
+        );
+
+        excelData.push({
+          [isEnglish ? "Activity Code" : "საქმიანობის კოდი"]: "-",
+          [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: isEnglish
+            ? "Total"
+            : "ჯამი",
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: "100.0%",
+          [isEnglish ? "Active" : "აქტიური"]: totalActive,
+          [isEnglish ? "Active %" : "აქტიური %"]: "100.0%",
+        });
+
+        title = isEnglish
+          ? "Number of registered and active organizations by economic activities"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ეკონომიკური საქმიანობების მიხედვით";
+
+        fileName = isEnglish
+          ? `Economic_Activities_Report_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`
+          : `ეკონომიკური_საქმიანობების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish
+          ? "Economic Activities Report"
+          : "ეკონომიკური საქმიანობების ანგარიში";
+      } else {
+        // Report 2: Legal Forms
+        excelData = sortedData.map((row) => ({
+          [isEnglish ? "Code" : "კოდი"]: row.ID,
+          [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
+            row.Legal_Form,
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            row.Registered_Percent
+          )}%`,
+          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            row.Active_Percent
+          )}%`,
+        }));
+
+        totalRegistered = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Qty),
+          0
+        );
+        totalActive = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Qty),
+          0
+        );
+
+        excelData.push({
+          [isEnglish ? "Code" : "კოდი"]: "-",
+          [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
+            isEnglish ? "Total" : "ჯამი",
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: "100.0%",
+          [isEnglish ? "Active" : "აქტიური"]: totalActive,
+          [isEnglish ? "Active %" : "აქტიური %"]: "100.0%",
+        });
+
+        title = isEnglish
+          ? "Number of registered and active organizations by organizational-legal forms"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით";
+
+        fileName = isEnglish
+          ? `Legal_Forms_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `სამართლებრივი_ფორმების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish
+          ? "Legal Forms Report"
+          : "სამართლებრივი ფორმების ანგარიში";
+      }
 
       // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
@@ -125,51 +228,50 @@ function ReportsResults({ isEnglish }) {
 
       // Set column widths
       const colWidths = [
-        { wch: 8 },   // Code
-        { wch: 40 },  // Legal Status
-        { wch: 15 },  // Registered
-        { wch: 15 },  // Registered %
-        { wch: 15 },  // Active
-        { wch: 15 },  // Active %
+        { wch: Number(reportId) === 1 ? 15 : 8 }, // Code/Activity Code
+        { wch: 40 }, // Name/Legal Status
+        { wch: 15 }, // Registered
+        { wch: 15 }, // Registered %
+        { wch: 15 }, // Active
+        { wch: 15 }, // Active %
       ];
-      ws['!cols'] = colWidths;
+      ws["!cols"] = colWidths;
 
-      // Add title and metadata
-      const title = isEnglish 
-        ? "Number of registered and active organizations by organizational-legal forms"
-        : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით";
-      
       // Insert title row at the beginning
-      XLSX.utils.sheet_add_aoa(ws, [[`Report 2 - ${title}`]], { origin: "A1" });
-      XLSX.utils.sheet_add_aoa(ws, [[`${isEnglish ? "Date: 1 July 2025" : "თარიღი: 1 ივლისი 2025"}`]], { origin: "A2" });
+      XLSX.utils.sheet_add_aoa(ws, [[`Report ${reportId} - ${title}`]], {
+        origin: "A1",
+      });
+      XLSX.utils.sheet_add_aoa(
+        ws,
+        [[`${isEnglish ? "Date: 1 July 2025" : "თარიღი: 1 ივლისი 2025"}`]],
+        { origin: "A2" }
+      );
       XLSX.utils.sheet_add_aoa(ws, [[""]], { origin: "A3" }); // Empty row
 
       // Adjust the data range
-      const range = XLSX.utils.decode_range(ws['!ref']);
+      const range = XLSX.utils.decode_range(ws["!ref"]);
       range.e.r += 3; // Extend range to include title rows
-      ws['!ref'] = XLSX.utils.encode_range(range);
+      ws["!ref"] = XLSX.utils.encode_range(range);
 
       // Add worksheet to workbook
-      const sheetName = isEnglish 
-        ? "Legal Forms Report" 
-        : "სამართლებრივი ფორმების ანგარიში";
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
-
-      // Generate filename with current date
-      const currentDate = new Date().toISOString().split('T')[0];
-      const fileName = isEnglish 
-        ? `Legal_Forms_Report_${currentDate}.xlsx`
-        : `სამართლებრივი_ფორმების_ანგარიში_${currentDate}.xlsx`;
 
       // Save the file
       XLSX.writeFile(wb, fileName);
-      
+
       // Show success message
-      alert(isEnglish ? "Excel file exported successfully!" : "Excel ფაილი წარმატებით ექსპორტირებულია!");
-      
+      alert(
+        isEnglish
+          ? "Excel file exported successfully!"
+          : "Excel ფაილი წარმატებით ექსპორტირებულია!"
+      );
     } catch (error) {
       console.error("Export error:", error);
-      alert(isEnglish ? "Error exporting to Excel. Please try again." : "Excel-ში ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა.");
+      alert(
+        isEnglish
+          ? "Error exporting to Excel. Please try again."
+          : "Excel-ში ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა."
+      );
     }
   };
 
@@ -206,17 +308,17 @@ function ReportsResults({ isEnglish }) {
               onClick={exportToExcel}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-bpg-nino flex items-center cursor-pointer"
             >
-              <svg 
-                className="w-4 h-4 mr-2" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
               {isEnglish ? "Export to Excel" : "Excel-ში ექსპორტი"}
@@ -224,6 +326,14 @@ function ReportsResults({ isEnglish }) {
           </div>
           <div className="mb-6">
             <h1 className="text-xl font-bpg-nino mb-2 text-center text-gray-800">
+              {Number(reportId) === 1 && (
+                <>
+                  1 -{" "}
+                  {isEnglish
+                    ? "Number of registered and active organizations by economic activity (Nace Rev. 2)"
+                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ეკონომიკური საქმიანობის სახეების მიხედვით (NACE Rev. 2)"}
+                </>
+              )}
               {Number(reportId) === 2 && (
                 <>
                   2 -{" "}
@@ -250,7 +360,10 @@ function ReportsResults({ isEnglish }) {
                             key={column.key}
                             onClick={() => handleSort(column.key)}
                             className={`px-4 py-3 font-bpg-nino whitespace-nowrap cursor-pointer hover:bg-[#0070aa] transition-colors ${
-                              column.key === "ID" || column.key === "Legal_Form"
+                              column.key === "ID" ||
+                              column.key === "Legal_Form" ||
+                              column.key === "Activity_Code" ||
+                              column.key === "Activity_Name"
                                 ? "text-left"
                                 : "text-right"
                             }`}
@@ -258,7 +371,9 @@ function ReportsResults({ isEnglish }) {
                             <div
                               className={`flex items-center ${
                                 column.key === "ID" ||
-                                column.key === "Legal_Form"
+                                column.key === "Legal_Form" ||
+                                column.key === "Activity_Code" ||
+                                column.key === "Activity_Name"
                                   ? "justify-start"
                                   : "justify-end"
                               }`}
@@ -275,27 +390,60 @@ function ReportsResults({ isEnglish }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {sortedData.map((row) => (
+                      {sortedData.map((row, index) => (
                         <tr
-                          key={row.ID}
+                          key={
+                            Number(reportId) === 1
+                              ? row.Activity_Code || index
+                              : row.ID || index
+                          }
                           className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-4 py-3 font-bpg-nino">{row.ID}</td>
-                          <td className="px-4 py-3 font-bpg-nino">
-                            {row.Legal_Form}
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {row.Registered_Qty}
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {formatNumber(row.Registered_Percent)}%
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {row.Active_Qty}
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {formatNumber(row.Active_Percent)}%
-                          </td>
+                          {Number(reportId) === 1 ? (
+                            // Report 1: Economic Activities
+                            <>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Activity_Code}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Activity_Name}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Registered_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.pct)}%
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Active_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.pct_act)}%
+                              </td>
+                            </>
+                          ) : (
+                            // Report 2: Legal Forms
+                            <>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.ID}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Legal_Form}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Registered_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Registered_Percent)}%
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Active_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Active_Percent)}%
+                              </td>
+                            </>
+                          )}
                         </tr>
                       ))}
                       {/* Total row */}
