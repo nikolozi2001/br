@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import loaderIcon from "../assets/images/equalizer.svg";
 import { API } from "../services/api";
 import * as XLSX from "xlsx";
+import toast, { Toaster } from "react-hot-toast";
 
 function ReportsResults({ isEnglish }) {
   const { reportId } = useParams();
@@ -14,8 +15,8 @@ function ReportsResults({ isEnglish }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   const report1Columns = [
-    { key: "Activity_Code", ge: "საქმიანობის კოდი", en: "Activity Code" },
-    { key: "Activity_Name", ge: "საქმიანობის სახე", en: "Activity Name" },
+    { key: "Activity_Code", ge: "კოდი", en: "Activity Code" },
+    { key: "Activity_Name", ge: "სექციის დასახელება", en: "Activity Name" },
     { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
     { key: "pct", ge: "%", en: "%" },
     { key: "Active_Qty", ge: "აქტიური", en: "Active" },
@@ -111,7 +112,7 @@ function ReportsResults({ isEnglish }) {
 
   const exportToExcel = () => {
     if (!reportData || reportData.length === 0) {
-      alert(
+      toast.error(
         isEnglish
           ? "No data available to export."
           : "ექსპორტისთვის მონაცემები არ არის ხელმისაწვდომი."
@@ -125,7 +126,7 @@ function ReportsResults({ isEnglish }) {
       if (Number(reportId) === 1) {
         // Report 1: Activities
         excelData = sortedData.map((row) => ({
-          [isEnglish ? "Activity Code" : "საქმიანობის კოდი"]: row.Activity_Code,
+          [isEnglish ? "Activity Code" : "კოდი"]: row.Activity_Code,
           [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: row.Activity_Name,
           [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
           [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
@@ -146,15 +147,24 @@ function ReportsResults({ isEnglish }) {
           0
         );
 
+        const totalRegisteredPct = sortedData.reduce(
+          (sum, row) => sum + Number(row.pct),
+          0
+        );
+        const totalActivePct = sortedData.reduce(
+          (sum, row) => sum + Number(row.pct_act),
+          0
+        );
+
         excelData.push({
-          [isEnglish ? "Activity Code" : "საქმიანობის კოდი"]: "-",
+          [isEnglish ? "Activity Code" : "კოდი"]: "-",
           [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: isEnglish
             ? "Total"
             : "ჯამი",
           [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: "100.0%",
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
           [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: "100.0%",
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
         });
 
         title = isEnglish
@@ -197,14 +207,23 @@ function ReportsResults({ isEnglish }) {
           0
         );
 
+        const totalRegisteredPct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Percent),
+          0
+        );
+        const totalActivePct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Percent),
+          0
+        );
+
         excelData.push({
           [isEnglish ? "Code" : "კოდი"]: "-",
           [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
             isEnglish ? "Total" : "ჯამი",
           [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: "100.0%",
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
           [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: "100.0%",
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
         });
 
         title = isEnglish
@@ -260,14 +279,14 @@ function ReportsResults({ isEnglish }) {
       XLSX.writeFile(wb, fileName);
 
       // Show success message
-      alert(
+      toast.success(
         isEnglish
           ? "Excel file exported successfully!"
           : "Excel ფაილი წარმატებით ექსპორტირებულია!"
       );
     } catch (error) {
       console.error("Export error:", error);
-      alert(
+      toast.error(
         isEnglish
           ? "Error exporting to Excel. Please try again."
           : "Excel-ში ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა."
@@ -412,13 +431,13 @@ function ReportsResults({ isEnglish }) {
                                 {row.Registered_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.pct)}%
+                                {formatNumber(row.pct)}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Active_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.pct_act)}%
+                                {formatNumber(row.pct_act)}
                               </td>
                             </>
                           ) : (
@@ -434,43 +453,53 @@ function ReportsResults({ isEnglish }) {
                                 {row.Registered_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Registered_Percent)}%
+                                {formatNumber(row.Registered_Percent)}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Active_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Active_Percent)}%
+                                {formatNumber(row.Active_Percent)}
                               </td>
                             </>
                           )}
                         </tr>
                       ))}
-                      {/* Total row */}
-                      <tr className="bg-gray-100 font-bold">
-                        <td className="px-4 py-3 font-bpg-nino">-</td>
-                        <td className="px-4 py-3 font-bpg-nino">
-                          {isEnglish ? "Total" : "ჯამი"}
-                        </td>
-                        <td className="px-4 py-3 font-bpg-nino text-right">
-                          {sortedData.reduce(
-                            (sum, row) => sum + Number(row.Registered_Qty),
-                            0
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-bpg-nino text-right">
-                          100.0%
-                        </td>
-                        <td className="px-4 py-3 font-bpg-nino text-right">
-                          {sortedData.reduce(
-                            (sum, row) => sum + Number(row.Active_Qty),
-                            0
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-bpg-nino text-right">
-                          100.0%
-                        </td>
-                      </tr>
+                      {/* Total row - only show for Report 2 */}
+                      {Number(reportId) === 2 && (
+                        <tr className="bg-gray-100 font-bold">
+                          <td className="px-4 py-3 font-bpg-nino">-</td>
+                          <td className="px-4 py-3 font-bpg-nino">
+                            {isEnglish ? "Total" : "სულ"}
+                          </td>
+                          <td className="px-4 py-3 font-bpg-nino text-right">
+                            {sortedData.reduce(
+                              (sum, row) => sum + Number(row.Registered_Qty),
+                              0
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-bpg-nino text-right">
+                            {formatNumber(
+                              Number(reportId) === 1
+                                ? sortedData.reduce((sum, row) => sum + Number(row.pct), 0)
+                                : sortedData.reduce((sum, row) => sum + Number(row.Registered_Percent), 0)
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-bpg-nino text-right">
+                            {sortedData.reduce(
+                              (sum, row) => sum + Number(row.Active_Qty),
+                              0
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-bpg-nino text-right">
+                            {formatNumber(
+                              Number(reportId) === 1
+                                ? sortedData.reduce((sum, row) => sum + Number(row.pct_act), 0)
+                                : sortedData.reduce((sum, row) => sum + Number(row.Active_Percent), 0)
+                            )}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -546,6 +575,33 @@ function ReportsResults({ isEnglish }) {
           </svg>
         </button>
       )}
+
+      {/* Toast notifications */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            fontFamily: 'bpg-nino',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#22c55e',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
     </div>
   );
 }
