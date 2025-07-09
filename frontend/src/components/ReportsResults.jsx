@@ -167,6 +167,24 @@ function ReportsResults({ isEnglish }) {
                           </td>
                         </tr>
                       ))}
+                      <tr className="bg-gray-100 font-bold">
+                        <td className="px-4 py-2 font-bpg-nino">-</td>
+                        <td className="px-4 py-2 font-bpg-nino">
+                          {isEnglish ? "Total" : "ჯამი"}
+                        </td>
+                        <td className="px-4 py-2 font-bpg-nino text-right">
+                          {sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty), 0)}
+                        </td>
+                        <td className="px-4 py-2 font-bpg-nino text-right">
+                          100.0%
+                        </td>
+                        <td className="px-4 py-2 font-bpg-nino text-right">
+                          {sortedData.reduce((sum, row) => sum + Number(row.Active_Qty), 0)}
+                        </td>
+                        <td className="px-4 py-2 font-bpg-nino text-right">
+                          100.0%
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
