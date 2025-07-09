@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import "../styles/scrollbar.css";
-
-
-
 import { useParams, useNavigate } from "react-router-dom";
+import loaderIcon from "../assets/images/equalizer.svg";
 import { API } from "../services/api";
 
 function ReportsResults({ isEnglish }) {
@@ -14,10 +12,16 @@ function ReportsResults({ isEnglish }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   const columns = [
-    { key: 'ID', ge: 'კოდი', en: 'Code' },
-    { key: 'Legal_Form', ge: 'ორგანიზაციულ-სამართლებრივი ფორმა', en: 'Legal Status' },
-    { key: 'Registered_Qty', ge: 'რეგისტრირებული', en: 'Registered' },
-    { key: 'Active_Qty', ge: 'აქტიური', en: 'Active' }
+    { key: "ID", ge: "კოდი", en: "Code" },
+    {
+      key: "Legal_Form",
+      ge: "ორგანიზაციულ-სამართლებრივი ფორმა",
+      en: "Legal Status",
+    },
+    { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
+    { key: "Registered_Pct", ge: "%", en: "%" },
+    { key: "Active_Qty", ge: "აქტიური", en: "Active" },
+    { key: "Active_Pct", ge: "%", en: "%" },
   ];
 
   useEffect(() => {
@@ -25,10 +29,11 @@ function ReportsResults({ isEnglish }) {
       if (Number(reportId) === 2) {
         setLoading(true);
         try {
-          const data = await API.fetchReport2Data(isEnglish ? 'en' : 'ge');
-          setReportData(data);
+          const response = await API.fetchReport2Data(isEnglish ? "en" : "ge");
+          const dataArray = Array.isArray(response.rows) ? response.rows : [];
+          setReportData(dataArray);
         } catch (error) {
-          console.error('Error fetching report data:', error);
+          console.error("Error fetching report data:", error);
         } finally {
           setLoading(false);
         }
@@ -41,7 +46,10 @@ function ReportsResults({ isEnglish }) {
   const handleSort = (key) => {
     setSortConfig((prevConfig) => ({
       key,
-      direction: prevConfig.key === key && prevConfig.direction === "asc" ? "desc" : "asc",
+      direction:
+        prevConfig.key === key && prevConfig.direction === "asc"
+          ? "desc"
+          : "asc",
     }));
   };
 
@@ -60,11 +68,18 @@ function ReportsResults({ isEnglish }) {
     return sortedArray;
   }, [reportData, sortConfig]);
 
+  const formatNumber = (num) => {
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    });
+  };
+
   if (loading) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
-        <div className="text-center font-bpg-nino text-[#0080BE]">
-          Loading...
+        <div className="geostat-loader">
+          <img src={loaderIcon} alt="Loading..." className="w-25 h-25" />
         </div>
       </div>
     );
@@ -79,7 +94,7 @@ function ReportsResults({ isEnglish }) {
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <button
-            onClick={() => navigate('/reports')}
+            onClick={() => navigate("/reports")}
             className="mb-4 px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center"
           >
             ← {isEnglish ? "Back to Reports" : "უკან დაბრუნება"}
@@ -88,10 +103,10 @@ function ReportsResults({ isEnglish }) {
             <h1 className="text-xl font-bpg-nino mb-2 text-center text-gray-800">
               {Number(reportId) === 2 && (
                 <>
-                  2 - {isEnglish 
+                  2 -{" "}
+                  {isEnglish
                     ? "Number of registered and active organizations by organizational-legal forms"
-                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით"
-                  }
+                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით"}
                 </>
               )}
             </h1>
@@ -126,11 +141,26 @@ function ReportsResults({ isEnglish }) {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {sortedData.map((row) => (
-                        <tr key={row.ID} className="border-b border-gray-200 hover:bg-gray-50">
+                        <tr
+                          key={row.ID}
+                          className="border-b border-gray-200 hover:bg-gray-50"
+                        >
                           <td className="px-4 py-2 font-bpg-nino">{row.ID}</td>
-                          <td className="px-4 py-2 font-bpg-nino">{row.Legal_Form}</td>
-                          <td className="px-4 py-2 font-bpg-nino">{row.Registered_Qty}</td>
-                          <td className="px-4 py-2 font-bpg-nino">{row.Active_Qty}</td>
+                          <td className="px-4 py-2 font-bpg-nino">
+                            {row.Legal_Form}
+                          </td>
+                          <td className="px-4 py-2 font-bpg-nino text-right">
+                            {row.Registered_Qty}
+                          </td>
+                          <td className="px-4 py-2 font-bpg-nino text-right">
+                            {formatNumber(row.Registered_Percent)}%
+                          </td>
+                          <td className="px-4 py-2 font-bpg-nino text-right">
+                            {row.Active_Qty}
+                          </td>
+                          <td className="px-4 py-2 font-bpg-nino text-right">
+                            {formatNumber(row.Active_Percent)}%
+                          </td>
                         </tr>
                       ))}
                     </tbody>
