@@ -1,5 +1,20 @@
 const API_BASE_URL = "http://192.168.1.27:5000/api";
 
+// Report 2 API
+export const fetchReport2Data = async (lang) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/report2?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    return data.recordset || data;
+  } catch (error) {
+    console.error("Error fetching report 2 data:", error);
+    return [];
+  }
+};
+
 // Legal Forms API
 export const fetchLegalForms = async (lang) => {
   try {
@@ -246,6 +261,7 @@ export const API = {
   fetchOwnershipTypes,
   fetchSizes,
   fetchDocuments,
+  fetchReport2Data,
 };
 
 export default API;

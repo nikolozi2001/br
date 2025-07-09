@@ -4,6 +4,7 @@ import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
 import Reports from "./components/Reports";
+import ReportsResults from "./components/ReportsResults";
 import Footer from "./components/Footer";
 import "./App.scss";
 
@@ -26,6 +27,10 @@ function App() {
           <Routes>
             <Route path="/" element={<SearchForm isEnglish={isEnglish} />} />
             <Route path="/reports" element={<Reports isEnglish={isEnglish} />} />
+            <Route 
+              path="/reports/:reportId" 
+              element={<ReportsResults isEnglish={isEnglish} />}
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

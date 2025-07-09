@@ -1,12 +1,18 @@
 import "../styles/Reports.scss";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Reports({ isEnglish }) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsFlipped(true);
   }, []);
+  const handleReportClick = (reportId) => {
+    navigate(`/reports/${reportId}`);
+  };
+
   const reports = {
     georgian: [
       {
@@ -124,6 +130,7 @@ function Reports({ isEnglish }) {
                   {reports[isEnglish ? "english" : "georgian"].map((report) => (
                     <li
                       key={report.id}
+                      onClick={() => handleReportClick(report.id)}
                       className="py-2.5 px-4 bg-white border border-gray-200 rounded hover:bg-[#0080BE] transition-all cursor-pointer group"
                     >
                       <div className="flex items-start">
