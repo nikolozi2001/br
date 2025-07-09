@@ -19,6 +19,7 @@ const sizesRouter = require('./routes/sizes');
 const documentsRouter = require('./routes/documents');
 const report1Router = require('./routes/report1');
 const report2Router = require('./routes/report2');
+const report3Router = require('./routes/report3');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -29,6 +30,7 @@ app.use('/api/sizes', sizesRouter);
 app.use('/api/documents', documentsRouter);
 app.use('/api/report1', report1Router);
 app.use('/api/report2', report2Router);
+app.use('/api/report3', report3Router);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

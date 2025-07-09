@@ -36,24 +36,53 @@ function ReportsResults({ isEnglish }) {
     { key: "Active_Pct", ge: "%", en: "%" },
   ];
 
-  const columns = Number(reportId) === 1 ? report1Columns : report2Columns;
+  const report3Columns = [
+    { key: "ID", ge: "კოდი", en: "Code" },
+    {
+      key: "Ownership_Type",
+      ge: "საკუთრების ფორმა",
+      en: "Ownership Type",
+    },
+    { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
+    { key: "Registered_Pct", ge: "%", en: "%" },
+    { key: "Active_Qty", ge: "აქტიური", en: "Active" },
+    { key: "Active_Pct", ge: "%", en: "%" },
+  ];
+
+  const columns = Number(reportId) === 1 ? report1Columns : Number(reportId) === 2 ? report2Columns : report3Columns;
 
   useEffect(() => {
     const fetchData = async () => {
-      if (Number(reportId) === 1 || Number(reportId) === 2) {
+      if (Number(reportId) === 1 || Number(reportId) === 2 || Number(reportId) === 3) {
         setLoading(true);
         try {
           let response;
           if (Number(reportId) === 1) {
             response = await API.fetchReport1Data(isEnglish ? "en" : "ge");
-          } else {
+          } else if (Number(reportId) === 2) {
             response = await API.fetchReport2Data(isEnglish ? "en" : "ge");
+          } else if (Number(reportId) === 3) {
+            response = await API.fetchReport3Data(isEnglish ? "en" : "ge");
           }
-          const dataArray = Array.isArray(response.rows)
+          
+          let dataArray = Array.isArray(response.rows)
             ? response.rows
             : Array.isArray(response)
             ? response
             : [];
+
+          // Calculate percentages for report 3
+          if (Number(reportId) === 3 && dataArray.length > 0) {
+            const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
+            const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
+            
+            dataArray = dataArray.map(row => ({
+              ...row,
+              Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
+              Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0
+            }));
+          }
+          
           setReportData(dataArray);
         } catch (error) {
           console.error("Error fetching report data:", error);
@@ -182,7 +211,7 @@ function ReportsResults({ isEnglish }) {
         sheetName = isEnglish
           ? "Economic Activities"
           : "ეკონომიკური საქმიანობები";
-      } else {
+      } else if (Number(reportId) === 2) {
         // Report 2: Legal Forms
         excelData = sortedData.map((row) => ({
           [isEnglish ? "Code" : "კოდი"]: row.ID,
@@ -239,6 +268,63 @@ function ReportsResults({ isEnglish }) {
         sheetName = isEnglish
           ? "Legal Forms"
           : "სამართლებრივი ფორმები";
+      } else if (Number(reportId) === 3) {
+        // Report 3: Ownership Types
+        excelData = sortedData.map((row) => ({
+          [isEnglish ? "Code" : "კოდი"]: row.ID,
+          [isEnglish ? "Ownership Type" : "საკუთრების ფორმა"]:
+            row.Ownership_Type,
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            row.Registered_Percent
+          )}%`,
+          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            row.Active_Percent
+          )}%`,
+        }));
+
+        totalRegistered = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Qty),
+          0
+        );
+        totalActive = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Qty),
+          0
+        );
+
+        const totalRegisteredPct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Percent),
+          0
+        );
+        const totalActivePct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Percent),
+          0
+        );
+
+        excelData.push({
+          [isEnglish ? "Code" : "კოდი"]: "-",
+          [isEnglish ? "Ownership Type" : "საკუთრების ფორმა"]:
+            isEnglish ? "Total" : "ჯამი",
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
+          [isEnglish ? "Active" : "აქტიური"]: totalActive,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
+        });
+
+        title = isEnglish
+          ? "Number of registered organizations by forms of ownership"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით";
+
+        fileName = isEnglish
+          ? `Ownership_Types_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `საკუთრების_ფორმების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish
+          ? "Ownership Types"
+          : "საკუთრების ფორმები";
       }
 
       // Create workbook and worksheet
@@ -361,6 +447,14 @@ function ReportsResults({ isEnglish }) {
                     : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით"}
                 </>
               )}
+              {Number(reportId) === 3 && (
+                <>
+                  3 -{" "}
+                  {isEnglish
+                    ? "Number of registered organizations by forms of ownership"
+                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით"}
+                </>
+              )}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
@@ -382,7 +476,8 @@ function ReportsResults({ isEnglish }) {
                               column.key === "ID" ||
                               column.key === "Legal_Form" ||
                               column.key === "Activity_Code" ||
-                              column.key === "Activity_Name"
+                              column.key === "Activity_Name" ||
+                              column.key === "Ownership_Type"
                                 ? "text-left"
                                 : "text-right"
                             }`}
@@ -392,7 +487,8 @@ function ReportsResults({ isEnglish }) {
                                 column.key === "ID" ||
                                 column.key === "Legal_Form" ||
                                 column.key === "Activity_Code" ||
-                                column.key === "Activity_Name"
+                                column.key === "Activity_Name" ||
+                                column.key === "Ownership_Type"
                                   ? "justify-start"
                                   : "justify-end"
                               }`}
@@ -440,7 +536,7 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.pct_act)}
                               </td>
                             </>
-                          ) : (
+                          ) : Number(reportId) === 2 ? (
                             // Report 2: Legal Forms
                             <>
                               <td className="px-4 py-3 font-bpg-nino">
@@ -462,11 +558,33 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.Active_Percent)}
                               </td>
                             </>
+                          ) : (
+                            // Report 3: Ownership Types
+                            <>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.ID}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Ownership_Type}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Registered_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Registered_Percent)}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Active_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Active_Percent)}
+                              </td>
+                            </>
                           )}
                         </tr>
                       ))}
-                      {/* Total row - only show for Report 2 */}
-                      {Number(reportId) === 2 && (
+                      {/* Total row - only show for Report 2 and 3 */}
+                      {(Number(reportId) === 2 || Number(reportId) === 3) && (
                         <tr className="bg-gray-100 font-bold">
                           <td className="px-4 py-3 font-bpg-nino">-</td>
                           <td className="px-4 py-3 font-bpg-nino">
@@ -480,9 +598,7 @@ function ReportsResults({ isEnglish }) {
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
                             {formatNumber(
-                              Number(reportId) === 1
-                                ? sortedData.reduce((sum, row) => sum + Number(row.pct), 0)
-                                : sortedData.reduce((sum, row) => sum + Number(row.Registered_Percent), 0)
+                              sortedData.reduce((sum, row) => sum + Number(row.Registered_Percent), 0)
                             )}
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
@@ -493,9 +609,7 @@ function ReportsResults({ isEnglish }) {
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
                             {formatNumber(
-                              Number(reportId) === 1
-                                ? sortedData.reduce((sum, row) => sum + Number(row.pct_act), 0)
-                                : sortedData.reduce((sum, row) => sum + Number(row.Active_Percent), 0)
+                              sortedData.reduce((sum, row) => sum + Number(row.Active_Percent), 0)
                             )}
                           </td>
                         </tr>

@@ -133,6 +133,21 @@ export const fetchReport1Data = async (lang = "ge") => {
   }
 };
 
+// Report 3 API
+export const fetchReport3Data = async (lang) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/report3?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    return data.recordset || data;
+  } catch (error) {
+    console.error("Error fetching report 3 data:", error);
+    return [];
+  }
+}
+
 // documents API
 export const fetchDocuments = async (searchParams, lang = "ge",) => {
   try {
@@ -278,6 +293,7 @@ export const API = {
   fetchDocuments,
   fetchReport1Data,
   fetchReport2Data,
+  fetchReport3Data,
 };
 
 export default API;
