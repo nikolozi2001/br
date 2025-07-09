@@ -180,8 +180,8 @@ function ReportsResults({ isEnglish }) {
             }.xlsx`;
 
         sheetName = isEnglish
-          ? "Economic Activities Report"
-          : "ეკონომიკური საქმიანობების ანგარიში";
+          ? "Economic Activities"
+          : "ეკონომიკური საქმიანობები";
       } else {
         // Report 2: Legal Forms
         excelData = sortedData.map((row) => ({
@@ -237,8 +237,8 @@ function ReportsResults({ isEnglish }) {
             }.xlsx`;
 
         sheetName = isEnglish
-          ? "Legal Forms Report"
-          : "სამართლებრივი ფორმების ანგარიში";
+          ? "Legal Forms"
+          : "სამართლებრივი ფორმები";
       }
 
       // Create workbook and worksheet
