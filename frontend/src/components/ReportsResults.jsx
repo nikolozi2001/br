@@ -81,6 +81,9 @@ function ReportsResults({ isEnglish }) {
               Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
               Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0
             }));
+            
+            // Sort by ID ascending for report 3
+            dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
           }
           
           setReportData(dataArray);
