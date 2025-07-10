@@ -640,8 +640,8 @@ function ReportsResults({ isEnglish }) {
             }.xlsx`;
 
         sheetName = isEnglish
-          ? "Org-Legal Forms and Years"
-          : "ორგანიზაციულ-სამართლებრივი ფორმები და წლები";
+          ? "Legal Forms by Years"
+          : "სამართლებრივი ფორმები წლები";
       }
 
       // Create workbook and worksheet
