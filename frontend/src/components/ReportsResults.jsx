@@ -49,11 +49,24 @@ function ReportsResults({ isEnglish }) {
     { key: "Active_Pct", ge: "%", en: "%" },
   ];
 
-  const columns = Number(reportId) === 1 ? report1Columns : Number(reportId) === 2 ? report2Columns : report3Columns;
+  const report4Columns = [
+    { key: "Location_Code", ge: "კოდი", en: "Code" },
+    {
+      key: "Location_Name",
+      ge: "რეგიონის დასახელება",
+      en: "Region Name",
+    },
+    { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
+    { key: "Registered_Pct", ge: "%", en: "%" },
+    { key: "Active_Qty", ge: "აქტიური", en: "Active" },
+    { key: "Active_Pct", ge: "%", en: "%" },
+  ];
+
+  const columns = Number(reportId) === 1 ? report1Columns : Number(reportId) === 2 ? report2Columns : Number(reportId) === 3 ? report3Columns : report4Columns;
 
   useEffect(() => {
     const fetchData = async () => {
-      if (Number(reportId) === 1 || Number(reportId) === 2 || Number(reportId) === 3) {
+      if (Number(reportId) === 1 || Number(reportId) === 2 || Number(reportId) === 3 || Number(reportId) === 4) {
         setLoading(true);
         try {
           let response;
@@ -63,6 +76,8 @@ function ReportsResults({ isEnglish }) {
             response = await API.fetchReport2Data(isEnglish ? "en" : "ge");
           } else if (Number(reportId) === 3) {
             response = await API.fetchReport3Data(isEnglish ? "en" : "ge");
+          } else if (Number(reportId) === 4) {
+            response = await API.fetchReport4Data(isEnglish ? "en" : "ge");
           }
           
           let dataArray = Array.isArray(response.rows)
@@ -84,6 +99,21 @@ function ReportsResults({ isEnglish }) {
             
             // Sort by ID ascending for report 3
             dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
+          }
+
+          // Calculate percentages for report 4
+          if (Number(reportId) === 4 && dataArray.length > 0) {
+            const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
+            const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
+            
+            dataArray = dataArray.map(row => ({
+              ...row,
+              Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
+              Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0
+            }));
+            
+            // Sort by Location_Code ascending for report 4
+            dataArray.sort((a, b) => Number(a.Location_Code) - Number(b.Location_Code));
           }
           
           setReportData(dataArray);
@@ -328,6 +358,63 @@ function ReportsResults({ isEnglish }) {
         sheetName = isEnglish
           ? "Ownership Types"
           : "საკუთრების ფორმები";
+      } else if (Number(reportId) === 4) {
+        // Report 4: Regions
+        excelData = sortedData.map((row) => ({
+          [isEnglish ? "Code" : "კოდი"]: row.Location_Code,
+          [isEnglish ? "Region" : "რეგიონი"]:
+            row.Location_Name,
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            row.Registered_Percent
+          )}%`,
+          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            row.Active_Percent
+          )}%`,
+        }));
+
+        totalRegistered = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Qty),
+          0
+        );
+        totalActive = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Qty),
+          0
+        );
+
+        const totalRegisteredPct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Percent),
+          0
+        );
+        const totalActivePct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Percent),
+          0
+        );
+
+        excelData.push({
+          [isEnglish ? "Code" : "კოდი"]: "-",
+          [isEnglish ? "Region" : "რეგიონი"]:
+            isEnglish ? "Total" : "ჯამი",
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
+          [isEnglish ? "Active" : "აქტიური"]: totalActive,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
+        });
+
+        title = isEnglish
+          ? "Number of registered and active organizations by regions"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით";
+
+        fileName = isEnglish
+          ? `Regions_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `რეგიონების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish
+          ? "Regions"
+          : "რეგიონები";
       }
 
       // Create workbook and worksheet
@@ -458,6 +545,14 @@ function ReportsResults({ isEnglish }) {
                     : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით"}
                 </>
               )}
+              {Number(reportId) === 4 && (
+                <>
+                  4 -{" "}
+                  {isEnglish
+                    ? "Number of registered and active organizations by regions"
+                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით"}
+                </>
+              )}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
@@ -480,7 +575,9 @@ function ReportsResults({ isEnglish }) {
                               column.key === "Legal_Form" ||
                               column.key === "Activity_Code" ||
                               column.key === "Activity_Name" ||
-                              column.key === "Ownership_Type"
+                              column.key === "Ownership_Type" ||
+                              column.key === "Location_Code" ||
+                              column.key === "Location_Name"
                                 ? "text-left"
                                 : "text-right"
                             }`}
@@ -491,7 +588,9 @@ function ReportsResults({ isEnglish }) {
                                 column.key === "Legal_Form" ||
                                 column.key === "Activity_Code" ||
                                 column.key === "Activity_Name" ||
-                                column.key === "Ownership_Type"
+                                column.key === "Ownership_Type" ||
+                                column.key === "Location_Code" ||
+                                column.key === "Location_Name"
                                   ? "justify-start"
                                   : "justify-end"
                               }`}
@@ -513,6 +612,8 @@ function ReportsResults({ isEnglish }) {
                           key={
                             Number(reportId) === 1
                               ? row.Activity_Code || index
+                              : Number(reportId) === 4
+                              ? row.Location_Code || index
                               : row.ID || index
                           }
                           className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
@@ -561,7 +662,7 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.Active_Percent)}
                               </td>
                             </>
-                          ) : (
+                          ) : Number(reportId) === 3 ? (
                             // Report 3: Ownership Types
                             <>
                               <td className="px-4 py-3 font-bpg-nino">
@@ -583,11 +684,33 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.Active_Percent)}
                               </td>
                             </>
+                          ) : (
+                            // Report 4: Regions
+                            <>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Location_Code}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Location_Name}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Registered_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Registered_Percent)}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Active_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Active_Percent)}
+                              </td>
+                            </>
                           )}
                         </tr>
                       ))}
-                      {/* Total row - only show for Report 2 and 3 */}
-                      {(Number(reportId) === 2 || Number(reportId) === 3) && (
+                      {/* Total row - only show for Report 2, 3 and 4 */}
+                      {(Number(reportId) === 2 || Number(reportId) === 3 || Number(reportId) === 4) && (
                         <tr className="bg-gray-100 font-bold">
                           <td className="px-4 py-3 font-bpg-nino">-</td>
                           <td className="px-4 py-3 font-bpg-nino">
