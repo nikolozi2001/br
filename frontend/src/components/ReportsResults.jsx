@@ -594,38 +594,138 @@ function ReportsResults({ isEnglish }) {
         sheetName = isEnglish ? "Municipalities" : "მუნიციპალიტეტები";
       } else if (Number(reportId) === 6) {
         // Report 6: Organizational-Legal Forms and Years
-        const excelRowData = {
-          [isEnglish ? "Code" : "კოდი"]: "",
-          [isEnglish ? "Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: "",
-          [isEnglish ? "<1995" : "<1995"]: "",
-        };
+        // Create a structured Excel format that mimics the frontend table layout
+        
+        // Create structured data array that includes the header structure
+        const structuredData = [];
+        
+        // Add main title row
+        structuredData.push({
+          col1: title,
+          col2: "",
+          col3: "",
+          col4: "",
+          col5: "",
+          col6: "",
+          col7: "",
+          col8: "",
+          col9: "",
+          col10: "",
+          col11: "",
+          col12: "",
+          col13: "",
+          col14: "",
+          col15: "",
+          col16: "",
+          col17: "",
+          col18: "",
+          col19: "",
+          col20: "",
+          col21: "",
+          col22: "",
+          col23: "",
+          col24: "",
+          col25: "",
+          col26: "",
+          col27: "",
+          col28: "",
+          col29: "",
+          col30: "",
+          col31: "",
+          col32: "",
+          col33: ""
+        });
 
+        // Add empty row
+        structuredData.push({});
+
+        // Add header row 1 (mimicking the table structure)
+        const headerRow1 = {
+          col1: isEnglish ? "Code" : "კოდი",
+          col2: isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
+          col3: isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
+          col4: "",
+          col5: "",
+          col6: "",
+          col7: "",
+          col8: "",
+          col9: "",
+          col10: "",
+          col11: "",
+          col12: "",
+          col13: "",
+          col14: "",
+          col15: "",
+          col16: "",
+          col17: "",
+          col18: "",
+          col19: "",
+          col20: "",
+          col21: "",
+          col22: "",
+          col23: "",
+          col24: "",
+          col25: "",
+          col26: "",
+          col27: "",
+          col28: "",
+          col29: "",
+          col30: "",
+          col31: "",
+          col32: "",
+          col33: ""
+        };
+        structuredData.push(headerRow1);
+
+        // Add header row 2 (year columns)
+        const headerRow2 = {
+          col1: "",
+          col2: "",
+          col3: "<1995",
+        };
+        
         // Add year columns
-        Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year) => {
-          excelRowData[year.toString()] = "";
+        Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year, index) => {
+          headerRow2[`col${index + 4}`] = year.toString();
         });
         
         // Add >2024 column
-        excelRowData[isEnglish ? ">2024" : ">2024"] = "";
+        headerRow2.col34 = ">2024";
+        structuredData.push(headerRow2);
 
-        excelData = sortedData.map((row) => {
-          const rowData = {
-            [isEnglish ? "Code" : "კოდი"]: row.ID,
-            [isEnglish ? "Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
-              row.Legal_Form,
-            [isEnglish ? "<1995" : "<1995"]: row["<1995"] || 0,
+        // Add data rows
+        sortedData.forEach((row) => {
+          const dataRow = {
+            col1: row.ID,
+            col2: row.Legal_Form,
+            col3: row["<1995"] || 0,
           };
 
           // Add year data
-          Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year) => {
-            rowData[year.toString()] = row[year.toString()] || 0;
+          Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year, index) => {
+            dataRow[`col${index + 4}`] = row[year.toString()] || 0;
           });
 
           // Add >2024 data
-          rowData[isEnglish ? ">2024" : ">2024"] = row[">2024"] || 0;
+          dataRow.col34 = row[">2024"] || 0;
 
-          return rowData;
+          structuredData.push(dataRow);
         });
+
+        // Create worksheet from structured data
+        const ws = XLSX.utils.json_to_sheet(structuredData, { skipHeader: true });
+
+        // Convert column names to proper headers
+        const properHeaders = [
+          isEnglish ? "Code" : "კოდი",
+          isEnglish ? "Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმა",
+          "<1995",
+          ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
+          ">2024"
+        ];
+
+        // Override the auto-generated headers
+        XLSX.utils.sheet_add_aoa(ws, [properHeaders], { origin: "A4" });
 
         title = isEnglish
           ? "Number of registered organizations by organizational-legal forms and years - incremental sum"
@@ -642,6 +742,33 @@ function ReportsResults({ isEnglish }) {
         sheetName = isEnglish
           ? "Legal Forms by Years"
           : "სამართლებრივი ფორმები წლები";
+
+        // Create workbook and add the worksheet
+        const wb = XLSX.utils.book_new();
+        
+        // Set column widths for report 6
+        const colWidths = [
+          { wch: 8 }, // Code
+          { wch: 40 }, // Legal Form
+          { wch: 8 }, // <1995
+          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
+          { wch: 8 }, // >2024
+        ];
+        ws["!cols"] = colWidths;
+
+        // Add worksheet to workbook
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+        // Save the file
+        XLSX.writeFile(wb, fileName);
+
+        // Show success message and return early for report 6
+        toast.success(
+          isEnglish
+            ? "Excel file exported successfully!"
+            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
+        );
+        return;
       }
 
       // Create workbook and worksheet
@@ -681,6 +808,9 @@ function ReportsResults({ isEnglish }) {
         { origin: "A2" }
       );
       XLSX.utils.sheet_add_aoa(ws, [[""]], { origin: "A3" }); // Empty row
+
+      // Note: Standard xlsx library has limited styling support
+      // For advanced styling, consider using a different library or server-side generation
 
       // Adjust the data range
       const range = XLSX.utils.decode_range(ws["!ref"]);
