@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import loaderIcon from "../assets/images/equalizer.svg";
 import { API } from "../services/api";
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
 
 function ReportsResults({ isEnglish }) {
@@ -280,7 +281,7 @@ function ReportsResults({ isEnglish }) {
     });
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (!reportData || reportData.length === 0) {
       toast.error(
         isEnglish
@@ -594,173 +595,144 @@ function ReportsResults({ isEnglish }) {
         sheetName = isEnglish ? "Municipalities" : "მუნიციპალიტეტები";
       } else if (Number(reportId) === 6) {
         // Report 6: Organizational-Legal Forms and Years
-        // Create a structured Excel format that mimics the frontend table layout
+        // Use ExcelJS for advanced styling to match frontend table
         
-        // Create structured data array that includes the header structure
-        const structuredData = [];
-        
-        // Add main title row
-        structuredData.push({
-          col1: title,
-          col2: "",
-          col3: "",
-          col4: "",
-          col5: "",
-          col6: "",
-          col7: "",
-          col8: "",
-          col9: "",
-          col10: "",
-          col11: "",
-          col12: "",
-          col13: "",
-          col14: "",
-          col15: "",
-          col16: "",
-          col17: "",
-          col18: "",
-          col19: "",
-          col20: "",
-          col21: "",
-          col22: "",
-          col23: "",
-          col24: "",
-          col25: "",
-          col26: "",
-          col27: "",
-          col28: "",
-          col29: "",
-          col30: "",
-          col31: "",
-          col32: "",
-          col33: ""
-        });
+        const title = isEnglish
+          ? "Number of registered organizations by organizational-legal forms and years - incremental sum"
+          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - ნაზარდი ჯამი";
+
+        const fileName = isEnglish
+          ? `Organizational_Legal_Forms_Years_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `ორგანიზაციულ_სამართლებრივი_ფორმები_წლები_ანგარიში_${new Date().toISOString().split("T")[0]}.xlsx`;
+
+        const sheetName = isEnglish
+          ? "Legal Forms by Years"
+          : "სამართლებრივი ფორმები წლები";
+
+        // Create workbook and worksheet using ExcelJS
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(sheetName);
+
+        // Set column widths
+        worksheet.columns = [
+          { width: 8 },   // Code
+          { width: 40 },  // Legal Form
+          { width: 8 },   // <1995
+          ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
+          { width: 8 },   // >2024
+        ];
+
+        // Add title row
+        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
+        titleRow.font = { bold: true, size: 14 };
+        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        // Add date row
+        const dateRow = worksheet.addRow([isEnglish ? "Date: 10 July 2025" : "თარიღი: 10 ივლისი 2025"]);
+        dateRow.font = { size: 12 };
+        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
 
         // Add empty row
-        structuredData.push({});
+        worksheet.addRow([]);
 
         // Add header row 1 (mimicking the table structure)
-        const headerRow1 = {
-          col1: isEnglish ? "Code" : "კოდი",
-          col2: isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
-          col3: isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
-          col4: "",
-          col5: "",
-          col6: "",
-          col7: "",
-          col8: "",
-          col9: "",
-          col10: "",
-          col11: "",
-          col12: "",
-          col13: "",
-          col14: "",
-          col15: "",
-          col16: "",
-          col17: "",
-          col18: "",
-          col19: "",
-          col20: "",
-          col21: "",
-          col22: "",
-          col23: "",
-          col24: "",
-          col25: "",
-          col26: "",
-          col27: "",
-          col28: "",
-          col29: "",
-          col30: "",
-          col31: "",
-          col32: "",
-          col33: ""
-        };
-        structuredData.push(headerRow1);
+        const headerRow1 = worksheet.addRow([
+          isEnglish ? "Code" : "კოდი",
+          isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
+          isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
+          ...Array.from({ length: 30 }, () => ""), // Empty cells for merged header
+        ]);
+
+        // Style header row 1
+        headerRow1.eachCell((cell) => {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF0080BE' }
+          };
+          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+          };
+        });
+
+        // Merge cells for header structure
+        worksheet.mergeCells('A4:A5'); // Code column (rowspan)
+        worksheet.mergeCells('B4:B5'); // Legal Form column (rowspan)
+        worksheet.mergeCells('C4:AH4'); // Number of Organizations (colspan)
 
         // Add header row 2 (year columns)
-        const headerRow2 = {
-          col1: "",
-          col2: "",
-          col3: "<1995",
-        };
-        
-        // Add year columns
-        Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year, index) => {
-          headerRow2[`col${index + 4}`] = year.toString();
-        });
-        
-        // Add >2024 column
-        headerRow2.col34 = ">2024";
-        structuredData.push(headerRow2);
-
-        // Add data rows
-        sortedData.forEach((row) => {
-          const dataRow = {
-            col1: row.ID,
-            col2: row.Legal_Form,
-            col3: row["<1995"] || 0,
-          };
-
-          // Add year data
-          Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year, index) => {
-            dataRow[`col${index + 4}`] = row[year.toString()] || 0;
-          });
-
-          // Add >2024 data
-          dataRow.col34 = row[">2024"] || 0;
-
-          structuredData.push(dataRow);
-        });
-
-        // Create worksheet from structured data
-        const ws = XLSX.utils.json_to_sheet(structuredData, { skipHeader: true });
-
-        // Convert column names to proper headers
-        const properHeaders = [
-          isEnglish ? "Code" : "კოდი",
-          isEnglish ? "Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმა",
+        const yearHeaders = [
+          "", "", // Empty for merged cells above
           "<1995",
           ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
           ">2024"
         ];
+        const headerRow2 = worksheet.addRow(yearHeaders);
 
-        // Override the auto-generated headers
-        XLSX.utils.sheet_add_aoa(ws, [properHeaders], { origin: "A4" });
+        // Style header row 2
+        headerRow2.eachCell((cell, colNumber) => {
+          if (colNumber > 2) { // Skip merged cells
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FF0080BE' }
+            };
+            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+            };
+          }
+        });
 
-        title = isEnglish
-          ? "Number of registered organizations by organizational-legal forms and years - incremental sum"
-          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - ნაზარდი ჯამი";
-
-        fileName = isEnglish
-          ? `Organizational_Legal_Forms_Years_Report_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`
-          : `ორგანიზაციულ_სამართლებრივი_ფორმები_წლები_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish
-          ? "Legal Forms by Years"
-          : "სამართლებრივი ფორმები წლები";
-
-        // Create workbook and add the worksheet
-        const wb = XLSX.utils.book_new();
-        
-        // Set column widths for report 6
-        const colWidths = [
-          { wch: 8 }, // Code
-          { wch: 40 }, // Legal Form
-          { wch: 8 }, // <1995
-          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
-          { wch: 8 }, // >2024
-        ];
-        ws["!cols"] = colWidths;
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        // Add data rows
+        sortedData.forEach((row) => {
+          const dataRowValues = [
+            row.ID,
+            row.Legal_Form,
+            row["<1995"] || 0,
+            ...Array.from({ length: 30 }, (_, i) => row[(1995 + i).toString()] || 0),
+            row[">2024"] || 0
+          ];
+          
+          const dataRow = worksheet.addRow(dataRowValues);
+          
+          // Style data row
+          dataRow.eachCell((cell, colNumber) => {
+            cell.alignment = { 
+              horizontal: colNumber <= 2 ? 'left' : 'right', 
+              vertical: 'middle' 
+            };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+            };
+          });
+        });
 
         // Save the file
-        XLSX.writeFile(wb, fileName);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        window.URL.revokeObjectURL(url);
 
         // Show success message and return early for report 6
         toast.success(
