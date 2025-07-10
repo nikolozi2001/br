@@ -62,11 +62,39 @@ function ReportsResults({ isEnglish }) {
     { key: "Active_Pct", ge: "%", en: "%" },
   ];
 
-  const columns = Number(reportId) === 1 ? report1Columns : Number(reportId) === 2 ? report2Columns : Number(reportId) === 3 ? report3Columns : report4Columns;
+  const report5Columns = [
+    { key: "Location_Code", ge: "კოდი", en: "Code" },
+    {
+      key: "Location_Name",
+      ge: "მუნიციპალიტეტი",
+      en: "Municipality",
+    },
+    { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
+    { key: "Registered_Pct", ge: "%", en: "%" },
+    { key: "Active_Qty", ge: "აქტიური", en: "Active" },
+    { key: "Active_Pct", ge: "%", en: "%" },
+  ];
+
+  const columns =
+    Number(reportId) === 1
+      ? report1Columns
+      : Number(reportId) === 2
+      ? report2Columns
+      : Number(reportId) === 3
+      ? report3Columns
+      : Number(reportId) === 4
+      ? report4Columns
+      : report5Columns;
 
   useEffect(() => {
     const fetchData = async () => {
-      if (Number(reportId) === 1 || Number(reportId) === 2 || Number(reportId) === 3 || Number(reportId) === 4) {
+      if (
+        Number(reportId) === 1 ||
+        Number(reportId) === 2 ||
+        Number(reportId) === 3 ||
+        Number(reportId) === 4 ||
+        Number(reportId) === 5
+      ) {
         setLoading(true);
         try {
           let response;
@@ -78,8 +106,10 @@ function ReportsResults({ isEnglish }) {
             response = await API.fetchReport3Data(isEnglish ? "en" : "ge");
           } else if (Number(reportId) === 4) {
             response = await API.fetchReport4Data(isEnglish ? "en" : "ge");
+          } else if (Number(reportId) === 5) {
+            response = await API.fetchReport5Data(isEnglish ? "en" : "ge");
           }
-          
+
           let dataArray = Array.isArray(response.rows)
             ? response.rows
             : Array.isArray(response)
@@ -88,34 +118,89 @@ function ReportsResults({ isEnglish }) {
 
           // Calculate percentages for report 3
           if (Number(reportId) === 3 && dataArray.length > 0) {
-            const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
-            const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
-            
-            dataArray = dataArray.map(row => ({
+            const totalRegistered = dataArray.reduce(
+              (sum, row) => sum + Number(row.Registered_Qty),
+              0
+            );
+            const totalActive = dataArray.reduce(
+              (sum, row) => sum + Number(row.Active_Qty),
+              0
+            );
+
+            dataArray = dataArray.map((row) => ({
               ...row,
-              Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
-              Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0
+              Registered_Percent:
+                totalRegistered > 0
+                  ? (Number(row.Registered_Qty) / totalRegistered) * 100
+                  : 0,
+              Active_Percent:
+                totalActive > 0
+                  ? (Number(row.Active_Qty) / totalActive) * 100
+                  : 0,
             }));
-            
+
             // Sort by ID ascending for report 3
             dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
           }
 
           // Calculate percentages for report 4
           if (Number(reportId) === 4 && dataArray.length > 0) {
-            const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
-            const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
-            
-            dataArray = dataArray.map(row => ({
+            const totalRegistered = dataArray.reduce(
+              (sum, row) => sum + Number(row.Registered_Qty),
+              0
+            );
+            const totalActive = dataArray.reduce(
+              (sum, row) => sum + Number(row.Active_Qty),
+              0
+            );
+
+            dataArray = dataArray.map((row) => ({
               ...row,
-              Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
-              Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0
+              Registered_Percent:
+                totalRegistered > 0
+                  ? (Number(row.Registered_Qty) / totalRegistered) * 100
+                  : 0,
+              Active_Percent:
+                totalActive > 0
+                  ? (Number(row.Active_Qty) / totalActive) * 100
+                  : 0,
             }));
-            
+
             // Sort by Location_Code ascending for report 4
-            dataArray.sort((a, b) => Number(a.Location_Code) - Number(b.Location_Code));
+            dataArray.sort(
+              (a, b) => Number(a.Location_Code) - Number(b.Location_Code)
+            );
           }
-          
+
+          // Calculate percentages for report 5
+          if (Number(reportId) === 5 && dataArray.length > 0) {
+            const totalRegistered = dataArray.reduce(
+              (sum, row) => sum + Number(row.Registered_Qty),
+              0
+            );
+            const totalActive = dataArray.reduce(
+              (sum, row) => sum + Number(row.Active_Qty),
+              0
+            );
+
+            dataArray = dataArray.map((row) => ({
+              ...row,
+              Registered_Percent:
+                totalRegistered > 0
+                  ? (Number(row.Registered_Qty) / totalRegistered) * 100
+                  : 0,
+              Active_Percent:
+                totalActive > 0
+                  ? (Number(row.Active_Qty) / totalActive) * 100
+                  : 0,
+            }));
+
+            // Sort by Location_Code ascending for report 5
+            dataArray.sort(
+              (a, b) => Number(a.Location_Code) - Number(b.Location_Code)
+            );
+          }
+
           setReportData(dataArray);
         } catch (error) {
           console.error("Error fetching report data:", error);
@@ -224,9 +309,13 @@ function ReportsResults({ isEnglish }) {
             ? "Total"
             : "ჯამი",
           [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            totalRegisteredPct
+          )}%`,
           [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            totalActivePct
+          )}%`,
         });
 
         title = isEnglish
@@ -283,9 +372,13 @@ function ReportsResults({ isEnglish }) {
           [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
             isEnglish ? "Total" : "ჯამი",
           [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            totalRegisteredPct
+          )}%`,
           [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            totalActivePct
+          )}%`,
         });
 
         title = isEnglish
@@ -298,9 +391,7 @@ function ReportsResults({ isEnglish }) {
               new Date().toISOString().split("T")[0]
             }.xlsx`;
 
-        sheetName = isEnglish
-          ? "Legal Forms"
-          : "სამართლებრივი ფორმები";
+        sheetName = isEnglish ? "Legal Forms" : "სამართლებრივი ფორმები";
       } else if (Number(reportId) === 3) {
         // Report 3: Ownership Types
         excelData = sortedData.map((row) => ({
@@ -337,12 +428,17 @@ function ReportsResults({ isEnglish }) {
 
         excelData.push({
           [isEnglish ? "Code" : "კოდი"]: "-",
-          [isEnglish ? "Ownership Type" : "საკუთრების ფორმა"]:
-            isEnglish ? "Total" : "ჯამი",
+          [isEnglish ? "Ownership Type" : "საკუთრების ფორმა"]: isEnglish
+            ? "Total"
+            : "ჯამი",
           [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            totalRegisteredPct
+          )}%`,
           [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            totalActivePct
+          )}%`,
         });
 
         title = isEnglish
@@ -350,20 +446,19 @@ function ReportsResults({ isEnglish }) {
           : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით";
 
         fileName = isEnglish
-          ? `Ownership_Types_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          ? `Ownership_Types_Report_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`
           : `საკუთრების_ფორმების_ანგარიში_${
               new Date().toISOString().split("T")[0]
             }.xlsx`;
 
-        sheetName = isEnglish
-          ? "Ownership Types"
-          : "საკუთრების ფორმები";
+        sheetName = isEnglish ? "Ownership Types" : "საკუთრების ფორმები";
       } else if (Number(reportId) === 4) {
         // Report 4: Regions
         excelData = sortedData.map((row) => ({
           [isEnglish ? "Code" : "კოდი"]: row.Location_Code,
-          [isEnglish ? "Region" : "რეგიონი"]:
-            row.Location_Name,
+          [isEnglish ? "Region" : "რეგიონი"]: row.Location_Name,
           [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
           [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
             row.Registered_Percent
@@ -394,12 +489,15 @@ function ReportsResults({ isEnglish }) {
 
         excelData.push({
           [isEnglish ? "Code" : "კოდი"]: "-",
-          [isEnglish ? "Region" : "რეგიონი"]:
-            isEnglish ? "Total" : "ჯამი",
+          [isEnglish ? "Region" : "რეგიონი"]: isEnglish ? "Total" : "ჯამი",
           [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(totalRegisteredPct)}%`,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            totalRegisteredPct
+          )}%`,
           [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(totalActivePct)}%`,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            totalActivePct
+          )}%`,
         });
 
         title = isEnglish
@@ -412,9 +510,65 @@ function ReportsResults({ isEnglish }) {
               new Date().toISOString().split("T")[0]
             }.xlsx`;
 
-        sheetName = isEnglish
-          ? "Regions"
-          : "რეგიონები";
+        sheetName = isEnglish ? "Regions" : "რეგიონები";
+      } else if (Number(reportId) === 5) {
+        // Report 5: Municipalities
+        excelData = sortedData.map((row) => ({
+          [isEnglish ? "Code" : "კოდი"]: row.Location_Code,
+          [isEnglish ? "Municipality" : "მუნიციპალიტეტი"]: row.Location_Name,
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            row.Registered_Percent
+          )}%`,
+          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            row.Active_Percent
+          )}%`,
+        }));
+        totalRegistered = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Qty),
+          0
+        );
+        totalActive = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Qty),
+          0
+        );
+        const totalRegisteredPct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Percent),
+          0
+        );
+        const totalActivePct = sortedData.reduce(
+          (sum, row) => sum + Number(row.Active_Percent),
+          0
+        );
+        excelData.push({
+          [isEnglish ? "Code" : "კოდი"]: "-",
+          [isEnglish ? "Municipality" : "მუნიციპალიტეტი"]: isEnglish
+            ? "Total"
+            : "ჯამი",
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
+            totalRegisteredPct
+          )}%`,
+          [isEnglish ? "Active" : "აქტიური"]: totalActive,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
+            totalActivePct
+          )}%`,
+        });
+
+        title = isEnglish
+          ? "Number of registered and active organizations by municipalities"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით";
+
+        fileName = isEnglish
+          ? `Municipalities_Report_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`
+          : `მუნიციპალიტეტების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish ? "Municipalities" : "მუნიციპალიტეტები";
       }
 
       // Create workbook and worksheet
@@ -553,6 +707,14 @@ function ReportsResults({ isEnglish }) {
                     : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით"}
                 </>
               )}
+              {Number(reportId) === 5 && (
+                <>
+                  5 -{" "}
+                  {isEnglish
+                    ? "Number of registered and active organizations by municipalities"
+                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით"}
+                </>
+              )}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
@@ -612,7 +774,7 @@ function ReportsResults({ isEnglish }) {
                           key={
                             Number(reportId) === 1
                               ? row.Activity_Code || index
-                              : Number(reportId) === 4
+                              : Number(reportId) === 4 || Number(reportId) === 5
                               ? row.Location_Code || index
                               : row.ID || index
                           }
@@ -684,8 +846,9 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.Active_Percent)}
                               </td>
                             </>
-                          ) : (
-                            // Report 4: Regions
+                          ) : Number(reportId) === 4 ||
+                            Number(reportId) === 5 ? (
+                            // Report 4: Regions / Report 5: Municipalities
                             <>
                               <td className="px-4 py-3 font-bpg-nino">
                                 {row.Location_Code}
@@ -706,11 +869,36 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.Active_Percent)}
                               </td>
                             </>
+                          ) : (
+                            // Fallback for other reports
+                            <>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.ID || row.Location_Code}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Location_Name || "N/A"}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Registered_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Registered_Percent)}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {row.Active_Qty}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino text-right">
+                                {formatNumber(row.Active_Percent)}
+                              </td>
+                            </>
                           )}
                         </tr>
                       ))}
-                      {/* Total row - only show for Report 2, 3 and 4 */}
-                      {(Number(reportId) === 2 || Number(reportId) === 3 || Number(reportId) === 4) && (
+                      {/* Total row - only show for Report 2, 3, 4 and 5 */}
+                      {(Number(reportId) === 2 ||
+                        Number(reportId) === 3 ||
+                        Number(reportId) === 4 ||
+                        Number(reportId) === 5) && (
                         <tr className="bg-gray-100 font-bold">
                           <td className="px-4 py-3 font-bpg-nino">-</td>
                           <td className="px-4 py-3 font-bpg-nino">
@@ -724,7 +912,11 @@ function ReportsResults({ isEnglish }) {
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
                             {formatNumber(
-                              sortedData.reduce((sum, row) => sum + Number(row.Registered_Percent), 0)
+                              sortedData.reduce(
+                                (sum, row) =>
+                                  sum + Number(row.Registered_Percent),
+                                0
+                              )
                             )}
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
@@ -735,7 +927,10 @@ function ReportsResults({ isEnglish }) {
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
                             {formatNumber(
-                              sortedData.reduce((sum, row) => sum + Number(row.Active_Percent), 0)
+                              sortedData.reduce(
+                                (sum, row) => sum + Number(row.Active_Percent),
+                                0
+                              )
                             )}
                           </td>
                         </tr>
@@ -822,22 +1017,22 @@ function ReportsResults({ isEnglish }) {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#363636',
-            color: '#fff',
-            fontFamily: 'bpg-nino',
+            background: "#363636",
+            color: "#fff",
+            fontFamily: "bpg-nino",
           },
           success: {
             duration: 3000,
             iconTheme: {
-              primary: '#22c55e',
-              secondary: '#fff',
+              primary: "#22c55e",
+              secondary: "#fff",
             },
           },
           error: {
             duration: 4000,
             iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
+              primary: "#ef4444",
+              secondary: "#fff",
             },
           },
         }}
