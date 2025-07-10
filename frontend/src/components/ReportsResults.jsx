@@ -75,6 +75,16 @@ function ReportsResults({ isEnglish }) {
     { key: "Active_Pct", ge: "%", en: "%" },
   ];
 
+  const report6Columns = [
+    { key: "ID", ge: "კოდი", en: "Code" },
+    {
+      key: "Legal_Form",
+      ge: "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
+      en: "Organizational-Legal Form",
+    },
+    // Year columns will be generated dynamically
+  ];
+
   const columns =
     Number(reportId) === 1
       ? report1Columns
@@ -84,7 +94,9 @@ function ReportsResults({ isEnglish }) {
       ? report3Columns
       : Number(reportId) === 4
       ? report4Columns
-      : report5Columns;
+      : Number(reportId) === 5
+      ? report5Columns
+      : report6Columns;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,7 +105,8 @@ function ReportsResults({ isEnglish }) {
         Number(reportId) === 2 ||
         Number(reportId) === 3 ||
         Number(reportId) === 4 ||
-        Number(reportId) === 5
+        Number(reportId) === 5 ||
+        Number(reportId) === 6
       ) {
         setLoading(true);
         try {
@@ -108,6 +121,8 @@ function ReportsResults({ isEnglish }) {
             response = await API.fetchReport4Data(isEnglish ? "en" : "ge");
           } else if (Number(reportId) === 5) {
             response = await API.fetchReport5Data(isEnglish ? "en" : "ge");
+          } else if (Number(reportId) === 6) {
+            response = await API.fetchReport6Data(isEnglish ? "en" : "ge");
           }
 
           let dataArray = Array.isArray(response.rows)
@@ -197,10 +212,16 @@ function ReportsResults({ isEnglish }) {
 
             // Sort by Location_Code ascending for report 5 (nvarchar - lexicographical sort)
             dataArray.sort((a, b) => {
-              const aCode = String(a.Location_Code || '');
-              const bCode = String(b.Location_Code || '');
+              const aCode = String(a.Location_Code || "");
+              const bCode = String(b.Location_Code || "");
               return aCode.localeCompare(bCode);
             });
+          }
+
+          // Process data for report 6 (no percentage calculations needed, just sort by ID)
+          if (Number(reportId) === 6 && dataArray.length > 0) {
+            // Sort by ID ascending for report 6
+            dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
           }
 
           setReportData(dataArray);
@@ -571,6 +592,50 @@ function ReportsResults({ isEnglish }) {
             }.xlsx`;
 
         sheetName = isEnglish ? "Municipalities" : "მუნიციპალიტეტები";
+      } else if (Number(reportId) === 6) {
+        // Report 6: Organizational-Legal Forms and Years
+        const excelRowData = {
+          [isEnglish ? "Code" : "კოდი"]: "",
+          [isEnglish ? "Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: "",
+          [isEnglish ? "<1995" : "<1995"]: "",
+        };
+
+        // Add year columns
+        Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year) => {
+          excelRowData[year.toString()] = "";
+        });
+
+        excelData = sortedData.map((row) => {
+          const rowData = {
+            [isEnglish ? "Code" : "კოდი"]: row.ID,
+            [isEnglish ? "Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
+              row.Legal_Form,
+            [isEnglish ? "<1995" : "<1995"]: row.Before1995 || 0,
+          };
+
+          // Add year data
+          Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year) => {
+            rowData[year.toString()] = row[`Y${year}`] || 0;
+          });
+
+          return rowData;
+        });
+
+        title = isEnglish
+          ? "Number of registered organizations by organizational-legal forms and years - incremental sum"
+          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - ნაზარდი ჯამი";
+
+        fileName = isEnglish
+          ? `Organizational_Legal_Forms_Years_Report_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`
+          : `ორგანიზაციულ_სამართლებრივი_ფორმები_წლები_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish
+          ? "Org-Legal Forms and Years"
+          : "ორგანიზაციულ-სამართლებრივი ფორმები და წლები";
       }
 
       // Create workbook and worksheet
@@ -578,14 +643,25 @@ function ReportsResults({ isEnglish }) {
       const ws = XLSX.utils.json_to_sheet(excelData);
 
       // Set column widths
-      const colWidths = [
-        { wch: Number(reportId) === 1 ? 15 : 8 }, // Code/Activity Code
-        { wch: 40 }, // Name/Legal Status
-        { wch: 15 }, // Registered
-        { wch: 15 }, // Registered %
-        { wch: 15 }, // Active
-        { wch: 15 }, // Active %
-      ];
+      let colWidths;
+      if (Number(reportId) === 6) {
+        // Report 6 has many year columns
+        colWidths = [
+          { wch: 8 }, // Code
+          { wch: 40 }, // Legal Form
+          { wch: 8 }, // <1995
+          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
+        ];
+      } else {
+        colWidths = [
+          { wch: Number(reportId) === 1 ? 15 : 8 }, // Code/Activity Code
+          { wch: 40 }, // Name/Legal Status
+          { wch: 15 }, // Registered
+          { wch: 15 }, // Registered %
+          { wch: 15 }, // Active
+          { wch: 15 }, // Active %
+        ];
+      }
       ws["!cols"] = colWidths;
 
       // Insert title row at the beginning
@@ -717,6 +793,14 @@ function ReportsResults({ isEnglish }) {
                     : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით"}
                 </>
               )}
+              {Number(reportId) === 6 && (
+                <>
+                  6 -{" "}
+                  {isEnglish
+                    ? "Number of registered organizations by organizational-legal forms and years - incremental sum"
+                    : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - ნაზარდი ჯამი"}
+                </>
+              )}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
@@ -728,26 +812,74 @@ function ReportsResults({ isEnglish }) {
               <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="min-w-full bg-white">
-                    <thead className="bg-[#0080BE] text-white">
-                      <tr>
-                        {columns.map((column) => (
+                    {Number(reportId) === 6 ? (
+                      // Special table structure for Report 6
+                      <thead className="bg-[#0080BE] text-white">
+                        <tr>
                           <th
-                            key={column.key}
-                            onClick={() => handleSort(column.key)}
-                            className={`px-4 py-3 font-bpg-nino whitespace-nowrap cursor-pointer hover:bg-[#0070aa] transition-colors ${
-                              column.key === "ID" ||
-                              column.key === "Legal_Form" ||
-                              column.key === "Activity_Code" ||
-                              column.key === "Activity_Name" ||
-                              column.key === "Ownership_Type" ||
-                              column.key === "Location_Code" ||
-                              column.key === "Location_Name"
-                                ? "text-left"
-                                : "text-right"
-                            }`}
+                            rowSpan="2"
+                            className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                            onClick={() => handleSort("ID")}
                           >
-                            <div
-                              className={`flex items-center ${
+                            <div className="flex items-center justify-center">
+                              {isEnglish ? "Code" : "კოდი"}
+                              {sortConfig.key === "ID" && (
+                                <span className="ml-1">
+                                  {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                </span>
+                              )}
+                            </div>
+                          </th>
+                          <th
+                            rowSpan="2"
+                            className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                            onClick={() => handleSort("Legal_Form")}
+                          >
+                            <div className="flex items-center justify-center">
+                              {isEnglish
+                                ? "Organizational-Legal Form"
+                                : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება"}
+                              {sortConfig.key === "Legal_Form" && (
+                                <span className="ml-1">
+                                  {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                </span>
+                              )}
+                            </div>
+                          </th>
+                          <th
+                            colSpan="31"
+                            className="px-4 py-3 font-bpg-nino text-center border-b border-gray-300"
+                          >
+                            {isEnglish
+                              ? "Number of Organizations"
+                              : "ორგანიზაციათა რაოდენობა"}
+                          </th>
+                        </tr>
+                        <tr>
+                          <th className="px-2 py-2 font-bpg-nino text-center text-xs">
+                            &lt;1995
+                          </th>
+                          {Array.from({ length: 30 }, (_, i) => 1995 + i).map(
+                            (year) => (
+                              <th
+                                key={year}
+                                className="px-2 py-2 font-bpg-nino text-center text-xs"
+                              >
+                                {year}
+                              </th>
+                            )
+                          )}
+                        </tr>
+                      </thead>
+                    ) : (
+                      // Regular table structure for other reports
+                      <thead className="bg-[#0080BE] text-white">
+                        <tr>
+                          {columns.map((column) => (
+                            <th
+                              key={column.key}
+                              onClick={() => handleSort(column.key)}
+                              className={`px-4 py-3 font-bpg-nino whitespace-nowrap cursor-pointer hover:bg-[#0070aa] transition-colors ${
                                 column.key === "ID" ||
                                 column.key === "Legal_Form" ||
                                 column.key === "Activity_Code" ||
@@ -755,21 +887,35 @@ function ReportsResults({ isEnglish }) {
                                 column.key === "Ownership_Type" ||
                                 column.key === "Location_Code" ||
                                 column.key === "Location_Name"
-                                  ? "justify-start"
-                                  : "justify-end"
+                                  ? "text-left"
+                                  : "text-right"
                               }`}
                             >
-                              {isEnglish ? column.en : column.ge}
-                              {sortConfig.key === column.key && (
-                                <span className="ml-1">
-                                  {sortConfig.direction === "asc" ? "↑" : "↓"}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+                              <div
+                                className={`flex items-center ${
+                                  column.key === "ID" ||
+                                  column.key === "Legal_Form" ||
+                                  column.key === "Activity_Code" ||
+                                  column.key === "Activity_Name" ||
+                                  column.key === "Ownership_Type" ||
+                                  column.key === "Location_Code" ||
+                                  column.key === "Location_Name"
+                                    ? "justify-start"
+                                    : "justify-end"
+                                }`}
+                              >
+                                {isEnglish ? column.en : column.ge}
+                                {sortConfig.key === column.key && (
+                                  <span className="ml-1">
+                                    {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                  </span>
+                                )}
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                    )}
                     <tbody className="divide-y divide-gray-200">
                       {sortedData.map((row, index) => (
                         <tr
@@ -870,6 +1016,31 @@ function ReportsResults({ isEnglish }) {
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {formatNumber(row.Active_Percent)}
                               </td>
+                            </>
+                          ) : Number(reportId) === 6 ? (
+                            // Report 6: Organizational-Legal Forms by Years
+                            <>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.ID}
+                              </td>
+                              <td className="px-4 py-3 font-bpg-nino">
+                                {row.Legal_Form}
+                              </td>
+                              {/* Year columns: <1995, 1995-2024 */}
+                              <td className="px-2 py-3 font-bpg-nino text-right text-xs">
+                                {row.Before1995 || 0}
+                              </td>
+                              {Array.from(
+                                { length: 30 },
+                                (_, i) => 1995 + i
+                              ).map((year) => (
+                                <td
+                                  key={year}
+                                  className="px-2 py-3 font-bpg-nino text-right text-xs"
+                                >
+                                  {row[`${year}`] || 0}
+                                </td>
+                              ))}
                             </>
                           ) : (
                             // Fallback for other reports

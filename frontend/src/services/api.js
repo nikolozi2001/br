@@ -350,6 +350,7 @@ export const API = {
   fetchReport3Data,
   fetchReport4Data,
   fetchReport5Data,
+  fetchReport6Data,
 };
 
 export default API;
