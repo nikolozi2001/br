@@ -604,19 +604,25 @@ function ReportsResults({ isEnglish }) {
         Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year) => {
           excelRowData[year.toString()] = "";
         });
+        
+        // Add >2024 column
+        excelRowData[isEnglish ? ">2024" : ">2024"] = "";
 
         excelData = sortedData.map((row) => {
           const rowData = {
             [isEnglish ? "Code" : "კოდი"]: row.ID,
             [isEnglish ? "Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
               row.Legal_Form,
-            [isEnglish ? "<1995" : "<1995"]: row.Before1995 || 0,
+            [isEnglish ? "<1995" : "<1995"]: row["<1995"] || 0,
           };
 
           // Add year data
           Array.from({ length: 30 }, (_, i) => 1995 + i).forEach((year) => {
-            rowData[year.toString()] = row[`Y${year}`] || 0;
+            rowData[year.toString()] = row[year.toString()] || 0;
           });
+
+          // Add >2024 data
+          rowData[isEnglish ? ">2024" : ">2024"] = row[">2024"] || 0;
 
           return rowData;
         });
@@ -651,6 +657,7 @@ function ReportsResults({ isEnglish }) {
           { wch: 40 }, // Legal Form
           { wch: 8 }, // <1995
           ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
+          { wch: 8 }, // >2024
         ];
       } else {
         colWidths = [
@@ -847,7 +854,7 @@ function ReportsResults({ isEnglish }) {
                             </div>
                           </th>
                           <th
-                            colSpan="31"
+                            colSpan="32"
                             className="px-4 py-3 font-bpg-nino text-center border-b border-gray-300"
                           >
                             {isEnglish
@@ -869,6 +876,9 @@ function ReportsResults({ isEnglish }) {
                               </th>
                             )
                           )}
+                          <th className="px-2 py-2 font-bpg-nino text-center text-xs">
+                            &gt;2024
+                          </th>
                         </tr>
                       </thead>
                     ) : (
@@ -1026,9 +1036,9 @@ function ReportsResults({ isEnglish }) {
                               <td className="px-4 py-3 font-bpg-nino">
                                 {row.Legal_Form}
                               </td>
-                              {/* Year columns: <1995, 1995-2024 */}
-                              <td className="px-2 py-3 font-bpg-nino text-right text-xs">
-                                {row.Before1995 || 0}
+                              {/* Year columns: <1995, 1995-2024, >2024 */}
+                              <td className="px-2 py-3 text-right text-xs">
+                                {row["<1995"] || 0}
                               </td>
                               {Array.from(
                                 { length: 30 },
@@ -1036,11 +1046,14 @@ function ReportsResults({ isEnglish }) {
                               ).map((year) => (
                                 <td
                                   key={year}
-                                  className="px-2 py-3 font-bpg-nino text-right text-xs"
+                                  className="px-2 py-3 text-right text-xs"
                                 >
                                   {row[`${year}`] || 0}
                                 </td>
                               ))}
+                              <td className="px-2 py-3 text-right text-xs">
+                                {row[">2024"] || 0}
+                              </td>
                             </>
                           ) : (
                             // Fallback for other reports
