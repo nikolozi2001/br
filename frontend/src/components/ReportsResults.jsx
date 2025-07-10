@@ -195,10 +195,12 @@ function ReportsResults({ isEnglish }) {
                   : 0,
             }));
 
-            // Sort by Location_Code ascending for report 5
-            dataArray.sort(
-              (a, b) => Number(a.Location_Code) - Number(b.Location_Code)
-            );
+            // Sort by Location_Code ascending for report 5 (nvarchar - lexicographical sort)
+            dataArray.sort((a, b) => {
+              const aCode = String(a.Location_Code || '');
+              const bCode = String(b.Location_Code || '');
+              return aCode.localeCompare(bCode);
+            });
           }
 
           setReportData(dataArray);
