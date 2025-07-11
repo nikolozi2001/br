@@ -263,10 +263,21 @@ function ReportsResults({ isEnglish }) {
 
           // Process data for report 8 (no percentage calculations needed, just sort by ID)
           if (Number(reportId) === 8 && dataArray.length > 0) {
-            // Sort by Activity_Code ascending for report 8
+            // Sort by Activity_Code ascending for report 8, empty codes last
             dataArray.sort((a, b) => {
               const aCode = String(a.Activity_Code || "");
               const bCode = String(b.Activity_Code || "");
+              
+              // If both codes are empty, maintain original order
+              if (!aCode && !bCode) return 0;
+              
+              // If only aCode is empty, put it last
+              if (!aCode) return 1;
+              
+              // If only bCode is empty, put it last
+              if (!bCode) return -1;
+              
+              // Both codes have values, compare normally
               return aCode.localeCompare(bCode);
             });
           }
