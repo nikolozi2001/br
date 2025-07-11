@@ -117,13 +117,12 @@ function ReportsResults({ isEnglish }) {
   ];
 
   const report10Columns = [
-    { key: "Region_Code", ge: "რეგიონის კოდი", en: "Region Code" },
     { key: "Region", ge: "რეგიონი", en: "Region" },
-    { key: "Activity_Code", ge: "საქმიანობის კოდი", en: "Activity Code" },
+    { key: "Activity_Code", ge: "საქმიანობის კოდი Nace Rev.2", en: "Activity_Code Nace Rev.2" },
     {
       key: "Activity_Name",
-      ge: "ეკონომიკური საქმიანობის სახე",
-      en: "Economic Activity",
+      ge: "საქმიანობა Nace Rev.2",
+      en: "Activity Nace Rev.2",
     },
     // Year columns will be generated dynamically (2012-2023)
   ];
@@ -1365,10 +1364,9 @@ function ReportsResults({ isEnglish }) {
 
         // Add header row 1 (mimicking the table structure)
         const headerRow1 = worksheet.addRow([
-          isEnglish ? "Region Code" : "რეგიონის კოდი",
           isEnglish ? "Region" : "რეგიონი",
-          isEnglish ? "Activity Code" : "საქმიანობის კოდი",
-          isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე",
+          isEnglish ? "Activity_Code Nace Rev.2" : "საქმიანობის კოდი Nace Rev.2",
+          isEnglish ? "Activity Nace Rev.2" : "საქმიანობა Nace Rev.2",
           isEnglish ? "Number of Active Business Entities" : "მოქმედ ბიზნეს სუბიექტთა რაოდენობა",
           ...Array.from({ length: 11 }, () => ""), // Empty cells for merged header
         ]);
@@ -1391,22 +1389,21 @@ function ReportsResults({ isEnglish }) {
         });
 
         // Merge cells for header structure
-        worksheet.mergeCells('A4:A5'); // Region Code column (rowspan)
-        worksheet.mergeCells('B4:B5'); // Region column (rowspan)
-        worksheet.mergeCells('C4:C5'); // Activity Code column (rowspan)
-        worksheet.mergeCells('D4:D5'); // Activity Name column (rowspan)
-        worksheet.mergeCells('E4:P4'); // Number of Active Business Entities (colspan)
+        worksheet.mergeCells('A4:A5'); // Region column (rowspan)
+        worksheet.mergeCells('B4:B5'); // Activity Code column (rowspan)
+        worksheet.mergeCells('C4:C5'); // Activity Name column (rowspan)
+        worksheet.mergeCells('D4:O4'); // Number of Active Business Entities (colspan)
 
         // Add header row 2 (year columns)
         const yearHeaders = [
-          "", "", "", "", // Empty for merged cells above
+          "", "", "", // Empty for merged cells above (Region, Activity Code, Activity Name)
           ...Array.from({ length: 12 }, (_, i) => (2012 + i).toString())
         ];
         const headerRow2 = worksheet.addRow(yearHeaders);
 
         // Style header row 2
         headerRow2.eachCell((cell, colNumber) => {
-          if (colNumber > 4) { // Skip merged cells
+          if (colNumber > 3) { // Skip merged cells (Region, Activity Code, Activity Name)
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
@@ -1426,7 +1423,6 @@ function ReportsResults({ isEnglish }) {
         // Add data rows
         sortedData.forEach((row) => {
           const dataRowValues = [
-            row.Region_Code,
             row.Region,
             row.Activity_Code,
             row.Activity_Name,
@@ -1438,7 +1434,7 @@ function ReportsResults({ isEnglish }) {
           // Style data row
           dataRow.eachCell((cell, colNumber) => {
             cell.alignment = { 
-              horizontal: colNumber <= 4 ? 'left' : 'right', 
+              horizontal: colNumber <= 3 ? 'left' : 'right', 
               vertical: 'middle' 
             };
             cell.border = {
@@ -1729,20 +1725,6 @@ function ReportsResults({ isEnglish }) {
                               <th
                                 rowSpan="2"
                                 className="px-3 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
-                                onClick={() => handleSort("Region_Code")}
-                              >
-                                <div className="flex items-center justify-center">
-                                  {isEnglish ? "Region Code" : "რეგიონის კოდი"}
-                                  {sortConfig.key === "Region_Code" && (
-                                    <span className="ml-1">
-                                      {sortConfig.direction === "asc" ? "↑" : "↓"}
-                                    </span>
-                                  )}
-                                </div>
-                              </th>
-                              <th
-                                rowSpan="2"
-                                className="px-3 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
                                 onClick={() => handleSort("Region")}
                               >
                                 <div className="flex items-center justify-center">
@@ -1760,7 +1742,7 @@ function ReportsResults({ isEnglish }) {
                                 onClick={() => handleSort("Activity_Code")}
                               >
                                 <div className="flex items-center justify-center">
-                                  {isEnglish ? "Activity Code" : "საქმიანობის კოდი"}
+                                  {isEnglish ? "Activity_Code Nace Rev.2" : "საქმიანობის კოდი Nace Rev.2"}
                                   {sortConfig.key === "Activity_Code" && (
                                     <span className="ml-1">
                                       {sortConfig.direction === "asc" ? "↑" : "↓"}
@@ -1774,7 +1756,7 @@ function ReportsResults({ isEnglish }) {
                                 onClick={() => handleSort("Activity_Name")}
                               >
                                 <div className="flex items-center justify-center">
-                                  {isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე"}
+                                  {isEnglish ? "Activity_Name Nace Rev.2" : "საქმიანობა Nace Rev.2"}
                                   {sortConfig.key === "Activity_Name" && (
                                     <span className="ml-1">
                                       {sortConfig.direction === "asc" ? "↑" : "↓"}
@@ -1787,8 +1769,8 @@ function ReportsResults({ isEnglish }) {
                                 className="px-4 py-3 font-bpg-nino text-center border-b border-gray-300"
                               >
                                 {isEnglish
-                                  ? "Number of Active Business Entities"
-                                  : "მოქმედ ბიზნეს სუბიექტთა რაოდენობა"}
+                                  ? "Number of Organizations"
+                                  : "ორგანიზაციათა რაოდენობა"}
                               </th>
                             </tr>
                             <tr>
@@ -1921,7 +1903,7 @@ function ReportsResults({ isEnglish }) {
                             Number(reportId) === 1 || Number(reportId) === 8 || Number(reportId) === 9
                               ? row.Activity_Code || index
                               : Number(reportId) === 10
-                              ? (row.Region_Code && row.Activity_Code ? `${row.Region_Code}-${row.Activity_Code}` : index)
+                              ? (row.Region && row.Activity_Code ? `${row.Region}-${row.Activity_Code}` : index)
                               : Number(reportId) === 4 || Number(reportId) === 5
                               ? row.Location_Code || index
                               : row.ID || index
@@ -2023,9 +2005,6 @@ function ReportsResults({ isEnglish }) {
                               {Number(reportId) === 10 ? (
                                 // Report 10: Region + Activity structure
                                 <>
-                                  <td className="px-3 py-3 font-bpg-nino text-center">
-                                    {row.Region_Code}
-                                  </td>
                                   <td className="px-3 py-3 font-bpg-nino">
                                     {row.Region}
                                   </td>
