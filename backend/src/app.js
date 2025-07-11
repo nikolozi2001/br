@@ -25,6 +25,7 @@ const report5Router = require('./routes/report5');
 const report6Router = require('./routes/report6');
 const report7Router = require('./routes/report7');
 const report8Router = require('./routes/report8'); 
+const report9Router = require('./routes/report9');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -41,6 +42,7 @@ app.use('/api/report5', report5Router);
 app.use('/api/report6', report6Router);
 app.use('/api/report7', report7Router);
 app.use('/api/report8', report8Router);
+app.use('/api/report9', report9Router);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
