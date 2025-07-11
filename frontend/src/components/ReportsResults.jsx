@@ -116,6 +116,18 @@ function ReportsResults({ isEnglish }) {
     // Year columns will be generated dynamically
   ];
 
+  const report10Columns = [
+    { key: "Region_Code", ge: "რეგიონის კოდი", en: "Region Code" },
+    { key: "Region", ge: "რეგიონი", en: "Region" },
+    { key: "Activity_Code", ge: "საქმიანობის კოდი", en: "Activity Code" },
+    {
+      key: "Activity_Name",
+      ge: "ეკონომიკური საქმიანობის სახე",
+      en: "Economic Activity",
+    },
+    // Year columns will be generated dynamically (2012-2023)
+  ];
+
   const columns =
     Number(reportId) === 1
       ? report1Columns
@@ -133,7 +145,9 @@ function ReportsResults({ isEnglish }) {
       ? report7Columns
       : Number(reportId) === 8
       ? report8Columns
-      : report9Columns;
+      : Number(reportId) === 9
+      ? report9Columns
+      : report10Columns;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -146,7 +160,8 @@ function ReportsResults({ isEnglish }) {
         Number(reportId) === 6 ||
         Number(reportId) === 7 ||
         Number(reportId) === 8 ||
-        Number(reportId) === 9
+        Number(reportId) === 9 ||
+        Number(reportId) === 10
       ) {
         setLoading(true);
         try {
@@ -169,6 +184,8 @@ function ReportsResults({ isEnglish }) {
             response = await API.fetchReport8Data(isEnglish ? "en" : "ge");
           } else if (Number(reportId) === 9) {
             response = await API.fetchReport9Data(isEnglish ? "en" : "ge");
+          } else if (Number(reportId) === 10) {
+            response = await API.fetchReport10Data(isEnglish ? "en" : "ge");
           }
 
           let dataArray = Array.isArray(response.rows)
@@ -317,6 +334,32 @@ function ReportsResults({ isEnglish }) {
               return aCode.localeCompare(bCode);
             });
           }
+
+          // // Process data for report 10 (sort by Region_Code, then Activity_Code)
+          // if (Number(reportId) === 10 && dataArray.length > 0) {
+          //   // Sort by Region_Code first, then by Activity_Code
+          //   dataArray.sort((a, b) => {
+          //     const aRegionCode = String(a.Region_Code || "");
+          //     const bRegionCode = String(b.Region_Code || "");
+          //     const aActivityCode = String(a.Activity_Code || "");
+          //     const bActivityCode = String(b.Activity_Code || "");
+              
+          //     // First compare by Region_Code
+          //     if (aRegionCode !== bRegionCode) {
+          //       // Handle empty region codes
+          //       if (!aRegionCode && !bRegionCode) return 0;
+          //       if (!aRegionCode) return 1;
+          //       if (!bRegionCode) return -1;
+          //       return aRegionCode.localeCompare(bRegionCode);
+          //     }
+              
+          //     // If Region_Code is the same, compare by Activity_Code
+          //     if (!aActivityCode && !bActivityCode) return 0;
+          //     if (!aActivityCode) return 1;
+          //     if (!bActivityCode) return -1;
+          //     return aActivityCode.localeCompare(bActivityCode);
+          //   });
+          // }
 
           setReportData(dataArray);
         } catch (error) {
@@ -1278,6 +1321,156 @@ function ReportsResults({ isEnglish }) {
             : "Excel ფაილი წარმატებით ექსპორტირებულია!"
         );
         return;
+      } else if (Number(reportId) === 10) {
+        // Report 10: Regions and Economic Activities (2012-2023)
+        // Use ExcelJS for advanced styling to match frontend table
+        
+        const title = isEnglish
+          ? "The number of active business entities registered in Georgia according to regions and types of economic activity (Nace Rev.2)"
+          : "საქართველოში რეგისტრირებულ მოქმედ ბიზნეს სუბიექტთა რაოდენობა რეგიონებისა და ეკონომიკური საქმიანობის სახეების მიხედვით (Nace Rev.2)";
+
+        const fileName = isEnglish
+          ? `Regions_Activities_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `რეგიონები_საქმიანობები_ანგარიში_${new Date().toISOString().split("T")[0]}.xlsx`;
+
+        const sheetName = isEnglish
+          ? "Regions and Activities"
+          : "რეგიონები და საქმიანობები";
+
+        // Create workbook and worksheet using ExcelJS
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(sheetName);
+
+        // Set column widths
+        worksheet.columns = [
+          { width: 10 },  // Region Code
+          { width: 20 },  // Region
+          { width: 12 },  // Activity Code
+          { width: 40 },  // Activity Name
+          ...Array.from({ length: 12 }, () => ({ width: 8 })), // Year columns (2012-2023)
+        ];
+
+        // Add title row
+        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
+        titleRow.font = { bold: true, size: 14 };
+        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        // Add date row
+        const dateRow = worksheet.addRow([isEnglish ? "Date: 11 July 2025" : "თარიღი: 11 ივლისი 2025"]);
+        dateRow.font = { size: 12 };
+        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        // Add empty row
+        worksheet.addRow([]);
+
+        // Add header row 1 (mimicking the table structure)
+        const headerRow1 = worksheet.addRow([
+          isEnglish ? "Region Code" : "რეგიონის კოდი",
+          isEnglish ? "Region" : "რეგიონი",
+          isEnglish ? "Activity Code" : "საქმიანობის კოდი",
+          isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე",
+          isEnglish ? "Number of Active Business Entities" : "მოქმედ ბიზნეს სუბიექტთა რაოდენობა",
+          ...Array.from({ length: 11 }, () => ""), // Empty cells for merged header
+        ]);
+
+        // Style header row 1
+        headerRow1.eachCell((cell) => {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF0080BE' }
+          };
+          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+          };
+        });
+
+        // Merge cells for header structure
+        worksheet.mergeCells('A4:A5'); // Region Code column (rowspan)
+        worksheet.mergeCells('B4:B5'); // Region column (rowspan)
+        worksheet.mergeCells('C4:C5'); // Activity Code column (rowspan)
+        worksheet.mergeCells('D4:D5'); // Activity Name column (rowspan)
+        worksheet.mergeCells('E4:P4'); // Number of Active Business Entities (colspan)
+
+        // Add header row 2 (year columns)
+        const yearHeaders = [
+          "", "", "", "", // Empty for merged cells above
+          ...Array.from({ length: 12 }, (_, i) => (2012 + i).toString())
+        ];
+        const headerRow2 = worksheet.addRow(yearHeaders);
+
+        // Style header row 2
+        headerRow2.eachCell((cell, colNumber) => {
+          if (colNumber > 4) { // Skip merged cells
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FF0080BE' }
+            };
+            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+            };
+          }
+        });
+
+        // Add data rows
+        sortedData.forEach((row) => {
+          const dataRowValues = [
+            row.Region_Code,
+            row.Region,
+            row.Activity_Code,
+            row.Activity_Name,
+            ...Array.from({ length: 12 }, (_, i) => row[(2012 + i).toString()] || 0)
+          ];
+          
+          const dataRow = worksheet.addRow(dataRowValues);
+          
+          // Style data row
+          dataRow.eachCell((cell, colNumber) => {
+            cell.alignment = { 
+              horizontal: colNumber <= 4 ? 'left' : 'right', 
+              vertical: 'middle' 
+            };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+            };
+          });
+        });
+
+        // Save the file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        // Show success message and return early for report 10
+        toast.success(
+          isEnglish
+            ? "Excel file exported successfully!"
+            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
+        );
+        return;
       }
 
       // Create workbook and worksheet
@@ -1321,6 +1514,15 @@ function ReportsResults({ isEnglish }) {
           { wch: 8 }, // <1995
           ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
           { wch: 8 }, // >2024
+        ];
+      } else if (Number(reportId) === 10) {
+        // Report 10 has region and activity structure with 2012-2023 years
+        colWidths = [
+          { wch: 10 }, // Region Code
+          { wch: 20 }, // Region
+          { wch: 12 }, // Activity Code
+          { wch: 40 }, // Activity Name
+          ...Array.from({ length: 12 }, () => ({ wch: 8 })), // Year columns (2012-2023)
         ];
       } else {
         colWidths = [
@@ -1498,6 +1700,14 @@ function ReportsResults({ isEnglish }) {
                     : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - კონკრეტულ წელს რეგისტრირებული"}
                 </>
               )}
+              {Number(reportId) === 10 && (
+                <>
+                  10 -{" "}
+                  {isEnglish
+                    ? "The number of active business entities registered in Georgia according to regions and types of economic activity (Nace Rev.2)"
+                    : "საქართველოში რეგისტრირებულ მოქმედ ბიზნეს სუბიექტთა რაოდენობა რეგიონებისა და ეკონომიკური საქმიანობის სახეების მიხედვით (Nace Rev.2)"}
+                </>
+              )}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
@@ -1509,68 +1719,155 @@ function ReportsResults({ isEnglish }) {
               <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="min-w-full bg-white">
-                    {Number(reportId) === 6 || Number(reportId) === 7 || Number(reportId) === 8 || Number(reportId) === 9 ? (
-                      // Special table structure for Report 6, 7 and 8
+                    {Number(reportId) === 6 || Number(reportId) === 7 || Number(reportId) === 8 || Number(reportId) === 9 || Number(reportId) === 10 ? (
+                      // Special table structure for Report 6, 7, 8, 9 and 10
                       <thead className="bg-[#0080BE] text-white">
-                        <tr>
-                          <th
-                            rowSpan="2"
-                            className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
-                            onClick={() => handleSort(Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Code" : "ID")}
-                          >
-                            <div className="flex items-center justify-center">
-                              {isEnglish ? "Code" : "კოდი"}
-                              {sortConfig.key === (Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Code" : "ID") && (
-                                <span className="ml-1">
-                                  {sortConfig.direction === "asc" ? "↑" : "↓"}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th
-                            rowSpan="2"
-                            className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
-                            onClick={() => handleSort(Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Name" : "Legal_Form")}
-                          >
-                            <div className="flex items-center justify-center">
-                              {Number(reportId) === 8 || Number(reportId) === 9
-                                ? (isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე")
-                                : (isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება")
-                              }
-                              {sortConfig.key === (Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Name" : "Legal_Form") && (
-                                <span className="ml-1">
-                                  {sortConfig.direction === "asc" ? "↑" : "↓"}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th
-                            colSpan="32"
-                            className="px-4 py-3 font-bpg-nino text-center border-b border-gray-300"
-                          >
-                            {isEnglish
-                              ? "Number of Organizations"
-                              : "ორგანიზაციათა რაოდენობა"}
-                          </th>
-                        </tr>
-                        <tr>
-                          <th className="px-2 py-2 font-bpg-nino text-center text-xs">
-                            &lt;1995
-                          </th>
-                          {Array.from({ length: 30 }, (_, i) => 1995 + i).map(
-                            (year) => (
+                        {Number(reportId) === 10 ? (
+                          // Special header for Report 10 with Region and Activity columns
+                          <>
+                            <tr>
                               <th
-                                key={year}
-                                className="px-2 py-2 font-bpg-nino text-center text-xs"
+                                rowSpan="2"
+                                className="px-3 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                                onClick={() => handleSort("Region_Code")}
                               >
-                                {year}
+                                <div className="flex items-center justify-center">
+                                  {isEnglish ? "Region Code" : "რეგიონის კოდი"}
+                                  {sortConfig.key === "Region_Code" && (
+                                    <span className="ml-1">
+                                      {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                    </span>
+                                  )}
+                                </div>
                               </th>
-                            )
-                          )}
-                          <th className="px-2 py-2 font-bpg-nino text-center text-xs">
-                            &gt;2024
-                          </th>
-                        </tr>
+                              <th
+                                rowSpan="2"
+                                className="px-3 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                                onClick={() => handleSort("Region")}
+                              >
+                                <div className="flex items-center justify-center">
+                                  {isEnglish ? "Region" : "რეგიონი"}
+                                  {sortConfig.key === "Region" && (
+                                    <span className="ml-1">
+                                      {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                              <th
+                                rowSpan="2"
+                                className="px-3 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                                onClick={() => handleSort("Activity_Code")}
+                              >
+                                <div className="flex items-center justify-center">
+                                  {isEnglish ? "Activity Code" : "საქმიანობის კოდი"}
+                                  {sortConfig.key === "Activity_Code" && (
+                                    <span className="ml-1">
+                                      {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                              <th
+                                rowSpan="2"
+                                className="px-3 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                                onClick={() => handleSort("Activity_Name")}
+                              >
+                                <div className="flex items-center justify-center">
+                                  {isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე"}
+                                  {sortConfig.key === "Activity_Name" && (
+                                    <span className="ml-1">
+                                      {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                              <th
+                                colSpan="12"
+                                className="px-4 py-3 font-bpg-nino text-center border-b border-gray-300"
+                              >
+                                {isEnglish
+                                  ? "Number of Active Business Entities"
+                                  : "მოქმედ ბიზნეს სუბიექტთა რაოდენობა"}
+                              </th>
+                            </tr>
+                            <tr>
+                              {Array.from({ length: 12 }, (_, i) => 2012 + i).map(
+                                (year) => (
+                                  <th
+                                    key={year}
+                                    className="px-2 py-2 font-bpg-nino text-center text-xs"
+                                  >
+                                    {year}
+                                  </th>
+                                )
+                              )}
+                            </tr>
+                          </>
+                        ) : (
+                          // Standard header for Reports 6, 7, 8, 9
+                          <>
+                            <tr>
+                              <th
+                                rowSpan="2"
+                                className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                                onClick={() => handleSort(Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Code" : "ID")}
+                              >
+                                <div className="flex items-center justify-center">
+                                  {isEnglish ? "Code" : "კოდი"}
+                                  {sortConfig.key === (Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Code" : "ID") && (
+                                    <span className="ml-1">
+                                      {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                              <th
+                                rowSpan="2"
+                                className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
+                                onClick={() => handleSort(Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Name" : "Legal_Form")}
+                              >
+                                <div className="flex items-center justify-center">
+                                  {Number(reportId) === 8 || Number(reportId) === 9
+                                    ? (isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე")
+                                    : (isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება")
+                                  }
+                                  {sortConfig.key === (Number(reportId) === 8 || Number(reportId) === 9 ? "Activity_Name" : "Legal_Form") && (
+                                    <span className="ml-1">
+                                      {sortConfig.direction === "asc" ? "↑" : "↓"}
+                                    </span>
+                                  )}
+                                </div>
+                              </th>
+                              <th
+                                colSpan="32"
+                                className="px-4 py-3 font-bpg-nino text-center border-b border-gray-300"
+                              >
+                                {isEnglish
+                                  ? "Number of Organizations"
+                                  : "ორგანიზაციათა რაოდენობა"}
+                              </th>
+                            </tr>
+                            <tr>
+                              <th className="px-2 py-2 font-bpg-nino text-center text-xs">
+                                &lt;1995
+                              </th>
+                              {Array.from({ length: 30 }, (_, i) => 1995 + i).map(
+                                (year) => (
+                                  <th
+                                    key={year}
+                                    className="px-2 py-2 font-bpg-nino text-center text-xs"
+                                  >
+                                    {year}
+                                  </th>
+                                )
+                              )}
+                              <th className="px-2 py-2 font-bpg-nino text-center text-xs">
+                                &gt;2024
+                              </th>
+                            </tr>
+                          </>
+                        )}
                       </thead>
                     ) : (
                       // Regular table structure for other reports
@@ -1623,6 +1920,8 @@ function ReportsResults({ isEnglish }) {
                           key={
                             Number(reportId) === 1 || Number(reportId) === 8 || Number(reportId) === 9
                               ? row.Activity_Code || index
+                              : Number(reportId) === 10
+                              ? (row.Region_Code && row.Activity_Code ? `${row.Region_Code}-${row.Activity_Code}` : index)
                               : Number(reportId) === 4 || Number(reportId) === 5
                               ? row.Location_Code || index
                               : row.ID || index
@@ -1718,33 +2017,66 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.Active_Percent)}
                               </td>
                             </>
-                          ) : Number(reportId) === 6 || Number(reportId) === 7 || Number(reportId) === 8 || Number(reportId) === 9 ? (
-                            // Report 6, 7, 8 and 9: Year-based reports
+                          ) : Number(reportId) === 6 || Number(reportId) === 7 || Number(reportId) === 8 || Number(reportId) === 9 || Number(reportId) === 10 ? (
+                            // Report 6, 7, 8, 9 and 10: Year-based reports
                             <>
-                              <td className="px-4 py-3 font-bpg-nino">
-                                {Number(reportId) === 8 || Number(reportId) === 9 ? row.Activity_Code : row.ID}
-                              </td>
-                              <td className="px-4 py-3 font-bpg-nino">
-                                {Number(reportId) === 8 || Number(reportId) === 9 ? row.Activity_Name : row.Legal_Form}
-                              </td>
-                              {/* Year columns: <1995, 1995-2024, >2024 */}
-                              <td className="px-2 py-3 text-right text-xs">
-                                {row["<1995"] || 0}
-                              </td>
-                              {Array.from(
-                                { length: 30 },
-                                (_, i) => 1995 + i
-                              ).map((year) => (
-                                <td
-                                  key={year}
-                                  className="px-2 py-3 text-right text-xs"
-                                >
-                                  {row[`${year}`] || 0}
-                                </td>
-                              ))}
-                              <td className="px-2 py-3 text-right text-xs">
-                                {row[">2024"] || 0}
-                              </td>
+                              {Number(reportId) === 10 ? (
+                                // Report 10: Region + Activity structure
+                                <>
+                                  <td className="px-3 py-3 font-bpg-nino text-center">
+                                    {row.Region_Code}
+                                  </td>
+                                  <td className="px-3 py-3 font-bpg-nino">
+                                    {row.Region}
+                                  </td>
+                                  <td className="px-3 py-3 font-bpg-nino text-center">
+                                    {row.Activity_Code}
+                                  </td>
+                                  <td className="px-3 py-3 font-bpg-nino">
+                                    {row.Activity_Name}
+                                  </td>
+                                  {/* Year columns: 2012-2023 */}
+                                  {Array.from(
+                                    { length: 12 },
+                                    (_, i) => 2012 + i
+                                  ).map((year) => (
+                                    <td
+                                      key={year}
+                                      className="px-2 py-3 text-right text-xs"
+                                    >
+                                      {row[`${year}`] || 0}
+                                    </td>
+                                  ))}
+                                </>
+                              ) : (
+                                // Reports 6, 7, 8, 9: Standard structure
+                                <>
+                                  <td className="px-4 py-3 font-bpg-nino">
+                                    {Number(reportId) === 8 || Number(reportId) === 9 ? row.Activity_Code : row.ID}
+                                  </td>
+                                  <td className="px-4 py-3 font-bpg-nino">
+                                    {Number(reportId) === 8 || Number(reportId) === 9 ? row.Activity_Name : row.Legal_Form}
+                                  </td>
+                                  {/* Year columns: <1995, 1995-2024, >2024 */}
+                                  <td className="px-2 py-3 text-right text-xs">
+                                    {row["<1995"] || 0}
+                                  </td>
+                                  {Array.from(
+                                    { length: 30 },
+                                    (_, i) => 1995 + i
+                                  ).map((year) => (
+                                    <td
+                                      key={year}
+                                      className="px-2 py-3 text-right text-xs"
+                                    >
+                                      {row[`${year}`] || 0}
+                                    </td>
+                                  ))}
+                                  <td className="px-2 py-3 text-right text-xs">
+                                    {row[">2024"] || 0}
+                                  </td>
+                                </>
+                              )}
                             </>
                           ) : (
                             // Fallback for other reports
