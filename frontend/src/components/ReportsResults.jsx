@@ -96,6 +96,16 @@ function ReportsResults({ isEnglish }) {
     // Year columns will be generated dynamically
   ];
 
+  const report8Columns = [
+    { key: "Activity_Code", ge: "კოდი", en: "Activity Code" },
+    {
+      key: "Activity_Name",
+      ge: "ეკონომიკური საქმიანობის სახე",
+      en: "Economic Activity",
+    },
+    // Year columns will be generated dynamically
+  ];
+
   const columns =
     Number(reportId) === 1
       ? report1Columns
@@ -109,7 +119,9 @@ function ReportsResults({ isEnglish }) {
       ? report5Columns
       : Number(reportId) === 6
       ? report6Columns
-      : report7Columns;
+      : Number(reportId) === 7
+      ? report7Columns
+      : report8Columns;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,7 +132,8 @@ function ReportsResults({ isEnglish }) {
         Number(reportId) === 4 ||
         Number(reportId) === 5 ||
         Number(reportId) === 6 ||
-        Number(reportId) === 7
+        Number(reportId) === 7 ||
+        Number(reportId) === 8
       ) {
         setLoading(true);
         try {
@@ -139,6 +152,8 @@ function ReportsResults({ isEnglish }) {
             response = await API.fetchReport6Data(isEnglish ? "en" : "ge");
           } else if (Number(reportId) === 7) {
             response = await API.fetchReport7Data(isEnglish ? "en" : "ge");
+          } else if (Number(reportId) === 8) {
+            response = await API.fetchReport8Data(isEnglish ? "en" : "ge");
           }
 
           let dataArray = Array.isArray(response.rows)
@@ -244,6 +259,16 @@ function ReportsResults({ isEnglish }) {
           if (Number(reportId) === 7 && dataArray.length > 0) {
             // Sort by ID ascending for report 7
             dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
+          }
+
+          // Process data for report 8 (no percentage calculations needed, just sort by ID)
+          if (Number(reportId) === 8 && dataArray.length > 0) {
+            // Sort by Activity_Code ascending for report 8
+            dataArray.sort((a, b) => {
+              const aCode = String(a.Activity_Code || "");
+              const bCode = String(b.Activity_Code || "");
+              return aCode.localeCompare(bCode);
+            });
           }
 
           setReportData(dataArray);
@@ -910,6 +935,154 @@ function ReportsResults({ isEnglish }) {
             : "Excel ფაილი წარმატებით ექსპორტირებულია!"
         );
         return;
+      } else if (Number(reportId) === 8) {
+        // Report 8: Economic Activities by Years
+        // Use ExcelJS for advanced styling to match frontend table
+        
+        const title = isEnglish
+          ? "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - incremental sum"
+          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - ნაზარდი ჯამი";
+
+        const fileName = isEnglish
+          ? `Report_8_Economic_Activities_Years_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `ანგარიში_8_ეკონომიკური_საქმიანობები_წლები_${new Date().toISOString().split("T")[0]}.xlsx`;
+
+        const sheetName = isEnglish
+          ? "Economic Activities by Years"
+          : "ეკონომიკური საქმიანობები წლები";
+
+        // Create workbook and worksheet using ExcelJS
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(sheetName);
+
+        // Set column widths
+        worksheet.columns = [
+          { width: 12 },   // Activity Code
+          { width: 50 },   // Activity Name
+          { width: 8 },    // <1995
+          ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
+          { width: 8 },    // >2024
+        ];
+
+        // Add title row
+        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
+        titleRow.font = { bold: true, size: 14 };
+        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        // Add date row
+        const dateRow = worksheet.addRow([isEnglish ? "Date: 11 July 2025" : "თარიღი: 11 ივლისი 2025"]);
+        dateRow.font = { size: 12 };
+        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        // Add empty row
+        worksheet.addRow([]);
+
+        // Add header row 1 (mimicking the table structure)
+        const headerRow1 = worksheet.addRow([
+          isEnglish ? "Activity Code" : "კოდი",
+          isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე",
+          isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
+          ...Array.from({ length: 30 }, () => ""), // Empty cells for merged header
+        ]);
+
+        // Style header row 1
+        headerRow1.eachCell((cell) => {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF0080BE' }
+          };
+          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+          };
+        });
+
+        // Merge cells for header structure
+        worksheet.mergeCells('A4:A5'); // Activity Code column (rowspan)
+        worksheet.mergeCells('B4:B5'); // Activity Name column (rowspan)
+        worksheet.mergeCells('C4:AH4'); // Number of Organizations (colspan)
+
+        // Add header row 2 (year columns)
+        const yearHeaders = [
+          "", "", // Empty for merged cells above
+          "<1995",
+          ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
+          ">2024"
+        ];
+        const headerRow2 = worksheet.addRow(yearHeaders);
+
+        // Style header row 2
+        headerRow2.eachCell((cell, colNumber) => {
+          if (colNumber > 2) { // Skip merged cells
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FF0080BE' }
+            };
+            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+            };
+          }
+        });
+
+        // Add data rows
+        sortedData.forEach((row) => {
+          const dataRowValues = [
+            row.Activity_Code,
+            row.Activity_Name,
+            row["<1995"] || 0,
+            ...Array.from({ length: 30 }, (_, i) => row[(1995 + i).toString()] || 0),
+            row[">2024"] || 0
+          ];
+          
+          const dataRow = worksheet.addRow(dataRowValues);
+          
+          // Style data row
+          dataRow.eachCell((cell, colNumber) => {
+            cell.alignment = { 
+              horizontal: colNumber <= 2 ? 'left' : 'right', 
+              vertical: 'middle' 
+            };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
+            };
+          });
+        });
+
+        // Save the file
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        // Show success message and return early for report 8
+        toast.success(
+          isEnglish
+            ? "Excel file exported successfully!"
+            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
+        );
+        return;
       }
 
       // Create workbook and worksheet
@@ -932,6 +1105,15 @@ function ReportsResults({ isEnglish }) {
         colWidths = [
           { wch: 8 }, // Code
           { wch: 40 }, // Legal Form
+          { wch: 8 }, // <1995
+          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
+          { wch: 8 }, // >2024
+        ];
+      } else if (Number(reportId) === 8) {
+        // Report 8 has similar structure to report 6 but with activity codes
+        colWidths = [
+          { wch: 12 }, // Activity Code
+          { wch: 50 }, // Activity Name
           { wch: 8 }, // <1995
           ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
           { wch: 8 }, // >2024
@@ -1096,6 +1278,14 @@ function ReportsResults({ isEnglish }) {
                     : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - კონკრეტულ წელს რეგისტრირებული"}
                 </>
               )}
+              {Number(reportId) === 8 && (
+                <>
+                  8 -{" "}
+                  {isEnglish
+                    ? "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - incremental sum"
+                    : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - ნაზარდი ჯამი"}
+                </>
+              )}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
@@ -1107,18 +1297,18 @@ function ReportsResults({ isEnglish }) {
               <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="min-w-full bg-white">
-                    {Number(reportId) === 6 || Number(reportId) === 7 ? (
-                      // Special table structure for Report 6 and 7
+                    {Number(reportId) === 6 || Number(reportId) === 7 || Number(reportId) === 8 ? (
+                      // Special table structure for Report 6, 7 and 8
                       <thead className="bg-[#0080BE] text-white">
                         <tr>
                           <th
                             rowSpan="2"
                             className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
-                            onClick={() => handleSort("ID")}
+                            onClick={() => handleSort(Number(reportId) === 8 ? "Activity_Code" : "ID")}
                           >
                             <div className="flex items-center justify-center">
                               {isEnglish ? "Code" : "კოდი"}
-                              {sortConfig.key === "ID" && (
+                              {sortConfig.key === (Number(reportId) === 8 ? "Activity_Code" : "ID") && (
                                 <span className="ml-1">
                                   {sortConfig.direction === "asc" ? "↑" : "↓"}
                                 </span>
@@ -1128,13 +1318,14 @@ function ReportsResults({ isEnglish }) {
                           <th
                             rowSpan="2"
                             className="px-4 py-3 font-bpg-nino text-center cursor-pointer hover:bg-[#0070aa] transition-colors"
-                            onClick={() => handleSort("Legal_Form")}
+                            onClick={() => handleSort(Number(reportId) === 8 ? "Activity_Name" : "Legal_Form")}
                           >
                             <div className="flex items-center justify-center">
-                              {isEnglish
-                                ? "Organizational-Legal Form"
-                                : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება"}
-                              {sortConfig.key === "Legal_Form" && (
+                              {Number(reportId) === 8 
+                                ? (isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე")
+                                : (isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება")
+                              }
+                              {sortConfig.key === (Number(reportId) === 8 ? "Activity_Name" : "Legal_Form") && (
                                 <span className="ml-1">
                                   {sortConfig.direction === "asc" ? "↑" : "↓"}
                                 </span>
@@ -1218,7 +1409,7 @@ function ReportsResults({ isEnglish }) {
                       {sortedData.map((row, index) => (
                         <tr
                           key={
-                            Number(reportId) === 1
+                            Number(reportId) === 1 || Number(reportId) === 8
                               ? row.Activity_Code || index
                               : Number(reportId) === 4 || Number(reportId) === 5
                               ? row.Location_Code || index
@@ -1315,14 +1506,14 @@ function ReportsResults({ isEnglish }) {
                                 {formatNumber(row.Active_Percent)}
                               </td>
                             </>
-                          ) : Number(reportId) === 6 || Number(reportId) === 7 ? (
-                            // Report 6 and 7: Organizational-Legal Forms by Years
+                          ) : Number(reportId) === 6 || Number(reportId) === 7 || Number(reportId) === 8 ? (
+                            // Report 6, 7 and 8: Year-based reports
                             <>
                               <td className="px-4 py-3 font-bpg-nino">
-                                {row.ID}
+                                {Number(reportId) === 8 ? row.Activity_Code : row.ID}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino">
-                                {row.Legal_Form}
+                                {Number(reportId) === 8 ? row.Activity_Name : row.Legal_Form}
                               </td>
                               {/* Year columns: <1995, 1995-2024, >2024 */}
                               <td className="px-2 py-3 text-right text-xs">
