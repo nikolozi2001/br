@@ -16,15 +16,27 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Menu, Download, Maximize2 } from "lucide-react";
+import { Menu, Download, Maximize2, Printer, ChevronDown } from "lucide-react";
 import "../styles/Charts.scss";
 
 const Charts = ({ isEnglish }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [maximizedChart, setMaximizedChart] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   useEffect(() => {
     setIsFlipped(true);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.chart-action-dropdown')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const handleMaximizeChart = (chartData, chartType, title) => {
@@ -33,6 +45,275 @@ const Charts = ({ isEnglish }) => {
 
   const handleCloseMaximized = () => {
     setMaximizedChart(null);
+  };
+
+  const toggleDropdown = (chartIndex) => {
+    setActiveDropdown(activeDropdown === chartIndex ? null : chartIndex);
+  };
+
+  const handlePrintChart = (chartElement, title) => {
+    // Close dropdown first
+    setActiveDropdown(null);
+    
+    setTimeout(() => {
+      const printWindow = window.open('', '_blank');
+      const chartContent = chartElement.querySelector('.chart-content');
+      
+      if (!chartContent) {
+        console.error('Chart content not found');
+        return;
+      }
+      
+      // Get the SVG element
+      const svgElement = chartContent.querySelector('svg');
+      if (!svgElement) {
+        console.error('SVG element not found');
+        return;
+      }
+      
+      // Clone the SVG to avoid modifying the original
+      const svgClone = svgElement.cloneNode(true);
+      const svgRect = svgElement.getBoundingClientRect();
+      
+      // Set explicit dimensions
+      svgClone.setAttribute('width', svgRect.width || 800);
+      svgClone.setAttribute('height', svgRect.height || 400);
+      
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print Chart - ${title}</title>
+            <style>
+              body { 
+                margin: 20px; 
+                font-family: Arial, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+              }
+              .chart-title { 
+                font-size: 18px; 
+                font-weight: bold; 
+                margin-bottom: 20px;
+                text-align: center;
+              }
+              .chart-content { 
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              }
+              svg {
+                max-width: 100%;
+                height: auto;
+              }
+              @media print {
+                body { margin: 0; }
+                .chart-title { margin-bottom: 10px; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="chart-title">${title}</div>
+            <div class="chart-content">${svgClone.outerHTML}</div>
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      printWindow.focus();
+      
+      // Wait for content to load then print
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }, 100);
+  };
+
+  const downloadChart = async (format, chartElement, title) => {
+    // Close dropdown first to avoid capturing it
+    setActiveDropdown(null);
+    
+    // Wait a bit for dropdown to close
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Get the chart content area specifically, not the whole container
+    const chartContent = chartElement.querySelector('.chart-content');
+    const svgElement = chartContent?.querySelector('svg');
+    
+    if (!svgElement) {
+      console.error('No SVG element found in chart');
+      return;
+    }
+
+    // Get the actual rendered dimensions
+    const svgRect = svgElement.getBoundingClientRect();
+    const svgWidth = svgRect.width || 800;
+    const svgHeight = svgRect.height || 400;
+
+    // Clone the SVG to avoid modifying the original
+    const svgClone = svgElement.cloneNode(true);
+    
+    // Set explicit dimensions on the clone
+    svgClone.setAttribute('width', svgWidth);
+    svgClone.setAttribute('height', svgHeight);
+    svgClone.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    
+    const svgData = new XMLSerializer().serializeToString(svgClone);
+    const fileName = `${title.replace(/[^a-z0-9\s]/gi, '_').toLowerCase().replace(/\s+/g, '_')}_chart`;
+
+    if (format === 'svg') {
+      // Direct SVG download
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${fileName}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // For raster formats, convert SVG to canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size with device pixel ratio for better quality
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = svgWidth * dpr;
+    canvas.height = svgHeight * dpr;
+    canvas.style.width = svgWidth + 'px';
+    canvas.style.height = svgHeight + 'px';
+    ctx.scale(dpr, dpr);
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      
+      img.onload = () => {
+        // Fill with white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, svgWidth, svgHeight);
+        
+        // Draw the chart
+        ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+
+        switch (format) {
+          case 'png': {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }
+              resolve();
+            }, 'image/png');
+            break;
+          }
+
+          case 'jpeg': {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${fileName}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }
+              resolve();
+            }, 'image/jpeg', 0.95);
+            break;
+          }
+
+          case 'pdf': {
+            // For PDF, we'll use the canvas to create a simple PDF
+            import('jspdf').then(({ jsPDF }) => {
+              const orientation = svgWidth > svgHeight ? 'landscape' : 'portrait';
+              const pdf = new jsPDF({
+                orientation,
+                unit: 'mm',
+                format: 'a4'
+              });
+              
+              // Calculate dimensions to fit A4
+              const a4Width = orientation === 'landscape' ? 297 : 210;
+              const a4Height = orientation === 'landscape' ? 210 : 297;
+              const margin = 20;
+              
+              const maxWidth = a4Width - (margin * 2);
+              const maxHeight = a4Height - (margin * 3); // Extra margin for title
+              
+              // Calculate scale to fit
+              const scaleX = maxWidth / (svgWidth * 0.264583); // Convert px to mm
+              const scaleY = maxHeight / (svgHeight * 0.264583);
+              const scale = Math.min(scaleX, scaleY);
+              
+              const finalWidth = (svgWidth * 0.264583) * scale;
+              const finalHeight = (svgHeight * 0.264583) * scale;
+              
+              // Center the image
+              const x = (a4Width - finalWidth) / 2;
+              const y = margin + 15; // Space for title
+              
+              // Add title
+              pdf.setFontSize(16);
+              pdf.text(title, margin, margin);
+              
+              // Add chart
+              pdf.addImage(
+                canvas.toDataURL('image/png'),
+                'PNG',
+                x,
+                y,
+                finalWidth,
+                finalHeight
+              );
+              
+              pdf.save(`${fileName}.pdf`);
+              resolve();
+            }).catch((error) => {
+              console.error('PDF generation failed:', error);
+              // Fallback: download as PNG
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${fileName}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }
+                resolve();
+              }, 'image/png');
+            });
+            break;
+          }
+
+          default:
+            resolve();
+        }
+      };
+
+      img.onerror = () => {
+        console.error('Failed to load SVG as image');
+        resolve();
+      };
+
+      // Convert SVG to data URL
+      const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+      img.src = svgDataUrl;
+    });
   };
 
   // Sample data for charts - replace with real data from your API
@@ -208,14 +489,82 @@ const Charts = ({ isEnglish }) => {
 
   const currentTexts = isEnglish ? texts.english : texts.georgian;
 
-  const ChartContainer = ({ title, children, onDownload, onMaximize }) => (
-    <div className="chart-container">
+  const ChartContainer = ({ title, children, onMaximize, chartIndex }) => (
+    <div className="chart-container" ref={(el) => el && (window.chartRefs = { ...window.chartRefs, [chartIndex]: el })}>
       <div className="chart-header">
         <h3 className="chart-title">{title}</h3>
         <div className="chart-actions">
-          <button className="chart-action-btn" onClick={onDownload}>
-            <Download size={16} />
-          </button>
+          <div className="chart-action-dropdown">
+            <button 
+              className="chart-action-btn dropdown-trigger" 
+              onClick={() => toggleDropdown(chartIndex)}
+            >
+              <Download size={16} />
+              <ChevronDown size={12} />
+            </button>
+            {activeDropdown === chartIndex && (
+              <div className="dropdown-menu">
+                <button 
+                  className="dropdown-item"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const container = e.target.closest('.chart-container');
+                    setActiveDropdown(null);
+                    setTimeout(() => {
+                      handlePrintChart(container, title);
+                    }, 100);
+                  }}
+                >
+                  <Printer size={16} />
+                  Print Chart
+                </button>
+                <button 
+                  className="dropdown-item"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const container = e.target.closest('.chart-container');
+                    await downloadChart('png', container, title);
+                  }}
+                >
+                  <Download size={16} />
+                  Download PNG
+                </button>
+                <button 
+                  className="dropdown-item"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const container = e.target.closest('.chart-container');
+                    await downloadChart('jpeg', container, title);
+                  }}
+                >
+                  <Download size={16} />
+                  Download JPEG
+                </button>
+                <button 
+                  className="dropdown-item"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const container = e.target.closest('.chart-container');
+                    await downloadChart('pdf', container, title);
+                  }}
+                >
+                  <Download size={16} />
+                  Download PDF
+                </button>
+                <button 
+                  className="dropdown-item"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const container = e.target.closest('.chart-container');
+                    await downloadChart('svg', container, title);
+                  }}
+                >
+                  <Download size={16} />
+                  Download SVG
+                </button>
+              </div>
+            )}
+          </div>
           <button className="chart-action-btn" onClick={onMaximize}>
             <Maximize2 size={16} />
           </button>
@@ -351,8 +700,8 @@ const Charts = ({ isEnglish }) => {
                   {/* Bar Chart - Births and Deaths */}
                   <ChartContainer
                     title={currentTexts.organizationsByYear}
-                    onDownload={() => console.log("Download chart 1")}
                     onMaximize={() => handleMaximizeChart(organizationsByYear, 'bar', currentTexts.organizationsByYear)}
+                    chartIndex={0}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={organizationsByYear}>
@@ -385,8 +734,8 @@ const Charts = ({ isEnglish }) => {
                   {/* Line Chart - Activity Trends */}
                   <ChartContainer
                     title={currentTexts.activitySectors}
-                    onDownload={() => console.log("Download chart 2")}
                     onMaximize={() => handleMaximizeChart(activityData, 'line', currentTexts.activitySectors)}
+                    chartIndex={1}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={activityData}>
@@ -438,8 +787,8 @@ const Charts = ({ isEnglish }) => {
                   {/* Stacked Bar Chart - Regional Distribution */}
                   <ChartContainer
                     title={currentTexts.regionalDistribution}
-                    onDownload={() => console.log("Download chart 3")}
                     onMaximize={() => handleMaximizeChart(organizationGrowthData, 'horizontalBar', currentTexts.regionalDistribution)}
+                    chartIndex={2}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
@@ -462,8 +811,8 @@ const Charts = ({ isEnglish }) => {
                         ? "Organizations by Legal Forms"
                         : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით"
                     }
-                    onDownload={() => console.log("Download chart 4")}
                     onMaximize={() => handleMaximizeChart(activityData, 'area', isEnglish ? "Organizations by Legal Forms" : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით")}
+                    chartIndex={3}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart data={activityData}>
@@ -521,7 +870,6 @@ const Charts = ({ isEnglish }) => {
                   {/* Growth Percentage Chart */}
                   <ChartContainer
                     title={currentTexts.organizationGrowth}
-                    onDownload={() => console.log("Download chart 5")}
                     onMaximize={() => handleMaximizeChart(
                       organizationsByYear.map((item, index) => ({
                         year: item.year,
@@ -530,6 +878,7 @@ const Charts = ({ isEnglish }) => {
                       'growth',
                       currentTexts.organizationGrowth
                     )}
+                    chartIndex={4}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
@@ -558,8 +907,8 @@ const Charts = ({ isEnglish }) => {
                   {/* Pie Chart - Ownership Types */}
                   <ChartContainer
                     title={currentTexts.ownershipTypes}
-                    onDownload={() => console.log("Download chart 6")}
                     onMaximize={() => handleMaximizeChart(ownershipData, 'pie', currentTexts.ownershipTypes)}
+                    chartIndex={5}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
