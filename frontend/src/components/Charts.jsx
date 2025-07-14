@@ -26,7 +26,28 @@ const Charts = ({ isEnglish }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [organizationsByYear, setOrganizationsByYear] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [hiddenDataKeys, setHiddenDataKeys] = useState(new Set());
+  
+  // Initialize hiddenDataKeys from localStorage or empty Set
+  const [hiddenDataKeys, setHiddenDataKeys] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chartHiddenDataKeys');
+      if (saved) {
+        return new Set(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.log('Failed to load hidden data keys from localStorage:', error);
+    }
+    return new Set();
+  });
+
+  // Save hiddenDataKeys to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('chartHiddenDataKeys', JSON.stringify([...hiddenDataKeys]));
+    } catch (error) {
+      console.log('Failed to save hidden data keys to localStorage:', error);
+    }
+  }, [hiddenDataKeys]);
 
   useEffect(() => {
     setIsFlipped(true);
@@ -73,7 +94,7 @@ const Charts = ({ isEnglish }) => {
     setActiveDropdown(activeDropdown === chartIndex ? null : chartIndex);
   };
 
-  const handleLegendClick = (dataKey) => {
+  const handleLegendClick = React.useCallback((dataKey) => {
     setHiddenDataKeys(prev => {
       const newSet = new Set(prev);
       if (newSet.has(dataKey)) {
@@ -83,7 +104,7 @@ const Charts = ({ isEnglish }) => {
       }
       return newSet;
     });
-  };
+  }, []);
 
   const handlePrintChart = (chartElement, title) => {
     // Close dropdown first
@@ -174,7 +195,7 @@ const Charts = ({ isEnglish }) => {
     }, 100);
   };
 
-  const downloadChart = async (format, chartElement, title) => {
+  const downloadChart = React.useCallback(async (format, chartElement, title) => {
     // Close dropdown first to avoid capturing it
     setActiveDropdown(null);
 
@@ -471,7 +492,7 @@ const Charts = ({ isEnglish }) => {
         "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
       img.src = svgDataUrl;
     });
-  };
+  }, []);
 
   // Sample data for charts - replace with real data from your API
   const activityData = [
