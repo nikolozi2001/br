@@ -262,6 +262,166 @@ const formatNumber = (num) => {
 const getReportConfig = (reportId) => REPORT_CONFIGS[Number(reportId)];
 const getColumnConfig = (reportId) => COLUMN_CONFIGS[`report${reportId}`];
 
+// Data processing utilities
+const calculatePercentages = (dataArray, totalRegisteredKey = 'Registered_Qty', totalActiveKey = 'Active_Qty') => {
+  const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row[totalRegisteredKey]), 0);
+  const totalActive = dataArray.reduce((sum, row) => sum + Number(row[totalActiveKey]), 0);
+  
+  return dataArray.map(row => ({
+    ...row,
+    Registered_Percent: totalRegistered > 0 ? (Number(row[totalRegisteredKey]) / totalRegistered) * 100 : 0,
+    Active_Percent: totalActive > 0 ? (Number(row[totalActiveKey]) / totalActive) * 100 : 0,
+  }));
+};
+
+const sortDataByReportType = (dataArray, reportNum) => {
+  switch (reportNum) {
+    case 6:
+    case 7:
+      return [...dataArray].sort((a, b) => String(a.ID || "").localeCompare(String(b.ID || "")));
+    
+    case 8:
+    case 9:
+      return [...dataArray].sort((a, b) => {
+        const aCode = String(a.Activity_Code || "");
+        const bCode = String(b.Activity_Code || "");
+        if (!aCode && !bCode) return 0;
+        if (!aCode) return 1;
+        if (!bCode) return -1;
+        return aCode.localeCompare(bCode);
+      });
+    
+    default:
+      return dataArray;
+  }
+};
+
+// Excel export utilities (for future refactoring)
+// eslint-disable-next-line no-unused-vars
+const createExcelData = (reportId, sortedData, isEnglish) => {
+  const reportNum = Number(reportId);
+  // eslint-disable-next-line no-unused-vars
+  const config = getReportConfig(reportId);
+  
+  switch (reportNum) {
+    case 1:
+      return {
+        data: sortedData.map((row) => ({
+          [isEnglish ? "Activity Code" : "კოდი"]: row.Activity_Code,
+          [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: row.Activity_Name,
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(row.pct)}%`,
+          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(row.pct_act)}%`,
+        })),
+        totals: {
+          registered: sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty), 0),
+          active: sortedData.reduce((sum, row) => sum + Number(row.Active_Qty), 0),
+          registeredPct: sortedData.reduce((sum, row) => sum + Number(row.pct), 0),
+          activePct: sortedData.reduce((sum, row) => sum + Number(row.pct_act), 0),
+        }
+      };
+    
+    case 2:
+      return {
+        data: sortedData.map((row) => ({
+          [isEnglish ? "Code" : "კოდი"]: row.ID,
+          [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: row.Legal_Form,
+          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(row.Registered_Percent)}%`,
+          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(row.Active_Percent)}%`,
+        })),
+        totals: {
+          registered: sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty), 0),
+          active: sortedData.reduce((sum, row) => sum + Number(row.Active_Qty), 0),
+          registeredPct: sortedData.reduce((sum, row) => sum + Number(row.Registered_Percent), 0),
+          activePct: sortedData.reduce((sum, row) => sum + Number(row.Active_Percent), 0),
+        }
+      };
+    
+    default:
+      return { data: [], totals: {} };
+  }
+};
+
+// eslint-disable-next-line no-unused-vars
+const getExcelFileInfo = (reportId, isEnglish) => {
+  const config = getReportConfig(reportId);
+  if (!config) return { title: "", fileName: "", sheetName: "" };
+  
+  const dateStr = new Date().toISOString().split("T")[0];
+  return {
+    title: config.title[isEnglish ? 'en' : 'ge'],
+    fileName: `${config.fileName[isEnglish ? 'en' : 'ge']}_${dateStr}.xlsx`,
+    sheetName: config.sheetName[isEnglish ? 'en' : 'ge']
+  };
+};
+
+const processReportData = (dataArray, reportNum) => {
+  let processedData = [...dataArray];
+
+  // Calculate percentages for reports that need them
+  if ([3, 4, 5].includes(reportNum) && processedData.length > 0) {
+    processedData = calculatePercentages(processedData);
+  }
+
+  // Sort data based on report type
+  processedData = sortDataByReportType(processedData, reportNum);
+
+  return processedData;
+};
+
+// Custom hook for sorting functionality
+const useSortedData = (reportData) => {
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+
+  const handleSort = (key) => {
+    setSortConfig((prevConfig) => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const sortedData = useMemo(() => {
+    if (!reportData) return [];
+    const sortedArray = [...reportData];
+    if (sortConfig.key) {
+      sortedArray.sort((a, b) => {
+        const aVal = a[sortConfig.key];
+        const bVal = b[sortConfig.key];
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortedArray;
+  }, [reportData, sortConfig]);
+
+  return { sortedData, sortConfig, handleSort };
+};
+
+// Custom hook for scroll functionality
+const useScrollToTop = () => {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollTop(scrollTop > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  return { showScrollTop, scrollToTop };
+};
+
 // Custom hook for fetching report data
 const useFetchReportData = (reportId, isEnglish) => {
   const [reportData, setReportData] = useState(null);
@@ -286,59 +446,8 @@ const useFetchReportData = (reportId, isEnglish) => {
           ? response
           : [];
 
-        // Process data based on report type
-        if (reportNum === 3 && dataArray.length > 0) {
-          const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
-          const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
-          
-          dataArray = dataArray.map(row => ({
-            ...row,
-            Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
-            Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0,
-          }));
-        }
-
-        if (reportNum === 4 && dataArray.length > 0) {
-          const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
-          const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
-          
-          dataArray = dataArray.map(row => ({
-            ...row,
-            Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
-            Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0,
-          }));
-        }
-
-        if (reportNum === 5 && dataArray.length > 0) {
-          const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
-          const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
-          
-          dataArray = dataArray.map(row => ({
-            ...row,
-            Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
-            Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0,
-          }));
-        }
-
-        // Sort data based on report type
-        if (reportNum === 6 && dataArray.length > 0) {
-          dataArray.sort((a, b) => String(a.ID || "").localeCompare(String(b.ID || "")));
-        }
-
-        if (reportNum === 7 && dataArray.length > 0) {
-          dataArray.sort((a, b) => String(a.ID || "").localeCompare(String(b.ID || "")));
-        }
-
-        if ([8, 9].includes(reportNum) && dataArray.length > 0) {
-          dataArray.sort((a, b) => {
-            const aCode = String(a.Activity_Code || "");
-            const bCode = String(b.Activity_Code || "");
-            if (!aCode && !bCode) return 0;
-            if (!aCode) return 1;
-            if (!bCode) return -1;
-            return aCode.localeCompare(bCode);
-          });
-        }
+        // Process the data using utility functions
+        dataArray = processReportData(dataArray, reportNum);
 
         setReportData(dataArray);
       } catch (error) {
@@ -358,60 +467,21 @@ const useFetchReportData = (reportId, isEnglish) => {
 function ReportsResults({ isEnglish }) {
   const { reportId } = useParams();
   const navigate = useNavigate();
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Get current report configuration
   const reportConfig = getReportConfig(reportId);
-
-  // Get report title
-  const getReportTitle = () => {
-    if (!reportConfig) return "";
-    return `${reportId} - ${isEnglish ? reportConfig.title.en : reportConfig.title.ge}`;
-  };
   const columns = getColumnConfig(reportId) || [];
   
-  // Use custom hook for data fetching
+  // Use custom hooks
   const { reportData, loading } = useFetchReportData(reportId, isEnglish);
+  const { sortedData, sortConfig, handleSort } = useSortedData(reportData);
+  const { showScrollTop, scrollToTop } = useScrollToTop();
 
-  // Handle scroll visibility for scroll-to-top button
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop =
-        window.pageYOffset || document.documentElement.scrollTop;
-      setShowScrollTop(scrollTop > 300);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const handleSort = (key) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig.key === key && prevConfig.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
+  // Get title from config
+  const getReportTitle = () => {
+    if (!reportConfig) return "";
+    return `${reportId} - ${reportConfig.title[isEnglish ? 'en' : 'ge']}`;
   };
-
-  const sortedData = useMemo(() => {
-    if (!reportData) return [];
-    const sortedArray = [...reportData];
-    if (sortConfig.key) {
-      sortedArray.sort((a, b) => {
-        const aVal = a[sortConfig.key];
-        const bVal = b[sortConfig.key];
-        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-    return sortedArray;
-  }, [reportData, sortConfig]);
-
-
 
   const exportToExcel = async () => {
     if (!reportData || reportData.length === 0) {
@@ -423,21 +493,8 @@ function ReportsResults({ isEnglish }) {
       return;
     }
 
-    if (!reportConfig) {
-      toast.error(
-        isEnglish
-          ? "Report configuration not found."
-          : "ანგარიშის კონფიგურაცია ვერ მოიძებნა."
-      );
-      return;
-    }
-
     try {
-      const title = isEnglish ? reportConfig.title.en : reportConfig.title.ge;
-      const fileName = `${isEnglish ? reportConfig.fileName.en : reportConfig.fileName.ge}_${new Date().toISOString().split("T")[0]}.xlsx`;
-      const sheetName = isEnglish ? reportConfig.sheetName.en : reportConfig.sheetName.ge;
-
-      let excelData, totalRegistered, totalActive;
+      let excelData, totalRegistered, totalActive, title, fileName, sheetName;
 
       if (Number(reportId) === 1) {
         // Report 1: Activities
@@ -487,6 +544,21 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
+        title = isEnglish
+          ? "Number of registered and active organizations by economic activities"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ეკონომიკური საქმიანობების მიხედვით";
+
+        fileName = isEnglish
+          ? `Economic_Activities_Report_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`
+          : `ეკონომიკური_საქმიანობების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish
+          ? "Economic Activities"
+          : "ეკონომიკური საქმიანობები";
       } else if (Number(reportId) === 2) {
         // Report 2: Legal Forms
         excelData = sortedData.map((row) => ({
@@ -535,6 +607,17 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
+        title = isEnglish
+          ? "Number of registered and active organizations by organizational-legal forms"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით";
+
+        fileName = isEnglish
+          ? `Legal_Forms_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `სამართლებრივი_ფორმების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish ? "Legal Forms" : "სამართლებრივი ფორმები";
       } else if (Number(reportId) === 3) {
         // Report 3: Ownership Types
         excelData = sortedData.map((row) => ({
@@ -584,6 +667,19 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
+        title = isEnglish
+          ? "Number of registered organizations by forms of ownership"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით";
+
+        fileName = isEnglish
+          ? `Ownership_Types_Report_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`
+          : `საკუთრების_ფორმების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish ? "Ownership Types" : "საკუთრების ფორმები";
       } else if (Number(reportId) === 4) {
         // Report 4: Regions
         excelData = sortedData.map((row) => ({
@@ -630,6 +726,17 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
+        title = isEnglish
+          ? "Number of registered and active organizations by regions"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით";
+
+        fileName = isEnglish
+          ? `Regions_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `რეგიონების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish ? "Regions" : "რეგიონები";
       } else if (Number(reportId) === 5) {
         // Report 5: Municipalities
         excelData = sortedData.map((row) => ({
@@ -675,6 +782,19 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
+        title = isEnglish
+          ? "Number of registered and active organizations by municipalities"
+          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით";
+
+        fileName = isEnglish
+          ? `Municipalities_Report_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`
+          : `მუნიციპალიტეტების_ანგარიში_${
+              new Date().toISOString().split("T")[0]
+            }.xlsx`;
+
+        sheetName = isEnglish ? "Municipalities" : "მუნიციპალიტეტები";
       } else if (Number(reportId) === 6) {
         // Report 6: Organizational-Legal Forms and Years
         // Use ExcelJS for advanced styling to match frontend table
@@ -1518,10 +1638,6 @@ function ReportsResults({ isEnglish }) {
           : "Excel-ში ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა."
       );
     }
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   if (loading) {
