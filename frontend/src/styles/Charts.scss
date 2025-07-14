@@ -1,0 +1,199 @@
+// Charts Page Styles - Updated to match main page layout
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 20px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .chart-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 12px 15px;
+      background: linear-gradient(135deg, #0080BE 0%, #005a8b 100%);
+      border-bottom: 1px solid #e2e8f0;
+      
+      .chart-actions {
+        display: flex;
+        gap: 6px;
+        
+        .chart-action-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          border-radius: 4px;
+          padding: 6px;
+          color: white;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          &:hover {
+            background: rgba(255, 255, 255, 0.3);
+          }
+          
+          svg {
+            width: 14px;
+            height: 14px;
+          }
+        }
+      }
+    }
+    
+    .chart-content {
+      padding: 20px;
+      
+      // Custom styles for recharts components
+      .recharts-wrapper {
+        font-family: 'BPG Nino Mtavruli', sans-serif;
+      }
+      
+      .recharts-cartesian-axis-tick-value {
+        font-size: 11px;
+        fill: #64748b;
+      }
+      
+      .recharts-legend-wrapper {
+        padding-top: 15px !important;
+        
+        .recharts-legend-item {
+          margin-right: 15px !important;
+          
+          .recharts-legend-item-text {
+            font-size: 12px !important;
+            color: #475569 !important;
+            font-family: 'BPG Nino Mtavruli', sans-serif !important;
+          }
+        }
+      }
+      
+      .recharts-tooltip-wrapper {
+        .recharts-default-tooltip {
+          background: white !important;
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 6px !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+          
+          .recharts-tooltip-label {
+            color: #1e293b !important;
+            font-weight: 600 !important;
+            margin-bottom: 6px !important;
+            font-family: 'BPG Nino Mtavruli', sans-serif !important;
+          }
+          
+          .recharts-tooltip-item {
+            color: #475569 !important;
+            font-family: 'BPG Nino Mtavruli', sans-serif !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 1200px) {
+  .charts-grid {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+    
+    .chart-container {
+      .chart-header {
+        padding: 10px 12px;
+        
+        .chart-actions {
+          .chart-action-btn {
+            padding: 5px;
+            
+            svg {
+              width: 12px;
+              height: 12px;
+            }
+          }
+        }
+      }
+      
+      .chart-content {
+        padding: 15px;
+      }
+    }
+  }
+}
+
+// Animation for chart load
+.chart-container {
+  animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Chart styling improvements
+.recharts-pie-sector {
+  stroke: white;
+  stroke-width: 2px;
+}
+
+.recharts-bar {
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.recharts-line {
+  stroke-width: 2px;
+}
+
+.recharts-area {
+  fill-opacity: 0.6;
+}
+
+// Print styles
+@media print {
+  .charts-grid {
+    .chart-container {
+      box-shadow: none;
+      border: 1px solid #e2e8f0;
+      break-inside: avoid;
+      margin-bottom: 15px;
+      
+      .chart-header {
+        background: #f8fafc !important;
+        
+        .chart-actions {
+          display: none;
+        }
+      }
+    }
+  }
+}

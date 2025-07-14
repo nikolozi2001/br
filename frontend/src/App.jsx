@@ -10,6 +10,7 @@ import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
 import Reports from "./components/Reports";
 import ReportsResults from "./components/ReportsResults";
+import Charts from "./components/Charts";
 import Footer from "./components/Footer";
 import "./App.scss";
 
@@ -38,6 +39,10 @@ function App() {
             <Route
               path="/reports/:reportId"
               element={<ReportsResults isEnglish={isEnglish} />}
+            />
+            <Route
+              path="/charts"
+              element={<Charts isEnglish={isEnglish} />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

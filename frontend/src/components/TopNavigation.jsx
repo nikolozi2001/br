@@ -121,7 +121,11 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
 
                 <Link
                   to="/charts"
-                  className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-t border-l border-r border-[#0080BE] hover:bg-[#fff] hover:text-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0  after:h-full after:bg-[#0080BE] cursor-pointer"
+                  className={`font-bpg-nino font-bold px-6 py-[6px] text-sm ${
+                    location.pathname === "/charts"
+                      ? "bg-white text-[#0080BE]"
+                      : "bg-[#0080BE] text-white hover:bg-[#fff] hover:text-[#0080BE]"
+                  } border-t border-l border-r border-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE] cursor-pointer`}
                 >
                   {currentLanguage.navigation.charts}
                 </Link>
