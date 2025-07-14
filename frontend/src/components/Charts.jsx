@@ -21,10 +21,19 @@ import "../styles/Charts.scss";
 
 const Charts = ({ isEnglish }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [maximizedChart, setMaximizedChart] = useState(null);
 
   useEffect(() => {
     setIsFlipped(true);
   }, []);
+
+  const handleMaximizeChart = (chartData, chartType, title) => {
+    setMaximizedChart({ data: chartData, type: chartType, title });
+  };
+
+  const handleCloseMaximized = () => {
+    setMaximizedChart(null);
+  };
 
   // Sample data for charts - replace with real data from your API
   const organizationsByYear = [
@@ -219,6 +228,118 @@ const Charts = ({ isEnglish }) => {
     </div>
   );
 
+  const MaximizedChartModal = () => {
+    if (!maximizedChart) return null;
+
+    const renderChart = () => {
+      switch (maximizedChart.type) {
+        case 'bar':
+          return (
+            <BarChart data={maximizedChart.data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis tickFormatter={(value) => value.toLocaleString()} />
+              <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} />
+              <Legend />
+              <Bar dataKey="birth" fill="#2563eb" name={currentTexts.birth} />
+              <Bar dataKey="death" fill="#dc2626" name={currentTexts.death} />
+            </BarChart>
+          );
+        case 'line':
+          return (
+            <LineChart data={maximizedChart.data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="manufacturing" stroke="#2563eb" strokeWidth={2} />
+              <Line type="monotone" dataKey="construction" stroke="#dc2626" strokeWidth={2} />
+              <Line type="monotone" dataKey="retail" stroke="#16a34a" strokeWidth={2} />
+              <Line type="monotone" dataKey="transport" stroke="#ca8a04" strokeWidth={2} />
+              <Line type="monotone" dataKey="finance" stroke="#7c3aed" strokeWidth={2} />
+              <Line type="monotone" dataKey="other" stroke="#db2777" strokeWidth={2} />
+            </LineChart>
+          );
+        case 'horizontalBar':
+          return (
+            <BarChart data={maximizedChart.data} layout="horizontal">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="year" type="category" />
+              <Tooltip />
+              <Bar dataKey="total" fill="#2563eb" />
+            </BarChart>
+          );
+        case 'area':
+          return (
+            <AreaChart data={maximizedChart.data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Area type="monotone" dataKey="manufacturing" stackId="1" stroke="#2563eb" fill="#2563eb" />
+              <Area type="monotone" dataKey="construction" stackId="1" stroke="#dc2626" fill="#dc2626" />
+              <Area type="monotone" dataKey="retail" stackId="1" stroke="#16a34a" fill="#16a34a" />
+              <Area type="monotone" dataKey="transport" stackId="1" stroke="#ca8a04" fill="#ca8a04" />
+              <Area type="monotone" dataKey="finance" stackId="1" stroke="#7c3aed" fill="#7c3aed" />
+              <Area type="monotone" dataKey="other" stackId="1" stroke="#db2777" fill="#db2777" />
+            </AreaChart>
+          );
+        case 'growth':
+          return (
+            <BarChart data={maximizedChart.data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`${value}%`, "ზრდა"]} />
+              <Bar dataKey="growth" fill="#16a34a" />
+            </BarChart>
+          );
+        case 'pie':
+          return (
+            <PieChart>
+              <Pie
+                data={maximizedChart.data}
+                cx="50%"
+                cy="50%"
+                outerRadius={120}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {maximizedChart.data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          );
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div className="maximize-modal-overlay" onClick={handleCloseMaximized}>
+        <div className="maximize-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="maximize-modal-header">
+            <h2 className="maximize-modal-title">{maximizedChart.title}</h2>
+            <button className="maximize-modal-close" onClick={handleCloseMaximized}>
+              ✕
+            </button>
+          </div>
+          <div className="maximize-modal-chart">
+            <ResponsiveContainer width="100%" height={600}>
+              {renderChart()}
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full">
       <div className="container mx-auto">
@@ -231,7 +352,7 @@ const Charts = ({ isEnglish }) => {
                   <ChartContainer
                     title={currentTexts.organizationsByYear}
                     onDownload={() => console.log("Download chart 1")}
-                    onMaximize={() => console.log("Maximize chart 1")}
+                    onMaximize={() => handleMaximizeChart(organizationsByYear, 'bar', currentTexts.organizationsByYear)}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={organizationsByYear}>
@@ -265,7 +386,7 @@ const Charts = ({ isEnglish }) => {
                   <ChartContainer
                     title={currentTexts.activitySectors}
                     onDownload={() => console.log("Download chart 2")}
-                    onMaximize={() => console.log("Maximize chart 2")}
+                    onMaximize={() => handleMaximizeChart(activityData, 'line', currentTexts.activitySectors)}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={activityData}>
@@ -318,7 +439,7 @@ const Charts = ({ isEnglish }) => {
                   <ChartContainer
                     title={currentTexts.regionalDistribution}
                     onDownload={() => console.log("Download chart 3")}
-                    onMaximize={() => console.log("Maximize chart 3")}
+                    onMaximize={() => handleMaximizeChart(organizationGrowthData, 'horizontalBar', currentTexts.regionalDistribution)}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
@@ -342,7 +463,7 @@ const Charts = ({ isEnglish }) => {
                         : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით"
                     }
                     onDownload={() => console.log("Download chart 4")}
-                    onMaximize={() => console.log("Maximize chart 4")}
+                    onMaximize={() => handleMaximizeChart(activityData, 'area', isEnglish ? "Organizations by Legal Forms" : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით")}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart data={activityData}>
@@ -401,7 +522,14 @@ const Charts = ({ isEnglish }) => {
                   <ChartContainer
                     title={currentTexts.organizationGrowth}
                     onDownload={() => console.log("Download chart 5")}
-                    onMaximize={() => console.log("Maximize chart 5")}
+                    onMaximize={() => handleMaximizeChart(
+                      organizationsByYear.map((item, index) => ({
+                        year: item.year,
+                        growth: index > 0 ? (((item.birth - organizationsByYear[index - 1].birth) / organizationsByYear[index - 1].birth) * 100).toFixed(1) : 0,
+                      })),
+                      'growth',
+                      currentTexts.organizationGrowth
+                    )}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart
@@ -431,7 +559,7 @@ const Charts = ({ isEnglish }) => {
                   <ChartContainer
                     title={currentTexts.ownershipTypes}
                     onDownload={() => console.log("Download chart 6")}
-                    onMaximize={() => console.log("Maximize chart 6")}
+                    onMaximize={() => handleMaximizeChart(ownershipData, 'pie', currentTexts.ownershipTypes)}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
@@ -460,6 +588,7 @@ const Charts = ({ isEnglish }) => {
           </div>
         </div>
       </div>
+      <MaximizedChartModal />
     </div>
   );
 };
