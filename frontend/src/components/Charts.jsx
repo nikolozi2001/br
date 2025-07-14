@@ -28,16 +28,16 @@ const Charts = ({ isEnglish }) => {
 
   // Sample data for charts - replace with real data from your API
   const organizationsByYear = [
-    { year: "2014", birth: 28, death: 27 },
-    { year: "2015", birth: 53, death: 48 },
-    { year: "2016", birth: 35, death: 32 },
-    { year: "2017", birth: 30, death: 28 },
-    { year: "2018", birth: 32, death: 30 },
-    { year: "2019", birth: 40, death: 38 },
-    { year: "2020", birth: 32, death: 30 },
-    { year: "2021", birth: 39, death: 36 },
-    { year: "2022", birth: 76, death: 52 },
-    { year: "2023", birth: 55, death: 50 },
+    { year: "2014", birth: 27323, death: 29662 },
+    { year: "2015", birth: 51984, death: 24061 },
+    { year: "2016", birth: 32000, death: 23992 },
+    { year: "2017", birth: 30796, death: 24695 },
+    { year: "2018", birth: 29458, death: 28790 },
+    { year: "2019", birth: 38584, death: 32429 },
+    { year: "2020", birth: 29340, death: 27555 },
+    { year: "2021", birth: 37760, death: 30653 },
+    { year: "2022", birth: 57583, death: 30913 },
+    { year: "2023", birth: 55146, death: 29435 },
   ];
 
   const activityData = [
@@ -237,8 +237,15 @@ const Charts = ({ isEnglish }) => {
                       <BarChart data={organizationsByYear}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" />
-                        <YAxis />
-                        <Tooltip />
+                        <YAxis 
+                          tickFormatter={(value) => value.toLocaleString()}
+                        />
+                        <Tooltip 
+                          formatter={(value, name) => [
+                            value.toLocaleString(), 
+                            name
+                          ]}
+                        />
                         <Legend />
                         <Bar
                           dataKey="birth"
