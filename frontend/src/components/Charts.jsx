@@ -30,13 +30,13 @@ const Charts = ({ isEnglish }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.chart-action-dropdown')) {
+      if (!event.target.closest(".chart-action-dropdown")) {
         setActiveDropdown(null);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const handleMaximizeChart = (chartData, chartType, title) => {
@@ -54,31 +54,31 @@ const Charts = ({ isEnglish }) => {
   const handlePrintChart = (chartElement, title) => {
     // Close dropdown first
     setActiveDropdown(null);
-    
+
     setTimeout(() => {
-      const printWindow = window.open('', '_blank');
-      const chartContent = chartElement.querySelector('.chart-content');
-      
+      const printWindow = window.open("", "_blank");
+      const chartContent = chartElement.querySelector(".chart-content");
+
       if (!chartContent) {
-        console.error('Chart content not found');
+        console.error("Chart content not found");
         return;
       }
-      
+
       // Get the SVG element
-      const svgElement = chartContent.querySelector('svg');
+      const svgElement = chartContent.querySelector("svg");
       if (!svgElement) {
-        console.error('SVG element not found');
+        console.error("SVG element not found");
         return;
       }
-      
+
       // Clone the SVG to avoid modifying the original
       const svgClone = svgElement.cloneNode(true);
       const svgRect = svgElement.getBoundingClientRect();
-      
+
       // Set explicit dimensions
-      svgClone.setAttribute('width', svgRect.width || 800);
-      svgClone.setAttribute('height', svgRect.height || 400);
-      
+      svgClone.setAttribute("width", svgRect.width || 800);
+      svgClone.setAttribute("height", svgRect.height || 400);
+
       printWindow.document.write(`
         <html>
           <head>
@@ -128,10 +128,10 @@ const Charts = ({ isEnglish }) => {
           </body>
         </html>
       `);
-      
+
       printWindow.document.close();
       printWindow.focus();
-      
+
       // Wait for content to load then print
       setTimeout(() => {
         printWindow.print();
@@ -143,16 +143,16 @@ const Charts = ({ isEnglish }) => {
   const downloadChart = async (format, chartElement, title) => {
     // Close dropdown first to avoid capturing it
     setActiveDropdown(null);
-    
+
     // Wait a bit for dropdown to close
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     // Get the chart content area specifically, not the whole container
-    const chartContent = chartElement.querySelector('.chart-content');
-    const svgElement = chartContent?.querySelector('svg');
-    
+    const chartContent = chartElement.querySelector(".chart-content");
+    const svgElement = chartContent?.querySelector("svg");
+
     if (!svgElement) {
-      console.error('No SVG element found in chart');
+      console.error("No SVG element found in chart");
       return;
     }
 
@@ -163,34 +163,36 @@ const Charts = ({ isEnglish }) => {
 
     // Clone the SVG to avoid modifying the original
     const svgClone = svgElement.cloneNode(true);
-    
+
     // Set explicit dimensions on the clone
-    svgClone.setAttribute('width', svgWidth);
-    svgClone.setAttribute('height', svgHeight);
-    svgClone.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
-    
+    svgClone.setAttribute("width", svgWidth);
+    svgClone.setAttribute("height", svgHeight);
+    svgClone.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+
     const svgData = new XMLSerializer().serializeToString(svgClone);
-    
+
     // Create a clean filename that works with Georgian text
     let cleanFileName = title;
     // Replace Georgian characters and special characters with safe alternatives
     cleanFileName = cleanFileName
-      .replace(/[^\w\s-_.]/g, '') // Remove special characters except word chars, spaces, hyphens, underscores, dots
-      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .replace(/[^\w\s-_.]/g, "") // Remove special characters except word chars, spaces, hyphens, underscores, dots
+      .replace(/\s+/g, "_") // Replace spaces with underscores
       .toLowerCase();
-    
+
     // Fallback if filename becomes empty
     if (!cleanFileName || cleanFileName.length < 3) {
       cleanFileName = `chart_${Date.now()}`;
     }
-    
+
     const fileName = `${cleanFileName}_chart`;
 
-    if (format === 'svg') {
+    if (format === "svg") {
       // Direct SVG download
-      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const svgBlob = new Blob([svgData], {
+        type: "image/svg+xml;charset=utf-8",
+      });
       const url = URL.createObjectURL(svgBlob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `${fileName}.svg`;
       document.body.appendChild(a);
@@ -201,189 +203,39 @@ const Charts = ({ isEnglish }) => {
     }
 
     // For raster formats, convert SVG to canvas
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
     // Set canvas size with high DPI for better quality (ensure 100% data capture)
     const dpr = Math.max(window.devicePixelRatio || 1, 2); // At least 2x for high quality
     canvas.width = svgWidth * dpr;
     canvas.height = svgHeight * dpr;
-    canvas.style.width = svgWidth + 'px';
-    canvas.style.height = svgHeight + 'px';
+    canvas.style.width = svgWidth + "px";
+    canvas.style.height = svgHeight + "px";
     ctx.scale(dpr, dpr);
-    
+
     // Improve rendering quality
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    ctx.imageSmoothingQuality = "high";
 
     return new Promise((resolve) => {
       const img = new Image();
-      
+
       img.onload = () => {
         // Fill with white background
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = "white";
         ctx.fillRect(0, 0, svgWidth, svgHeight);
-        
+
         // Draw the chart
         ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
 
         switch (format) {
-          case 'png': {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${fileName}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }
-              resolve();
-            }, 'image/png', 1.0); // Maximum quality
-            break;
-          }
-
-          case 'jpeg': {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${fileName}.jpg`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }
-              resolve();
-            }, 'image/jpeg', 1.0); // Maximum quality
-            break;
-          }
-
-          case 'pdf': {
-            // For PDF, we'll use the canvas to create a simple PDF
-            import('jspdf').then(({ jsPDF }) => {
-              const orientation = svgWidth > svgHeight ? 'landscape' : 'portrait';
-              const pdf = new jsPDF({
-                orientation,
-                unit: 'mm',
-                format: 'a4'
-              });
-              
-              // Calculate dimensions to fit A4
-              const a4Width = orientation === 'landscape' ? 297 : 210;
-              const a4Height = orientation === 'landscape' ? 210 : 297;
-              const margin = 20;
-              
-              const maxWidth = a4Width - (margin * 2);
-              const maxHeight = a4Height - (margin * 3); // Extra margin for title
-              
-              // Calculate scale to fit
-              const scaleX = maxWidth / (svgWidth * 0.264583); // Convert px to mm
-              const scaleY = maxHeight / (svgHeight * 0.264583);
-              const scale = Math.min(scaleX, scaleY);
-              
-              const finalWidth = (svgWidth * 0.264583) * scale;
-              const finalHeight = (svgHeight * 0.264583) * scale;
-              
-              // Center the image
-              const x = (a4Width - finalWidth) / 2;
-              const y = margin + 15; // Space for title
-              
-              // Handle Georgian text properly by converting to image
-              // Create a temporary canvas for the title
-              const titleCanvas = document.createElement('canvas');
-              const titleCtx = titleCanvas.getContext('2d');
-              
-              // Set canvas size for title (higher resolution for better quality)
-              const titleDpr = 2;
-              titleCanvas.width = (a4Width * 3.779) * titleDpr; // Convert mm to px (72 DPI) with high resolution
-              titleCanvas.height = 100 * titleDpr; // Increased height for better spacing
-              titleCtx.scale(titleDpr, titleDpr);
-              
-              // Set font for title (use system fonts that support Georgian)
-              titleCtx.fillStyle = 'white';
-              titleCtx.fillRect(0, 0, titleCanvas.width / titleDpr, titleCanvas.height / titleDpr);
-              titleCtx.fillStyle = '#1f2937'; // Dark gray for better readability
-              
-              // Try to load web fonts first, fallback to system fonts
-              titleCtx.font = 'bold 28px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", "Segoe UI", "Arial Unicode MS", sans-serif';
-              titleCtx.textAlign = 'center';
-              titleCtx.textBaseline = 'middle';
-              titleCtx.imageSmoothingEnabled = true;
-              titleCtx.imageSmoothingQuality = 'high';
-              
-              // Draw title text with better positioning
-              const titleWidth = titleCanvas.width / titleDpr;
-              const titleHeight = titleCanvas.height / titleDpr;
-              
-              // Split long titles into multiple lines if needed
-              const words = title.split(' ');
-              const titleMaxWidth = titleWidth - 60; // Increased margin for better spacing
-              let line = '';
-              const lines = [];
-              
-              for (let i = 0; i < words.length; i++) {
-                const testLine = line + words[i] + ' ';
-                const metrics = titleCtx.measureText(testLine);
-                const testWidth = metrics.width;
-                
-                if (testWidth > titleMaxWidth && line !== '') {
-                  lines.push(line.trim());
-                  line = words[i] + ' ';
-                } else {
-                  line = testLine;
-                }
-              }
-              lines.push(line.trim());
-              
-              // Draw each line with better spacing
-              const lineHeight = 24; // Increased line height for better readability
-              const startY = (titleHeight / 2) - ((lines.length - 1) * lineHeight / 2);
-              
-              lines.forEach((line, index) => {
-                titleCtx.fillText(line, titleWidth / 2, startY + (index * lineHeight));
-              });
-              
-              // Add title as image to PDF with proper sizing
-              const titleImageData = titleCanvas.toDataURL('image/png');
-              const titleHeightMm = Math.min(25, lines.length * 10); // Adjusted height calculation
-              
-              pdf.addImage(
-                titleImageData,
-                'PNG',
-                margin,
-                margin - 5,
-                maxWidth,
-                titleHeightMm
-              );
-              
-              // Adjust chart position based on title height
-              const adjustedY = margin + titleHeightMm + 8; // Increased spacing
-              
-              // Add chart with adjusted position
-              pdf.addImage(
-                canvas.toDataURL('image/png'),
-                'PNG',
-                x,
-                Math.max(adjustedY, y), // Use either adjusted position or original, whichever is lower
-                finalWidth,
-                finalHeight
-              );
-              
-              // Clean filename for Georgian text
-              const cleanFileName = fileName.replace(/[^\w\s-]/g, '').trim() || 'chart';
-              pdf.save(`${cleanFileName}.pdf`);
-              resolve();
-            }).catch((error) => {
-              console.error('PDF generation failed:', error);
-              // Fallback: download as PNG
-              canvas.toBlob((blob) => {
+          case "png": {
+            canvas.toBlob(
+              (blob) => {
                 if (blob) {
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
+                  const a = document.createElement("a");
                   a.href = url;
                   a.download = `${fileName}.png`;
                   document.body.appendChild(a);
@@ -392,8 +244,181 @@ const Charts = ({ isEnglish }) => {
                   URL.revokeObjectURL(url);
                 }
                 resolve();
-              }, 'image/png');
-            });
+              },
+              "image/png",
+              1.0
+            ); // Maximum quality
+            break;
+          }
+
+          case "jpeg": {
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${fileName}.jpg`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }
+                resolve();
+              },
+              "image/jpeg",
+              1.0
+            ); // Maximum quality
+            break;
+          }
+
+          case "pdf": {
+            // For PDF, we'll use the canvas to create a simple PDF
+            import("jspdf")
+              .then(({ jsPDF }) => {
+                const orientation =
+                  svgWidth > svgHeight ? "landscape" : "portrait";
+                const pdf = new jsPDF({
+                  orientation,
+                  unit: "mm",
+                  format: "a4",
+                });
+
+                // Calculate dimensions to fit A4
+                const a4Width = orientation === "landscape" ? 297 : 210;
+                const a4Height = orientation === "landscape" ? 210 : 297;
+                const margin = 20;
+
+                const maxWidth = a4Width - margin * 2;
+                const maxHeight = a4Height - margin * 3; // Extra margin for title
+
+                // Calculate scale to fit
+                const scaleX = maxWidth / (svgWidth * 0.264583); // Convert px to mm
+                const scaleY = maxHeight / (svgHeight * 0.264583);
+                const scale = Math.min(scaleX, scaleY);
+
+                const finalWidth = svgWidth * 0.264583 * scale;
+                const finalHeight = svgHeight * 0.264583 * scale;
+
+                // Center the image
+                const x = (a4Width - finalWidth) / 2;
+                const y = margin + 15; // Space for title
+
+                // Handle Georgian text properly by converting to image
+                // Create a temporary canvas for the title
+                const titleCanvas = document.createElement("canvas");
+                const titleCtx = titleCanvas.getContext("2d");
+
+                // Set canvas size for title (higher resolution for better quality)
+                const titleDpr = 2;
+                titleCanvas.width = a4Width * 3.779 * titleDpr; // Convert mm to px (72 DPI) with high resolution
+                titleCanvas.height = 100 * titleDpr; // Increased height for better spacing
+                titleCtx.scale(titleDpr, titleDpr);
+
+                // Set font for title (use system fonts that support Georgian)
+                titleCtx.fillStyle = "white";
+                titleCtx.fillRect(
+                  0,
+                  0,
+                  titleCanvas.width / titleDpr,
+                  titleCanvas.height / titleDpr
+                );
+                titleCtx.fillStyle = "#1f2937"; // Dark gray for better readability
+
+                // Try to load web fonts first, fallback to system fonts
+                titleCtx.font =
+                  'bold 28px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", "Segoe UI", "Arial Unicode MS", sans-serif';
+                titleCtx.textAlign = "center";
+                titleCtx.textBaseline = "middle";
+                titleCtx.imageSmoothingEnabled = true;
+                titleCtx.imageSmoothingQuality = "high";
+
+                // Draw title text with better positioning
+                const titleWidth = titleCanvas.width / titleDpr;
+                const titleHeight = titleCanvas.height / titleDpr;
+
+                // Split long titles into multiple lines if needed
+                const words = title.split(" ");
+                const titleMaxWidth = titleWidth - 60; // Increased margin for better spacing
+                let line = "";
+                const lines = [];
+
+                for (let i = 0; i < words.length; i++) {
+                  const testLine = line + words[i] + " ";
+                  const metrics = titleCtx.measureText(testLine);
+                  const testWidth = metrics.width;
+
+                  if (testWidth > titleMaxWidth && line !== "") {
+                    lines.push(line.trim());
+                    line = words[i] + " ";
+                  } else {
+                    line = testLine;
+                  }
+                }
+                lines.push(line.trim());
+
+                // Draw each line with better spacing
+                const lineHeight = 24; // Increased line height for better readability
+                const startY =
+                  titleHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
+
+                lines.forEach((line, index) => {
+                  titleCtx.fillText(
+                    line,
+                    titleWidth / 2,
+                    startY + index * lineHeight
+                  );
+                });
+
+                // Add title as image to PDF with proper sizing
+                const titleImageData = titleCanvas.toDataURL("image/png");
+                const titleHeightMm = Math.min(25, lines.length * 10); // Adjusted height calculation
+
+                pdf.addImage(
+                  titleImageData,
+                  "PNG",
+                  margin,
+                  margin - 5,
+                  maxWidth,
+                  titleHeightMm
+                );
+
+                // Adjust chart position based on title height
+                const adjustedY = margin + titleHeightMm + 8; // Increased spacing
+
+                // Add chart with adjusted position
+                pdf.addImage(
+                  canvas.toDataURL("image/png"),
+                  "PNG",
+                  x,
+                  Math.max(adjustedY, y), // Use either adjusted position or original, whichever is lower
+                  finalWidth,
+                  finalHeight
+                );
+
+                // Clean filename for Georgian text
+                const cleanFileName =
+                  fileName.replace(/[^\w\s-]/g, "").trim() || "chart";
+                pdf.save(`${cleanFileName}.pdf`);
+                resolve();
+              })
+              .catch((error) => {
+                console.error("PDF generation failed:", error);
+                // Fallback: download as PNG
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${fileName}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }
+                  resolve();
+                }, "image/png");
+              });
             break;
           }
 
@@ -403,12 +428,13 @@ const Charts = ({ isEnglish }) => {
       };
 
       img.onerror = () => {
-        console.error('Failed to load SVG as image');
+        console.error("Failed to load SVG as image");
         resolve();
       };
 
       // Convert SVG to data URL
-      const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+      const svgDataUrl =
+        "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
       img.src = svgDataUrl;
     });
   };
@@ -587,13 +613,18 @@ const Charts = ({ isEnglish }) => {
   const currentTexts = isEnglish ? texts.english : texts.georgian;
 
   const ChartContainer = ({ title, children, onMaximize, chartIndex }) => (
-    <div className="chart-container" ref={(el) => el && (window.chartRefs = { ...window.chartRefs, [chartIndex]: el })}>
+    <div
+      className="chart-container"
+      ref={(el) =>
+        el && (window.chartRefs = { ...window.chartRefs, [chartIndex]: el })
+      }
+    >
       <div className="chart-header">
         <h3 className="chart-title">{title}</h3>
         <div className="chart-actions">
           <div className="chart-action-dropdown">
-            <button 
-              className="chart-action-btn dropdown-trigger" 
+            <button
+              className="chart-action-btn dropdown-trigger"
               onClick={() => toggleDropdown(chartIndex)}
             >
               <Download size={16} />
@@ -601,11 +632,11 @@ const Charts = ({ isEnglish }) => {
             </button>
             {activeDropdown === chartIndex && (
               <div className="dropdown-menu">
-                <button 
+                <button
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest('.chart-container');
+                    const container = e.target.closest(".chart-container");
                     setActiveDropdown(null);
                     setTimeout(() => {
                       handlePrintChart(container, title);
@@ -613,51 +644,51 @@ const Charts = ({ isEnglish }) => {
                   }}
                 >
                   <Printer size={16} />
-                  Print Chart
+                  {isEnglish ? "Print Chart" : "ბეჭდვა"}
                 </button>
-                <button 
+                <button
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest('.chart-container');
-                    await downloadChart('png', container, title);
+                    const container = e.target.closest(".chart-container");
+                    await downloadChart("png", container, title);
                   }}
                 >
                   <Download size={16} />
-                  Download PNG
+                  {isEnglish ? "Download PNG" : "გადმოწერა PNG"}
                 </button>
-                <button 
+                <button
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest('.chart-container');
-                    await downloadChart('jpeg', container, title);
+                    const container = e.target.closest(".chart-container");
+                    await downloadChart("jpeg", container, title);
                   }}
                 >
                   <Download size={16} />
-                  Download JPEG
+                  {isEnglish ? "Download JPEG" : "გადმოწერა JPEG"}
                 </button>
-                <button 
+                <button
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest('.chart-container');
-                    await downloadChart('pdf', container, title);
+                    const container = e.target.closest(".chart-container");
+                    await downloadChart("pdf", container, title);
                   }}
                 >
                   <Download size={16} />
-                  Download PDF
+                  {isEnglish ? "Download PDF" : "გადმოწერა PDF"}
                 </button>
-                <button 
+                <button
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest('.chart-container');
-                    await downloadChart('svg', container, title);
+                    const container = e.target.closest(".chart-container");
+                    await downloadChart("svg", container, title);
                   }}
                 >
                   <Download size={16} />
-                  Download SVG
+                  {isEnglish ? "Download SVG" : "გადმოწერა SVG"}
                 </button>
               </div>
             )}
@@ -676,19 +707,21 @@ const Charts = ({ isEnglish }) => {
 
     const renderChart = () => {
       switch (maximizedChart.type) {
-        case 'bar':
+        case "bar":
           return (
             <BarChart data={maximizedChart.data}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="year" />
               <YAxis tickFormatter={(value) => value.toLocaleString()} />
-              <Tooltip formatter={(value, name) => [value.toLocaleString(), name]} />
+              <Tooltip
+                formatter={(value, name) => [value.toLocaleString(), name]}
+              />
               <Legend />
               <Bar dataKey="birth" fill="#2563eb" name={currentTexts.birth} />
               <Bar dataKey="death" fill="#dc2626" name={currentTexts.death} />
             </BarChart>
           );
-        case 'line':
+        case "line":
           return (
             <LineChart data={maximizedChart.data}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -696,15 +729,45 @@ const Charts = ({ isEnglish }) => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="manufacturing" stroke="#2563eb" strokeWidth={2} />
-              <Line type="monotone" dataKey="construction" stroke="#dc2626" strokeWidth={2} />
-              <Line type="monotone" dataKey="retail" stroke="#16a34a" strokeWidth={2} />
-              <Line type="monotone" dataKey="transport" stroke="#ca8a04" strokeWidth={2} />
-              <Line type="monotone" dataKey="finance" stroke="#7c3aed" strokeWidth={2} />
-              <Line type="monotone" dataKey="other" stroke="#db2777" strokeWidth={2} />
+              <Line
+                type="monotone"
+                dataKey="manufacturing"
+                stroke="#2563eb"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="construction"
+                stroke="#dc2626"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="retail"
+                stroke="#16a34a"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="transport"
+                stroke="#ca8a04"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="finance"
+                stroke="#7c3aed"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="other"
+                stroke="#db2777"
+                strokeWidth={2}
+              />
             </LineChart>
           );
-        case 'horizontalBar':
+        case "horizontalBar":
           return (
             <BarChart data={maximizedChart.data} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" />
@@ -714,7 +777,7 @@ const Charts = ({ isEnglish }) => {
               <Bar dataKey="total" fill="#2563eb" />
             </BarChart>
           );
-        case 'area':
+        case "area":
           return (
             <AreaChart data={maximizedChart.data}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -722,15 +785,51 @@ const Charts = ({ isEnglish }) => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Area type="monotone" dataKey="manufacturing" stackId="1" stroke="#2563eb" fill="#2563eb" />
-              <Area type="monotone" dataKey="construction" stackId="1" stroke="#dc2626" fill="#dc2626" />
-              <Area type="monotone" dataKey="retail" stackId="1" stroke="#16a34a" fill="#16a34a" />
-              <Area type="monotone" dataKey="transport" stackId="1" stroke="#ca8a04" fill="#ca8a04" />
-              <Area type="monotone" dataKey="finance" stackId="1" stroke="#7c3aed" fill="#7c3aed" />
-              <Area type="monotone" dataKey="other" stackId="1" stroke="#db2777" fill="#db2777" />
+              <Area
+                type="monotone"
+                dataKey="manufacturing"
+                stackId="1"
+                stroke="#2563eb"
+                fill="#2563eb"
+              />
+              <Area
+                type="monotone"
+                dataKey="construction"
+                stackId="1"
+                stroke="#dc2626"
+                fill="#dc2626"
+              />
+              <Area
+                type="monotone"
+                dataKey="retail"
+                stackId="1"
+                stroke="#16a34a"
+                fill="#16a34a"
+              />
+              <Area
+                type="monotone"
+                dataKey="transport"
+                stackId="1"
+                stroke="#ca8a04"
+                fill="#ca8a04"
+              />
+              <Area
+                type="monotone"
+                dataKey="finance"
+                stackId="1"
+                stroke="#7c3aed"
+                fill="#7c3aed"
+              />
+              <Area
+                type="monotone"
+                dataKey="other"
+                stackId="1"
+                stroke="#db2777"
+                fill="#db2777"
+              />
             </AreaChart>
           );
-        case 'growth':
+        case "growth":
           return (
             <BarChart data={maximizedChart.data}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -740,7 +839,7 @@ const Charts = ({ isEnglish }) => {
               <Bar dataKey="growth" fill="#16a34a" />
             </BarChart>
           );
-        case 'pie':
+        case "pie":
           return (
             <PieChart>
               <Pie
@@ -750,7 +849,9 @@ const Charts = ({ isEnglish }) => {
                 outerRadius={120}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name} ${(percent * 100).toFixed(0)}%`
+                }
               >
                 {maximizedChart.data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -766,10 +867,16 @@ const Charts = ({ isEnglish }) => {
 
     return (
       <div className="maximize-modal-overlay" onClick={handleCloseMaximized}>
-        <div className="maximize-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="maximize-modal-content"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="maximize-modal-header">
             <h2 className="maximize-modal-title">{maximizedChart.title}</h2>
-            <button className="maximize-modal-close" onClick={handleCloseMaximized}>
+            <button
+              className="maximize-modal-close"
+              onClick={handleCloseMaximized}
+            >
               ✕
             </button>
           </div>
@@ -794,20 +901,26 @@ const Charts = ({ isEnglish }) => {
                   {/* Bar Chart - Births and Deaths */}
                   <ChartContainer
                     title={currentTexts.organizationsByYear}
-                    onMaximize={() => handleMaximizeChart(organizationsByYear, 'bar', currentTexts.organizationsByYear)}
+                    onMaximize={() =>
+                      handleMaximizeChart(
+                        organizationsByYear,
+                        "bar",
+                        currentTexts.organizationsByYear
+                      )
+                    }
                     chartIndex={0}
                   >
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={organizationsByYear}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" />
-                        <YAxis 
+                        <YAxis
                           tickFormatter={(value) => value.toLocaleString()}
                         />
-                        <Tooltip 
+                        <Tooltip
                           formatter={(value, name) => [
-                            value.toLocaleString(), 
-                            name
+                            value.toLocaleString(),
+                            name,
                           ]}
                         />
                         <Legend />
@@ -828,7 +941,13 @@ const Charts = ({ isEnglish }) => {
                   {/* Line Chart - Activity Trends */}
                   <ChartContainer
                     title={currentTexts.activitySectors}
-                    onMaximize={() => handleMaximizeChart(activityData, 'line', currentTexts.activitySectors)}
+                    onMaximize={() =>
+                      handleMaximizeChart(
+                        activityData,
+                        "line",
+                        currentTexts.activitySectors
+                      )
+                    }
                     chartIndex={1}
                   >
                     <ResponsiveContainer width="100%" height={300}>
@@ -881,7 +1000,13 @@ const Charts = ({ isEnglish }) => {
                   {/* Stacked Bar Chart - Regional Distribution */}
                   <ChartContainer
                     title={currentTexts.regionalDistribution}
-                    onMaximize={() => handleMaximizeChart(organizationGrowthData, 'horizontalBar', currentTexts.regionalDistribution)}
+                    onMaximize={() =>
+                      handleMaximizeChart(
+                        organizationGrowthData,
+                        "horizontalBar",
+                        currentTexts.regionalDistribution
+                      )
+                    }
                     chartIndex={2}
                   >
                     <ResponsiveContainer width="100%" height={300}>
@@ -905,7 +1030,15 @@ const Charts = ({ isEnglish }) => {
                         ? "Organizations by Legal Forms"
                         : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით"
                     }
-                    onMaximize={() => handleMaximizeChart(activityData, 'area', isEnglish ? "Organizations by Legal Forms" : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით")}
+                    onMaximize={() =>
+                      handleMaximizeChart(
+                        activityData,
+                        "area",
+                        isEnglish
+                          ? "Organizations by Legal Forms"
+                          : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით"
+                      )
+                    }
                     chartIndex={3}
                   >
                     <ResponsiveContainer width="100%" height={300}>
@@ -964,14 +1097,24 @@ const Charts = ({ isEnglish }) => {
                   {/* Growth Percentage Chart */}
                   <ChartContainer
                     title={currentTexts.organizationGrowth}
-                    onMaximize={() => handleMaximizeChart(
-                      organizationsByYear.map((item, index) => ({
-                        year: item.year,
-                        growth: index > 0 ? (((item.birth - organizationsByYear[index - 1].birth) / organizationsByYear[index - 1].birth) * 100).toFixed(1) : 0,
-                      })),
-                      'growth',
-                      currentTexts.organizationGrowth
-                    )}
+                    onMaximize={() =>
+                      handleMaximizeChart(
+                        organizationsByYear.map((item, index) => ({
+                          year: item.year,
+                          growth:
+                            index > 0
+                              ? (
+                                  ((item.birth -
+                                    organizationsByYear[index - 1].birth) /
+                                    organizationsByYear[index - 1].birth) *
+                                  100
+                                ).toFixed(1)
+                              : 0,
+                        })),
+                        "growth",
+                        currentTexts.organizationGrowth
+                      )
+                    }
                     chartIndex={4}
                   >
                     <ResponsiveContainer width="100%" height={300}>
@@ -1001,7 +1144,13 @@ const Charts = ({ isEnglish }) => {
                   {/* Pie Chart - Ownership Types */}
                   <ChartContainer
                     title={currentTexts.ownershipTypes}
-                    onMaximize={() => handleMaximizeChart(ownershipData, 'pie', currentTexts.ownershipTypes)}
+                    onMaximize={() =>
+                      handleMaximizeChart(
+                        ownershipData,
+                        "pie",
+                        currentTexts.ownershipTypes
+                      )
+                    }
                     chartIndex={5}
                   >
                     <ResponsiveContainer width="100%" height={300}>
