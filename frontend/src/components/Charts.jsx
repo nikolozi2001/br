@@ -16,8 +16,9 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Download, Maximize2, Printer, ChevronDown, FileText } from "lucide-react";
+import { Download, Maximize2, Printer, ChevronDown, FileText, RefreshCw, AlertCircle } from "lucide-react";
 import { fetchEnterpriseBirthDeath } from "../services/api";
+import ChartSkeleton from "./ChartSkeleton";
 import "../styles/Charts.scss";
 
 const Charts = ({ isEnglish }) => {
@@ -26,6 +27,8 @@ const Charts = ({ isEnglish }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [organizationsByYear, setOrganizationsByYear] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Initialize hiddenDataKeys from localStorage or empty Set
   const [hiddenDataKeys, setHiddenDataKeys] = useState(() => {
@@ -57,11 +60,13 @@ const Charts = ({ isEnglish }) => {
     const loadData = async () => {
       try {
         setLoading(true);
+        setError(null);
         const data = await fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge");
         setOrganizationsByYear(data);
+        setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error("Error loading enterprise birth-death data:", error);
-        // Keep empty array if API fails
+        setError(error.message || "Failed to load data");
         setOrganizationsByYear([]);
       } finally {
         setLoading(false);
@@ -69,7 +74,11 @@ const Charts = ({ isEnglish }) => {
     };
 
     loadData();
-  }, [isEnglish]);
+  }, [isEnglish, retryCount]);
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -782,6 +791,8 @@ const Charts = ({ isEnglish }) => {
                       fill="#0077CC"
                     />
                     <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
                       d="M0.485389 8.80444H12.5345C12.8021 8.80444 13.0199 9.02215 13.0199 9.28983V14.6719C13.0199 14.9396 12.8021 15.1573 12.5345 15.1573H0.485389C0.217711 15.1573 0 14.9396 0 14.6719V9.28983C0 9.02215 0.217711 8.80444 0.485389 8.80444Z"
                       fill="#0077CC"
                     />
@@ -1135,7 +1146,22 @@ const Charts = ({ isEnglish }) => {
                   >
                     {loading ? (
                       <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div>Loading...</div>
+                        <ChartSkeleton />
+                      </div>
+                    ) : error ? (
+                      <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                        <AlertCircle size={24} color="#e53e3e" />
+                        <div className="mt-2 text-center text-sm text-gray-600">
+                          {isEnglish
+                            ? "Failed to load data. Please try again."
+                            : "მონაცემების დატვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან."}
+                        </div>
+                        <button
+                          onClick={handleRetry}
+                          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
+                        >
+                          {isEnglish ? "Retry" : "მეორე ცდა"}
+                        </button>
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={300}>
@@ -1365,7 +1391,22 @@ const Charts = ({ isEnglish }) => {
                   >
                     {loading ? (
                       <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div>Loading...</div>
+                        <ChartSkeleton />
+                      </div>
+                    ) : error ? (
+                      <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                        <AlertCircle size={24} color="#e53e3e" />
+                        <div className="mt-2 text-center text-sm text-gray-600">
+                          {isEnglish
+                            ? "Failed to load data. Please try again."
+                            : "მონაცემების დატვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან."}
+                        </div>
+                        <button
+                          onClick={handleRetry}
+                          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
+                        >
+                          {isEnglish ? "Retry" : "მეორე ცდა"}
+                        </button>
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={300}>
