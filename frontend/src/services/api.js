@@ -1,19 +1,54 @@
 const API_BASE_URL = "http://192.168.1.27:5000/api";
 
-// Report 2 API
-export const fetchReport2Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report2?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 2 data:", error);
-    return [];
+// Generic API utility functions for reports
+const handleReportApiResponse = async (response) => {
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
   }
+  const data = await response.json();
+  return data.recordset || data;
 };
+
+const createReportApiCall = (reportNumber) => {
+  return async (lang = "ge") => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/report${reportNumber}?lang=${lang}`);
+      return await handleReportApiResponse(response);
+    } catch (error) {
+      console.error(`Error fetching report ${reportNumber} data:`, error);
+      return [];
+    }
+  };
+};
+
+// Report API endpoints configuration
+const REPORT_ENDPOINTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+// Generate all report functions dynamically
+const createReportFunctions = () => {
+  const reportFunctions = {};
+  
+  REPORT_ENDPOINTS.forEach(reportNum => {
+    reportFunctions[`fetchReport${reportNum}Data`] = createReportApiCall(reportNum);
+  });
+  
+  return reportFunctions;
+};
+
+// Auto-generated report functions
+const reportFunctions = createReportFunctions();
+
+// Export individual report functions for backward compatibility
+export const fetchReport1Data = reportFunctions.fetchReport1Data;
+export const fetchReport2Data = reportFunctions.fetchReport2Data;
+export const fetchReport3Data = reportFunctions.fetchReport3Data;
+export const fetchReport4Data = reportFunctions.fetchReport4Data;
+export const fetchReport5Data = reportFunctions.fetchReport5Data;
+export const fetchReport6Data = reportFunctions.fetchReport6Data;
+export const fetchReport7Data = reportFunctions.fetchReport7Data;
+export const fetchReport8Data = reportFunctions.fetchReport8Data;
+export const fetchReport9Data = reportFunctions.fetchReport9Data;
+export const fetchReport10Data = reportFunctions.fetchReport10Data;
 
 // Legal Forms API
 export const fetchLegalForms = async (lang) => {
@@ -113,141 +148,6 @@ export const fetchSizes = async (lang) => {
     }));
   } catch (error) {
     console.error("Error fetching sizes:", error);
-    return [];
-  }
-};
-
-// Report 1 API
-export const fetchReport1Data = async (lang = "ge") => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report1?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 1 data:", error);
-    return [];
-  }
-};
-
-// Report 3 API
-export const fetchReport3Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report3?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 3 data:", error);
-    return [];
-  }
-};
-
-// Report 4 API
-export const fetchReport4Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report4?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 4 data:", error);
-    return [];
-  }
-};
-
-// Report 5 API
-export const fetchReport5Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report5?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 5 data:", error);
-    return [];
-  }
-};
-
-// Report 6 API
-export const fetchReport6Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report6?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 6 data:", error);
-    return [];
-  }
-};
-
-// Report 7 API
-export const fetchReport7Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report7?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 7 data:", error);
-    return [];
-  }
-};
-
-// Report 8 API
-export const fetchReport8Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report8?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 8 data:", error);
-    return [];
-  }
-};
-
-// Report 9 API
-export const fetchReport9Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report9?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 9 data:", error);
-    return [];
-  }
-};
-
-// Report 10 API
-export const fetchReport10Data = async (lang) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/report10?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
-    return data.recordset || data;
-  } catch (error) {
-    console.error("Error fetching report 10 data:", error);
     return [];
   }
 };
