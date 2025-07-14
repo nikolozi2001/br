@@ -84,18 +84,24 @@ const Charts = ({ isEnglish }) => {
           <head>
             <title>Print Chart - ${title}</title>
             <style>
+              @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;700&display=swap');
               body { 
                 margin: 20px; 
-                font-family: Arial, sans-serif;
+                font-family: "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", Arial, sans-serif;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                line-height: 1.4;
               }
               .chart-title { 
-                font-size: 18px; 
+                font-size: 16px; 
                 font-weight: bold; 
-                margin-bottom: 20px;
+                margin-bottom: 25px;
                 text-align: center;
+                max-width: 80%;
+                word-spacing: 2px;
+                letter-spacing: 0.5px;
+                line-height: 1.6;
               }
               .chart-content { 
                 display: flex;
@@ -107,8 +113,12 @@ const Charts = ({ isEnglish }) => {
                 height: auto;
               }
               @media print {
-                body { margin: 0; }
-                .chart-title { margin-bottom: 10px; }
+                body { margin: 15px; }
+                .chart-title { 
+                  margin-bottom: 20px; 
+                  font-size: 14px;
+                  line-height: 1.5;
+                }
               }
             </style>
           </head>
@@ -290,7 +300,7 @@ const Charts = ({ isEnglish }) => {
               // Set canvas size for title (higher resolution for better quality)
               const titleDpr = 2;
               titleCanvas.width = (a4Width * 3.779) * titleDpr; // Convert mm to px (72 DPI) with high resolution
-              titleCanvas.height = 80 * titleDpr;
+              titleCanvas.height = 100 * titleDpr; // Increased height for better spacing
               titleCtx.scale(titleDpr, titleDpr);
               
               // Set font for title (use system fonts that support Georgian)
@@ -299,7 +309,7 @@ const Charts = ({ isEnglish }) => {
               titleCtx.fillStyle = '#1f2937'; // Dark gray for better readability
               
               // Try to load web fonts first, fallback to system fonts
-              titleCtx.font = 'bold 24px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", "Segoe UI", "Arial Unicode MS", sans-serif';
+              titleCtx.font = 'bold 28px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", "Segoe UI", "Arial Unicode MS", sans-serif';
               titleCtx.textAlign = 'center';
               titleCtx.textBaseline = 'middle';
               titleCtx.imageSmoothingEnabled = true;
@@ -311,7 +321,7 @@ const Charts = ({ isEnglish }) => {
               
               // Split long titles into multiple lines if needed
               const words = title.split(' ');
-              const titleMaxWidth = titleWidth - 40; // 20px margin on each side
+              const titleMaxWidth = titleWidth - 60; // Increased margin for better spacing
               let line = '';
               const lines = [];
               
@@ -329,8 +339,8 @@ const Charts = ({ isEnglish }) => {
               }
               lines.push(line.trim());
               
-              // Draw each line
-              const lineHeight = 22;
+              // Draw each line with better spacing
+              const lineHeight = 24; // Increased line height for better readability
               const startY = (titleHeight / 2) - ((lines.length - 1) * lineHeight / 2);
               
               lines.forEach((line, index) => {
@@ -339,7 +349,7 @@ const Charts = ({ isEnglish }) => {
               
               // Add title as image to PDF with proper sizing
               const titleImageData = titleCanvas.toDataURL('image/png');
-              const titleHeightMm = Math.min(20, lines.length * 8); // Adjust height based on number of lines
+              const titleHeightMm = Math.min(25, lines.length * 10); // Adjusted height calculation
               
               pdf.addImage(
                 titleImageData,
@@ -351,7 +361,7 @@ const Charts = ({ isEnglish }) => {
               );
               
               // Adjust chart position based on title height
-              const adjustedY = margin + titleHeightMm + 5;
+              const adjustedY = margin + titleHeightMm + 8; // Increased spacing
               
               // Add chart with adjusted position
               pdf.addImage(
