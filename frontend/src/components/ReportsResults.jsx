@@ -7,370 +7,372 @@ import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
 
-function ReportsResults({ isEnglish }) {
-  const { reportId } = useParams();
-  const navigate = useNavigate();
-  const [reportData, setReportData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [showScrollTop, setShowScrollTop] = useState(false);
+// Constants and configurations
+const REPORT_CONFIGS = {
+  1: {
+    apiMethod: 'fetchReport1Data',
+    type: 'standard',
+    hasPercentages: true,
+    title: {
+      ge: "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ეკონომიკური საქმიანობის სახეების მიხედვით (NACE Rev. 2)",
+      en: "Number of registered and active organizations by economic activity (Nace Rev. 2)"
+    },
+    fileName: {
+      ge: "ეკონომიკური_საქმიანობების_ანგარიში",
+      en: "Economic_Activities_Report"
+    },
+    sheetName: {
+      ge: "ეკონომიკური საქმიანობები",
+      en: "Economic Activities"
+    }
+  },
+  2: {
+    apiMethod: 'fetchReport2Data',
+    type: 'standard',
+    hasPercentages: true,
+    title: {
+      ge: "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით",
+      en: "Number of registered and active organizations by organizational-legal forms"
+    },
+    fileName: {
+      ge: "სამართლებრივი_ფორმების_ანგარიში",
+      en: "Legal_Forms_Report"
+    },
+    sheetName: {
+      ge: "სამართლებრივი ფორმები",
+      en: "Legal Forms"
+    }
+  },
+  3: {
+    apiMethod: 'fetchReport3Data',
+    type: 'standard',
+    hasPercentages: true,
+    title: {
+      ge: "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით",
+      en: "Number of registered organizations by forms of ownership"
+    },
+    fileName: {
+      ge: "საკუთრების_ფორმების_ანგარიში",
+      en: "Ownership_Types_Report"
+    },
+    sheetName: {
+      ge: "საკუთრების ფორმები",
+      en: "Ownership Types"
+    }
+  },
+  4: {
+    apiMethod: 'fetchReport4Data',
+    type: 'standard',
+    hasPercentages: true,
+    title: {
+      ge: "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით",
+      en: "Number of registered and active organizations by regions"
+    },
+    fileName: {
+      ge: "რეგიონების_ანგარიში",
+      en: "Regions_Report"
+    },
+    sheetName: {
+      ge: "რეგიონები",
+      en: "Regions"
+    }
+  },
+  5: {
+    apiMethod: 'fetchReport5Data',
+    type: 'standard',
+    hasPercentages: true,
+    title: {
+      ge: "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით",
+      en: "Number of registered and active organizations by municipalities"
+    },
+    fileName: {
+      ge: "მუნიციპალიტეტების_ანგარიში",
+      en: "Municipalities_Report"
+    },
+    sheetName: {
+      ge: "მუნიციპალიტეტები",
+      en: "Municipalities"
+    }
+  },
+  6: {
+    apiMethod: 'fetchReport6Data',
+    type: 'yearly',
+    hasPercentages: false,
+    title: {
+      ge: "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - ნაზარდი ჯამი",
+      en: "Number of registered organizations by organizational-legal forms and years - incremental sum"
+    },
+    fileName: {
+      ge: "ორგანიზაციები_ფორმებით_ნაზარდი",
+      en: "Organizations_Forms_Incremental"
+    },
+    sheetName: {
+      ge: "ნაზარდი ჯამი",
+      en: "Incremental Sum"
+    }
+  },
+  7: {
+    apiMethod: 'fetchReport7Data',
+    type: 'yearly',
+    hasPercentages: false,
+    title: {
+      ge: "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - კონკრეტულ წელს რეგისტრირებული",
+      en: "Number of registered organizations by organizational-legal forms and years - registered in a specific year"
+    },
+    fileName: {
+      ge: "ორგანიზაციები_ფორმებით_წლიური",
+      en: "Organizations_Forms_Yearly"
+    },
+    sheetName: {
+      ge: "წლიური რეგისტრაცია",
+      en: "Yearly Registration"
+    }
+  },
+  8: {
+    apiMethod: 'fetchReport8Data',
+    type: 'yearly',
+    hasPercentages: false,
+    title: {
+      ge: "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - ნაზარდი ჯამი",
+      en: "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - incremental sum"
+    },
+    fileName: {
+      ge: "ორგანიზაციები_საქმიანობით_ნაზარდი",
+      en: "Organizations_Activities_Incremental"
+    },
+    sheetName: {
+      ge: "ნაზარდი ჯამი",
+      en: "Incremental Sum"
+    }
+  },
+  9: {
+    apiMethod: 'fetchReport9Data',
+    type: 'yearly',
+    hasPercentages: false,
+    title: {
+      ge: "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - კონკრეტულ წელს რეგისტრირებული",
+      en: "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - registered in a specific year"
+    },
+    fileName: {
+      ge: "ორგანიზაციები_საქმიანობით_წლიური",
+      en: "Organizations_Activities_Yearly"
+    },
+    sheetName: {
+      ge: "წლიური რეგისტრაცია",
+      en: "Yearly Registration"
+    }
+  },
+  10: {
+    apiMethod: 'fetchReport10Data',
+    type: 'regional',
+    hasPercentages: false,
+    title: {
+      ge: "საქართველოში რეგისტრირებულ მოქმედ ბიზნეს სუბიექტთა რაოდენობა რეგიონებისა და ეკონომიკური საქმიანობის სახეების მიხედვით (Nace Rev.2)",
+      en: "The number of active business entities registered in Georgia according to regions and types of economic activity (Nace Rev.2)"
+    },
+    fileName: {
+      ge: "რეგიონები_საქმიანობები",
+      en: "Regions_Activities"
+    },
+    sheetName: {
+      ge: "რეგიონები და საქმიანობები",
+      en: "Regions and Activities"
+    }
+  }
+};
 
-  const report1Columns = [
+// Column configurations
+const COLUMN_CONFIGS = {
+  report1: [
     { key: "Activity_Code", ge: "კოდი", en: "Activity Code" },
     { key: "Activity_Name", ge: "სექციის დასახელება", en: "Activity Name" },
     { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
     { key: "pct", ge: "%", en: "%" },
     { key: "Active_Qty", ge: "აქტიური", en: "Active" },
     { key: "pct_act", ge: "%", en: "%" },
-  ];
-
-  const report2Columns = [
+  ],
+  report2: [
     { key: "ID", ge: "კოდი", en: "Code" },
-    {
-      key: "Legal_Form",
-      ge: "ორგანიზაციულ-სამართლებრივი ფორმა",
-      en: "Legal Status",
-    },
+    { key: "Legal_Form", ge: "ორგანიზაციულ-სამართლებრივი ფორმა", en: "Legal Status" },
     { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
     { key: "Registered_Pct", ge: "%", en: "%" },
     { key: "Active_Qty", ge: "აქტიური", en: "Active" },
     { key: "Active_Pct", ge: "%", en: "%" },
-  ];
-
-  const report3Columns = [
+  ],
+  report3: [
     { key: "ID", ge: "კოდი", en: "Code" },
-    {
-      key: "Ownership_Type",
-      ge: "საკუთრების ფორმა",
-      en: "Ownership Type",
-    },
+    { key: "Ownership_Type", ge: "საკუთრების ფორმა", en: "Ownership Type" },
     { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
     { key: "Registered_Pct", ge: "%", en: "%" },
     { key: "Active_Qty", ge: "აქტიური", en: "Active" },
     { key: "Active_Pct", ge: "%", en: "%" },
-  ];
-
-  const report4Columns = [
+  ],
+  report4: [
     { key: "Location_Code", ge: "კოდი", en: "Code" },
-    {
-      key: "Location_Name",
-      ge: "რეგიონის დასახელება",
-      en: "Region Name",
-    },
+    { key: "Location_Name", ge: "რეგიონის დასახელება", en: "Region Name" },
     { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
     { key: "Registered_Pct", ge: "%", en: "%" },
     { key: "Active_Qty", ge: "აქტიური", en: "Active" },
     { key: "Active_Pct", ge: "%", en: "%" },
-  ];
-
-  const report5Columns = [
+  ],
+  report5: [
     { key: "Location_Code", ge: "კოდი", en: "Code" },
-    {
-      key: "Location_Name",
-      ge: "მუნიციპალიტეტი",
-      en: "Municipality",
-    },
+    { key: "Location_Name", ge: "მუნიციპალიტეტი", en: "Municipality" },
     { key: "Registered_Qty", ge: "რეგისტრირებული", en: "Registered" },
     { key: "Registered_Pct", ge: "%", en: "%" },
     { key: "Active_Qty", ge: "აქტიური", en: "Active" },
     { key: "Active_Pct", ge: "%", en: "%" },
-  ];
-
-  const report6Columns = [
+  ],
+  report6: [
     { key: "ID", ge: "კოდი", en: "Code" },
-    {
-      key: "Legal_Form",
-      ge: "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
-      en: "Organizational-Legal Form",
-    },
+    { key: "Legal_Form", ge: "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება", en: "Organizational-Legal Form" },
     // Year columns will be generated dynamically
-  ];
-
-  const report7Columns = [
+  ],
+  report7: [
     { key: "ID", ge: "კოდი", en: "Code" },
-    {
-      key: "Legal_Form",
-      ge: "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
-      en: "Organizational-Legal Form",
-    },
+    { key: "Legal_Form", ge: "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება", en: "Organizational-Legal Form" },
     // Year columns will be generated dynamically
-  ];
-
-  const report8Columns = [
+  ],
+  report8: [
     { key: "Activity_Code", ge: "კოდი", en: "Activity Code" },
-    {
-      key: "Activity_Name",
-      ge: "ეკონომიკური საქმიანობის სახე",
-      en: "Economic Activity",
-    },
+    { key: "Activity_Name", ge: "ეკონომიკური საქმიანობის სახე", en: "Economic Activity" },
     // Year columns will be generated dynamically
-  ];
-
-  const report9Columns = [
+  ],
+  report9: [
     { key: "Activity_Code", ge: "კოდი", en: "Activity Code" },
-    {
-      key: "Activity_Name",
-      ge: "ეკონომიკური საქმიანობის სახე",
-      en: "Economic Activity",
-    },
+    { key: "Activity_Name", ge: "ეკონომიკური საქმიანობის სახე", en: "Economic Activity" },
     // Year columns will be generated dynamically
-  ];
-
-  const report10Columns = [
+  ],
+  report10: [
     { key: "Region", ge: "რეგიონი", en: "Region" },
     { key: "Activity_Code", ge: "საქმიანობის კოდი Nace Rev.2", en: "Activity_Code Nace Rev.2" },
-    {
-      key: "Activity_Name",
-      ge: "საქმიანობა Nace Rev.2",
-      en: "Activity Nace Rev.2",
-    },
+    { key: "Activity_Name", ge: "საქმიანობა Nace Rev.2", en: "Activity Nace Rev.2" },
     // Year columns will be generated dynamically (2012-2023)
-  ];
+  ]
+};
 
-  const columns =
-    Number(reportId) === 1
-      ? report1Columns
-      : Number(reportId) === 2
-      ? report2Columns
-      : Number(reportId) === 3
-      ? report3Columns
-      : Number(reportId) === 4
-      ? report4Columns
-      : Number(reportId) === 5
-      ? report5Columns
-      : Number(reportId) === 6
-      ? report6Columns
-      : Number(reportId) === 7
-      ? report7Columns
-      : Number(reportId) === 8
-      ? report8Columns
-      : Number(reportId) === 9
-      ? report9Columns
-      : report10Columns;
+// Utility functions
+const formatNumber = (num) => {
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+};
+
+const getReportConfig = (reportId) => REPORT_CONFIGS[Number(reportId)];
+const getColumnConfig = (reportId) => COLUMN_CONFIGS[`report${reportId}`];
+
+// Custom hook for fetching report data
+const useFetchReportData = (reportId, isEnglish) => {
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (
-        Number(reportId) === 1 ||
-        Number(reportId) === 2 ||
-        Number(reportId) === 3 ||
-        Number(reportId) === 4 ||
-        Number(reportId) === 5 ||
-        Number(reportId) === 6 ||
-        Number(reportId) === 7 ||
-        Number(reportId) === 8 ||
-        Number(reportId) === 9 ||
-        Number(reportId) === 10
-      ) {
-        setLoading(true);
-        try {
-          let response;
-          if (Number(reportId) === 1) {
-            response = await API.fetchReport1Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 2) {
-            response = await API.fetchReport2Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 3) {
-            response = await API.fetchReport3Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 4) {
-            response = await API.fetchReport4Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 5) {
-            response = await API.fetchReport5Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 6) {
-            response = await API.fetchReport6Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 7) {
-            response = await API.fetchReport7Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 8) {
-            response = await API.fetchReport8Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 9) {
-            response = await API.fetchReport9Data(isEnglish ? "en" : "ge");
-          } else if (Number(reportId) === 10) {
-            response = await API.fetchReport10Data(isEnglish ? "en" : "ge");
-          }
+      const reportNum = Number(reportId);
+      if (reportNum < 1 || reportNum > 10) return;
 
-          let dataArray = Array.isArray(response.rows)
-            ? response.rows
-            : Array.isArray(response)
-            ? response
-            : [];
+      setLoading(true);
+      try {
+        const config = getReportConfig(reportId);
+        if (!config) return;
 
-          // Calculate percentages for report 3
-          if (Number(reportId) === 3 && dataArray.length > 0) {
-            const totalRegistered = dataArray.reduce(
-              (sum, row) => sum + Number(row.Registered_Qty),
-              0
-            );
-            const totalActive = dataArray.reduce(
-              (sum, row) => sum + Number(row.Active_Qty),
-              0
-            );
+        const language = isEnglish ? "en" : "ge";
+        const response = await API[config.apiMethod](language);
 
-            dataArray = dataArray.map((row) => ({
-              ...row,
-              Registered_Percent:
-                totalRegistered > 0
-                  ? (Number(row.Registered_Qty) / totalRegistered) * 100
-                  : 0,
-              Active_Percent:
-                totalActive > 0
-                  ? (Number(row.Active_Qty) / totalActive) * 100
-                  : 0,
-            }));
+        let dataArray = Array.isArray(response.rows)
+          ? response.rows
+          : Array.isArray(response)
+          ? response
+          : [];
 
-            // Sort by ID ascending for report 3
-            dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
-          }
-
-          // Calculate percentages for report 4
-          if (Number(reportId) === 4 && dataArray.length > 0) {
-            const totalRegistered = dataArray.reduce(
-              (sum, row) => sum + Number(row.Registered_Qty),
-              0
-            );
-            const totalActive = dataArray.reduce(
-              (sum, row) => sum + Number(row.Active_Qty),
-              0
-            );
-
-            dataArray = dataArray.map((row) => ({
-              ...row,
-              Registered_Percent:
-                totalRegistered > 0
-                  ? (Number(row.Registered_Qty) / totalRegistered) * 100
-                  : 0,
-              Active_Percent:
-                totalActive > 0
-                  ? (Number(row.Active_Qty) / totalActive) * 100
-                  : 0,
-            }));
-
-            // Sort by Location_Code ascending for report 4
-            dataArray.sort(
-              (a, b) => Number(a.Location_Code) - Number(b.Location_Code)
-            );
-          }
-
-          // Calculate percentages for report 5
-          if (Number(reportId) === 5 && dataArray.length > 0) {
-            const totalRegistered = dataArray.reduce(
-              (sum, row) => sum + Number(row.Registered_Qty),
-              0
-            );
-            const totalActive = dataArray.reduce(
-              (sum, row) => sum + Number(row.Active_Qty),
-              0
-            );
-
-            dataArray = dataArray.map((row) => ({
-              ...row,
-              Registered_Percent:
-                totalRegistered > 0
-                  ? (Number(row.Registered_Qty) / totalRegistered) * 100
-                  : 0,
-              Active_Percent:
-                totalActive > 0
-                  ? (Number(row.Active_Qty) / totalActive) * 100
-                  : 0,
-            }));
-
-            // Sort by Location_Code ascending for report 5 (nvarchar - lexicographical sort)
-            dataArray.sort((a, b) => {
-              const aCode = String(a.Location_Code || "");
-              const bCode = String(b.Location_Code || "");
-              return aCode.localeCompare(bCode);
-            });
-          }
-
-          // Process data for report 6 (no percentage calculations needed, just sort by ID)
-          if (Number(reportId) === 6 && dataArray.length > 0) {
-            // Sort by ID ascending for report 6
-            dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
-          }
-
-          // Process data for report 7 (no percentage calculations needed, just sort by ID)
-          if (Number(reportId) === 7 && dataArray.length > 0) {
-            // Sort by ID ascending for report 7
-            dataArray.sort((a, b) => Number(a.ID) - Number(b.ID));
-          }
-
-          // Process data for report 8 (no percentage calculations needed, just sort by ID)
-          if (Number(reportId) === 8 && dataArray.length > 0) {
-            // Sort by Activity_Code ascending for report 8, empty codes last
-            dataArray.sort((a, b) => {
-              const aCode = String(a.Activity_Code || "");
-              const bCode = String(b.Activity_Code || "");
-              
-              // If both codes are empty, maintain original order
-              if (!aCode && !bCode) return 0;
-              
-              // If only aCode is empty, put it last
-              if (!aCode) return 1;
-              
-              // If only bCode is empty, put it last
-              if (!bCode) return -1;
-              
-              // Both codes have values, compare normally
-              return aCode.localeCompare(bCode);
-            });
-          }
-
-          // Process data for report 9 (no percentage calculations needed, just sort by Activity_Code)
-          if (Number(reportId) === 9 && dataArray.length > 0) {
-            // Sort by Activity_Code ascending for report 9, empty codes last
-            dataArray.sort((a, b) => {
-              const aCode = String(a.Activity_Code || "");
-              const bCode = String(b.Activity_Code || "");
-              
-              // If both codes are empty, maintain original order
-              if (!aCode && !bCode) return 0;
-              
-              // If only aCode is empty, put it last
-              if (!aCode) return 1;
-              
-              // If only bCode is empty, put it last
-              if (!bCode) return -1;
-              
-              // Both codes have values, compare normally
-              return aCode.localeCompare(bCode);
-            });
-          }
-
-          // // Process data for report 10 (sort by Region_Code, then Activity_Code)
-          // if (Number(reportId) === 10 && dataArray.length > 0) {
-          //   // Sort by Region_Code first, then by Activity_Code
-          //   dataArray.sort((a, b) => {
-          //     const aRegionCode = String(a.Region_Code || "");
-          //     const bRegionCode = String(b.Region_Code || "");
-          //     const aActivityCode = String(a.Activity_Code || "");
-          //     const bActivityCode = String(b.Activity_Code || "");
-              
-          //     // First compare by Region_Code
-          //     if (aRegionCode !== bRegionCode) {
-          //       // Handle empty region codes
-          //       if (!aRegionCode && !bRegionCode) return 0;
-          //       if (!aRegionCode) return 1;
-          //       if (!bRegionCode) return -1;
-          //       return aRegionCode.localeCompare(bRegionCode);
-          //     }
-              
-          //     // If Region_Code is the same, compare by Activity_Code
-          //     if (!aActivityCode && !bActivityCode) return 0;
-          //     if (!aActivityCode) return 1;
-          //     if (!bActivityCode) return -1;
-          //     return aActivityCode.localeCompare(bActivityCode);
-          //   });
-          // }
-
-          setReportData(dataArray);
-        } catch (error) {
-          console.error("Error fetching report data:", error);
-        } finally {
-          setLoading(false);
+        // Process data based on report type
+        if (reportNum === 3 && dataArray.length > 0) {
+          const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
+          const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
+          
+          dataArray = dataArray.map(row => ({
+            ...row,
+            Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
+            Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0,
+          }));
         }
+
+        if (reportNum === 4 && dataArray.length > 0) {
+          const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
+          const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
+          
+          dataArray = dataArray.map(row => ({
+            ...row,
+            Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
+            Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0,
+          }));
+        }
+
+        if (reportNum === 5 && dataArray.length > 0) {
+          const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row.Registered_Qty), 0);
+          const totalActive = dataArray.reduce((sum, row) => sum + Number(row.Active_Qty), 0);
+          
+          dataArray = dataArray.map(row => ({
+            ...row,
+            Registered_Percent: totalRegistered > 0 ? (Number(row.Registered_Qty) / totalRegistered) * 100 : 0,
+            Active_Percent: totalActive > 0 ? (Number(row.Active_Qty) / totalActive) * 100 : 0,
+          }));
+        }
+
+        // Sort data based on report type
+        if (reportNum === 6 && dataArray.length > 0) {
+          dataArray.sort((a, b) => String(a.ID || "").localeCompare(String(b.ID || "")));
+        }
+
+        if (reportNum === 7 && dataArray.length > 0) {
+          dataArray.sort((a, b) => String(a.ID || "").localeCompare(String(b.ID || "")));
+        }
+
+        if ([8, 9].includes(reportNum) && dataArray.length > 0) {
+          dataArray.sort((a, b) => {
+            const aCode = String(a.Activity_Code || "");
+            const bCode = String(b.Activity_Code || "");
+            if (!aCode && !bCode) return 0;
+            if (!aCode) return 1;
+            if (!bCode) return -1;
+            return aCode.localeCompare(bCode);
+          });
+        }
+
+        setReportData(dataArray);
+      } catch (error) {
+        console.error("Error fetching report data:", error);
+        setReportData([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [reportId, isEnglish]);
+
+  return { reportData, loading };
+};
+
+function ReportsResults({ isEnglish }) {
+  const { reportId } = useParams();
+  const navigate = useNavigate();
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Get current report configuration
+  const reportConfig = getReportConfig(reportId);
+
+  // Get report title
+  const getReportTitle = () => {
+    if (!reportConfig) return "";
+    return `${reportId} - ${isEnglish ? reportConfig.title.en : reportConfig.title.ge}`;
+  };
+  const columns = getColumnConfig(reportId) || [];
+  
+  // Use custom hook for data fetching
+  const { reportData, loading } = useFetchReportData(reportId, isEnglish);
 
   // Handle scroll visibility for scroll-to-top button
   useEffect(() => {
@@ -409,12 +411,7 @@ function ReportsResults({ isEnglish }) {
     return sortedArray;
   }, [reportData, sortConfig]);
 
-  const formatNumber = (num) => {
-    return num.toLocaleString("en-US", {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    });
-  };
+
 
   const exportToExcel = async () => {
     if (!reportData || reportData.length === 0) {
@@ -426,8 +423,21 @@ function ReportsResults({ isEnglish }) {
       return;
     }
 
+    if (!reportConfig) {
+      toast.error(
+        isEnglish
+          ? "Report configuration not found."
+          : "ანგარიშის კონფიგურაცია ვერ მოიძებნა."
+      );
+      return;
+    }
+
     try {
-      let excelData, totalRegistered, totalActive, title, fileName, sheetName;
+      const title = isEnglish ? reportConfig.title.en : reportConfig.title.ge;
+      const fileName = `${isEnglish ? reportConfig.fileName.en : reportConfig.fileName.ge}_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const sheetName = isEnglish ? reportConfig.sheetName.en : reportConfig.sheetName.ge;
+
+      let excelData, totalRegistered, totalActive;
 
       if (Number(reportId) === 1) {
         // Report 1: Activities
@@ -477,21 +487,6 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
-        title = isEnglish
-          ? "Number of registered and active organizations by economic activities"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ეკონომიკური საქმიანობების მიხედვით";
-
-        fileName = isEnglish
-          ? `Economic_Activities_Report_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`
-          : `ეკონომიკური_საქმიანობების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish
-          ? "Economic Activities"
-          : "ეკონომიკური საქმიანობები";
       } else if (Number(reportId) === 2) {
         // Report 2: Legal Forms
         excelData = sortedData.map((row) => ({
@@ -540,17 +535,6 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
-        title = isEnglish
-          ? "Number of registered and active organizations by organizational-legal forms"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით";
-
-        fileName = isEnglish
-          ? `Legal_Forms_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `სამართლებრივი_ფორმების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Legal Forms" : "სამართლებრივი ფორმები";
       } else if (Number(reportId) === 3) {
         // Report 3: Ownership Types
         excelData = sortedData.map((row) => ({
@@ -600,19 +584,6 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
-        title = isEnglish
-          ? "Number of registered organizations by forms of ownership"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით";
-
-        fileName = isEnglish
-          ? `Ownership_Types_Report_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`
-          : `საკუთრების_ფორმების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Ownership Types" : "საკუთრების ფორმები";
       } else if (Number(reportId) === 4) {
         // Report 4: Regions
         excelData = sortedData.map((row) => ({
@@ -659,17 +630,6 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
-        title = isEnglish
-          ? "Number of registered and active organizations by regions"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით";
-
-        fileName = isEnglish
-          ? `Regions_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `რეგიონების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Regions" : "რეგიონები";
       } else if (Number(reportId) === 5) {
         // Report 5: Municipalities
         excelData = sortedData.map((row) => ({
@@ -715,19 +675,6 @@ function ReportsResults({ isEnglish }) {
           )}%`,
         });
 
-        title = isEnglish
-          ? "Number of registered and active organizations by municipalities"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით";
-
-        fileName = isEnglish
-          ? `Municipalities_Report_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`
-          : `მუნიციპალიტეტების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Municipalities" : "მუნიციპალიტეტები";
       } else if (Number(reportId) === 6) {
         // Report 6: Organizational-Legal Forms and Years
         // Use ExcelJS for advanced styling to match frontend table
@@ -1624,86 +1571,7 @@ function ReportsResults({ isEnglish }) {
           </div>
           <div className="mb-6">
             <h1 className="text-xl font-bpg-nino mb-2 text-center text-gray-800">
-              {Number(reportId) === 1 && (
-                <>
-                  1 -{" "}
-                  {isEnglish
-                    ? "Number of registered and active organizations by economic activity (Nace Rev. 2)"
-                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ეკონომიკური საქმიანობის სახეების მიხედვით (NACE Rev. 2)"}
-                </>
-              )}
-              {Number(reportId) === 2 && (
-                <>
-                  2 -{" "}
-                  {isEnglish
-                    ? "Number of registered and active organizations by organizational-legal forms"
-                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით"}
-                </>
-              )}
-              {Number(reportId) === 3 && (
-                <>
-                  3 -{" "}
-                  {isEnglish
-                    ? "Number of registered organizations by forms of ownership"
-                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით"}
-                </>
-              )}
-              {Number(reportId) === 4 && (
-                <>
-                  4 -{" "}
-                  {isEnglish
-                    ? "Number of registered and active organizations by regions"
-                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით"}
-                </>
-              )}
-              {Number(reportId) === 5 && (
-                <>
-                  5 -{" "}
-                  {isEnglish
-                    ? "Number of registered and active organizations by municipalities"
-                    : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით"}
-                </>
-              )}
-              {Number(reportId) === 6 && (
-                <>
-                  6 -{" "}
-                  {isEnglish
-                    ? "Number of registered organizations by organizational-legal forms and years - incremental sum"
-                    : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - ნაზარდი ჯამი"}
-                </>
-              )}
-              {Number(reportId) === 7 && (
-                <>
-                  7 -{" "}
-                  {isEnglish
-                    ? "Number of registered organizations by organizational-legal forms and years - registered in a specific year"
-                    : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - კონკრეტულ წელს რეგისტრირებული"}
-                </>
-              )}
-              {Number(reportId) === 8 && (
-                <>
-                  8 -{" "}
-                  {isEnglish
-                    ? "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - incremental sum"
-                    : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - ნაზარდი ჯამი"}
-                </>
-              )}
-              {Number(reportId) === 9 && (
-                <>
-                  9 -{" "}
-                  {isEnglish
-                    ? "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - registered in a specific year"
-                    : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - კონკრეტულ წელს რეგისტრირებული"}
-                </>
-              )}
-              {Number(reportId) === 10 && (
-                <>
-                  10 -{" "}
-                  {isEnglish
-                    ? "The number of active business entities registered in Georgia according to regions and types of economic activity (Nace Rev.2)"
-                    : "საქართველოში რეგისტრირებულ მოქმედ ბიზნეს სუბიექტთა რაოდენობა რეგიონებისა და ეკონომიკური საქმიანობის სახეების მიხედვით (Nace Rev.2)"}
-                </>
-              )}
+              {getReportTitle()}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
