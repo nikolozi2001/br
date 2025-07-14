@@ -298,6 +298,36 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
   }
 };
 
+// Enterprise Birth-Death API
+export const fetchEnterpriseBirthDeath = async (lang = "ge") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-birth-death?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+
+    // Transform the API response to the format needed by the chart
+    const birthData = data.find(item => item.hints === "birth");
+    const deathData = data.find(item => item.hints === "death");
+
+    if (!birthData || !deathData) {
+      throw new Error("Invalid API response format");
+    }
+
+    // Convert to chart format
+    const years = Object.keys(birthData).filter(key => key !== "hints");
+    return years.map(year => ({
+      year,
+      birth: birthData[year],
+      death: deathData[year]
+    }));
+  } catch (error) {
+    console.error("Error fetching enterprise birth-death data:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -315,6 +345,7 @@ export const API = {
   fetchReport8Data,
   fetchReport9Data,
   fetchReport10Data,
+  fetchEnterpriseBirthDeath,
 };
 
 export default API;

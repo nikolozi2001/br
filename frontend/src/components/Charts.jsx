@@ -17,16 +17,37 @@ import {
   AreaChart,
 } from "recharts";
 import { Download, Maximize2, Printer, ChevronDown, FileText } from "lucide-react";
+import { fetchEnterpriseBirthDeath } from "../services/api";
 import "../styles/Charts.scss";
 
 const Charts = ({ isEnglish }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [maximizedChart, setMaximizedChart] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [organizationsByYear, setOrganizationsByYear] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setIsFlipped(true);
   }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge");
+        setOrganizationsByYear(data);
+      } catch (error) {
+        console.error("Error loading enterprise birth-death data:", error);
+        // Keep empty array if API fails
+        setOrganizationsByYear([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [isEnglish]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -440,19 +461,6 @@ const Charts = ({ isEnglish }) => {
   };
 
   // Sample data for charts - replace with real data from your API
-  const organizationsByYear = [
-    { year: "2014", birth: 27323, death: 29662 },
-    { year: "2015", birth: 51984, death: 24061 },
-    { year: "2016", birth: 32000, death: 23992 },
-    { year: "2017", birth: 30796, death: 24695 },
-    { year: "2018", birth: 29458, death: 28790 },
-    { year: "2019", birth: 38584, death: 32429 },
-    { year: "2020", birth: 29340, death: 27555 },
-    { year: "2021", birth: 37760, death: 30653 },
-    { year: "2022", birth: 57583, death: 30913 },
-    { year: "2023", birth: 55146, death: 29435 },
-  ];
-
   const activityData = [
     {
       year: "2012",
@@ -1076,32 +1084,38 @@ const Charts = ({ isEnglish }) => {
                     }
                     chartIndex={0}
                   >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={organizationsByYear}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis
-                          tickFormatter={(value) => value.toLocaleString()}
-                        />
-                        <Tooltip
-                          formatter={(value, name) => [
-                            value.toLocaleString(),
-                            name,
-                          ]}
-                        />
-                        <Legend />
-                        <Bar
-                          dataKey="birth"
-                          fill="#2563eb"
-                          name={currentTexts.birth}
-                        />
-                        <Bar
-                          dataKey="death"
-                          fill="#dc2626"
-                          name={currentTexts.death}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    {loading ? (
+                      <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div>Loading...</div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={organizationsByYear}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="year" />
+                          <YAxis
+                            tickFormatter={(value) => value.toLocaleString()}
+                          />
+                          <Tooltip
+                            formatter={(value, name) => [
+                              value.toLocaleString(),
+                              name,
+                            ]}
+                          />
+                          <Legend />
+                          <Bar
+                            dataKey="birth"
+                            fill="#2563eb"
+                            name={currentTexts.birth}
+                          />
+                          <Bar
+                            dataKey="death"
+                            fill="#dc2626"
+                            name={currentTexts.death}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
                   </ChartContainer>
 
                   {/* Line Chart - Activity Trends */}
@@ -1283,28 +1297,34 @@ const Charts = ({ isEnglish }) => {
                     }
                     chartIndex={4}
                   >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart
-                        data={organizationsByYear.map((item, index) => ({
-                          year: item.year,
-                          growth:
-                            index > 0
-                              ? (
-                                  ((item.birth -
-                                    organizationsByYear[index - 1].birth) /
-                                    organizationsByYear[index - 1].birth) *
-                                  100
-                                ).toFixed(1)
-                              : 0,
-                        }))}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`${value}%`, "ზრდა"]} />
-                        <Bar dataKey="growth" fill="#16a34a" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    {loading ? (
+                      <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div>Loading...</div>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
+                          data={organizationsByYear.map((item, index) => ({
+                            year: item.year,
+                            growth:
+                              index > 0
+                                ? (
+                                    ((item.birth -
+                                      organizationsByYear[index - 1].birth) /
+                                      organizationsByYear[index - 1].birth) *
+                                    100
+                                  ).toFixed(1)
+                                : 0,
+                          }))}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="year" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => [`${value}%`, "ზრდა"]} />
+                          <Bar dataKey="growth" fill="#16a34a" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
                   </ChartContainer>
 
                   {/* Pie Chart - Ownership Types */}
