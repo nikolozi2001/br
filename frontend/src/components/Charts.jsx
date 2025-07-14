@@ -26,6 +26,7 @@ const Charts = ({ isEnglish }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [organizationsByYear, setOrganizationsByYear] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hiddenDataKeys, setHiddenDataKeys] = useState(new Set());
 
   useEffect(() => {
     setIsFlipped(true);
@@ -70,6 +71,18 @@ const Charts = ({ isEnglish }) => {
 
   const toggleDropdown = (chartIndex) => {
     setActiveDropdown(activeDropdown === chartIndex ? null : chartIndex);
+  };
+
+  const handleLegendClick = (dataKey) => {
+    setHiddenDataKeys(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dataKey)) {
+        newSet.delete(dataKey);  // UNHIDE: Remove from hidden set
+      } else {
+        newSet.add(dataKey);     // HIDE: Add to hidden set
+      }
+      return newSet;
+    });
   };
 
   const handlePrintChart = (chartElement, title) => {
@@ -890,9 +903,24 @@ const Charts = ({ isEnglish }) => {
               <Tooltip
                 formatter={(value, name) => [value.toLocaleString(), name]}
               />
-              <Legend />
-              <Bar dataKey="birth" fill="#2563eb" name={currentTexts.birth} />
-              <Bar dataKey="death" fill="#dc2626" name={currentTexts.death} />
+              <Legend 
+                onClick={(e) => handleLegendClick(e.dataKey)}
+                wrapperStyle={{ 
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+                iconType="rect"
+                formatter={(value, entry) => (
+                  <span style={{ 
+                    opacity: hiddenDataKeys.has(entry.dataKey) ? 0.5 : 1,
+                    textDecoration: hiddenDataKeys.has(entry.dataKey) ? 'line-through' : 'none'
+                  }}>
+                    {value}
+                  </span>
+                )}
+              />
+              <Bar dataKey="birth" fill="#2563eb" name={currentTexts.birth} hide={hiddenDataKeys.has('birth')} />
+              <Bar dataKey="death" fill="#dc2626" name={currentTexts.death} hide={hiddenDataKeys.has('death')} />
             </BarChart>
           );
         case "line":
@@ -1102,16 +1130,33 @@ const Charts = ({ isEnglish }) => {
                               name,
                             ]}
                           />
-                          <Legend />
+                          <Legend 
+                            onClick={(e) => handleLegendClick(e.dataKey)}
+                            wrapperStyle={{ 
+                              cursor: 'pointer',
+                              userSelect: 'none'
+                            }}
+                            iconType="rect"
+                            formatter={(value, entry) => (
+                              <span style={{ 
+                                opacity: hiddenDataKeys.has(entry.dataKey) ? 0.5 : 1,
+                                textDecoration: hiddenDataKeys.has(entry.dataKey) ? 'line-through' : 'none'
+                              }}>
+                                {value}
+                              </span>
+                            )}
+                          />
                           <Bar
                             dataKey="birth"
                             fill="#2563eb"
                             name={currentTexts.birth}
+                            hide={hiddenDataKeys.has('birth')}
                           />
                           <Bar
                             dataKey="death"
                             fill="#dc2626"
                             name={currentTexts.death}
+                            hide={hiddenDataKeys.has('death')}
                           />
                         </BarChart>
                       </ResponsiveContainer>
