@@ -11,11 +11,24 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Noto Sans Georgian';
+  src: url('/src/fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
 .font-bpg-nino {
   font-family: "BPG Nino Mtavruli", sans-serif;
 }
 
+.font-noto-georgian {
+  font-family: "Noto Sans Georgian", "BPG Nino Mtavruli", sans-serif;
+}
+
 $font-bpg-nino: "BPG Nino Mtavruli", sans-serif;
+$font-noto-georgian: "Noto Sans Georgian", "BPG Nino Mtavruli", sans-serif;
 
 .font-poppins {
   font-family: "Poppins", sans-serif;

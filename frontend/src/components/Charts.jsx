@@ -160,7 +160,21 @@ const Charts = ({ isEnglish }) => {
     svgClone.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
     
     const svgData = new XMLSerializer().serializeToString(svgClone);
-    const fileName = `${title.replace(/[^a-z0-9\s]/gi, '_').toLowerCase().replace(/\s+/g, '_')}_chart`;
+    
+    // Create a clean filename that works with Georgian text
+    let cleanFileName = title;
+    // Replace Georgian characters and special characters with safe alternatives
+    cleanFileName = cleanFileName
+      .replace(/[^\w\s-_.]/g, '') // Remove special characters except word chars, spaces, hyphens, underscores, dots
+      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .toLowerCase();
+    
+    // Fallback if filename becomes empty
+    if (!cleanFileName || cleanFileName.length < 3) {
+      cleanFileName = `chart_${Date.now()}`;
+    }
+    
+    const fileName = `${cleanFileName}_chart`;
 
     if (format === 'svg') {
       // Direct SVG download
@@ -180,13 +194,17 @@ const Charts = ({ isEnglish }) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size with device pixel ratio for better quality
-    const dpr = window.devicePixelRatio || 1;
+    // Set canvas size with high DPI for better quality (ensure 100% data capture)
+    const dpr = Math.max(window.devicePixelRatio || 1, 2); // At least 2x for high quality
     canvas.width = svgWidth * dpr;
     canvas.height = svgHeight * dpr;
     canvas.style.width = svgWidth + 'px';
     canvas.style.height = svgHeight + 'px';
     ctx.scale(dpr, dpr);
+    
+    // Improve rendering quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     return new Promise((resolve) => {
       const img = new Image();
@@ -213,7 +231,7 @@ const Charts = ({ isEnglish }) => {
                 URL.revokeObjectURL(url);
               }
               resolve();
-            }, 'image/png');
+            }, 'image/png', 1.0); // Maximum quality
             break;
           }
 
@@ -230,7 +248,7 @@ const Charts = ({ isEnglish }) => {
                 URL.revokeObjectURL(url);
               }
               resolve();
-            }, 'image/jpeg', 0.95);
+            }, 'image/jpeg', 1.0); // Maximum quality
             break;
           }
 
@@ -264,21 +282,90 @@ const Charts = ({ isEnglish }) => {
               const x = (a4Width - finalWidth) / 2;
               const y = margin + 15; // Space for title
               
-              // Add title
-              pdf.setFontSize(16);
-              pdf.text(title, margin, margin);
+              // Handle Georgian text properly by converting to image
+              // Create a temporary canvas for the title
+              const titleCanvas = document.createElement('canvas');
+              const titleCtx = titleCanvas.getContext('2d');
               
-              // Add chart
+              // Set canvas size for title (higher resolution for better quality)
+              const titleDpr = 2;
+              titleCanvas.width = (a4Width * 3.779) * titleDpr; // Convert mm to px (72 DPI) with high resolution
+              titleCanvas.height = 80 * titleDpr;
+              titleCtx.scale(titleDpr, titleDpr);
+              
+              // Set font for title (use system fonts that support Georgian)
+              titleCtx.fillStyle = 'white';
+              titleCtx.fillRect(0, 0, titleCanvas.width / titleDpr, titleCanvas.height / titleDpr);
+              titleCtx.fillStyle = '#1f2937'; // Dark gray for better readability
+              
+              // Try to load web fonts first, fallback to system fonts
+              titleCtx.font = 'bold 24px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", "Segoe UI", "Arial Unicode MS", sans-serif';
+              titleCtx.textAlign = 'center';
+              titleCtx.textBaseline = 'middle';
+              titleCtx.imageSmoothingEnabled = true;
+              titleCtx.imageSmoothingQuality = 'high';
+              
+              // Draw title text with better positioning
+              const titleWidth = titleCanvas.width / titleDpr;
+              const titleHeight = titleCanvas.height / titleDpr;
+              
+              // Split long titles into multiple lines if needed
+              const words = title.split(' ');
+              const titleMaxWidth = titleWidth - 40; // 20px margin on each side
+              let line = '';
+              const lines = [];
+              
+              for (let i = 0; i < words.length; i++) {
+                const testLine = line + words[i] + ' ';
+                const metrics = titleCtx.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > titleMaxWidth && line !== '') {
+                  lines.push(line.trim());
+                  line = words[i] + ' ';
+                } else {
+                  line = testLine;
+                }
+              }
+              lines.push(line.trim());
+              
+              // Draw each line
+              const lineHeight = 22;
+              const startY = (titleHeight / 2) - ((lines.length - 1) * lineHeight / 2);
+              
+              lines.forEach((line, index) => {
+                titleCtx.fillText(line, titleWidth / 2, startY + (index * lineHeight));
+              });
+              
+              // Add title as image to PDF with proper sizing
+              const titleImageData = titleCanvas.toDataURL('image/png');
+              const titleHeightMm = Math.min(20, lines.length * 8); // Adjust height based on number of lines
+              
+              pdf.addImage(
+                titleImageData,
+                'PNG',
+                margin,
+                margin - 5,
+                maxWidth,
+                titleHeightMm
+              );
+              
+              // Adjust chart position based on title height
+              const adjustedY = margin + titleHeightMm + 5;
+              
+              // Add chart with adjusted position
               pdf.addImage(
                 canvas.toDataURL('image/png'),
                 'PNG',
                 x,
-                y,
+                Math.max(adjustedY, y), // Use either adjusted position or original, whichever is lower
                 finalWidth,
                 finalHeight
               );
               
-              pdf.save(`${fileName}.pdf`);
+              // Clean filename for Georgian text
+              const cleanFileName = fileName.replace(/[^\w\s-]/g, '').trim() || 'chart';
+              pdf.save(`${cleanFileName}.pdf`);
               resolve();
             }).catch((error) => {
               console.error('PDF generation failed:', error);
