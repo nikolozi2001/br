@@ -16,7 +16,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { Menu, Download, Maximize2, Printer, ChevronDown } from "lucide-react";
+import { Download, Maximize2, Printer, ChevronDown } from "lucide-react";
 import "../styles/Charts.scss";
 
 const Charts = ({ isEnglish }) => {
@@ -664,9 +664,6 @@ const Charts = ({ isEnglish }) => {
           </div>
           <button className="chart-action-btn" onClick={onMaximize}>
             <Maximize2 size={16} />
-          </button>
-          <button className="chart-action-btn">
-            <Menu size={16} />
           </button>
         </div>
       </div>
