@@ -28,6 +28,7 @@ const report8Router = require('./routes/report8');
 const report9Router = require('./routes/report9');
 const report10Router = require('./routes/report10');
 const enterpriseBirthDeathRouter = require('./routes/enterprise_birth_death');
+const enterpriseNaceRouter = require('./routes/enterprice_nace');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -47,6 +48,7 @@ app.use('/api/report8', report8Router);
 app.use('/api/report9', report9Router);
 app.use('/api/report10', report10Router);
 app.use('/api/enterprise-birth-death', enterpriseBirthDeathRouter);
+app.use('/api/enterprise-nace', enterpriseNaceRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

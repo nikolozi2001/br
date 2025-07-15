@@ -962,7 +962,7 @@ const Charts = ({ isEnglish }) => {
               <XAxis dataKey="year" />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend layout="vertical" align="right" verticalAlign="middle" />
               <Line
                 type="monotone"
                 dataKey="manufacturing"
@@ -1228,7 +1228,7 @@ const Charts = ({ isEnglish }) => {
                         <XAxis dataKey="year" />
                         <YAxis />
                         <Tooltip />
-                        <Legend />
+                        <Legend layout="vertical" align="right" verticalAlign="middle" />
                         <Line
                           type="monotone"
                           dataKey="manufacturing"

@@ -328,6 +328,120 @@ export const fetchEnterpriseBirthDeath = async (lang = "ge") => {
   }
 };
 
+// Enterprise NACE API
+export const fetchEnterpriseNace = async (lang = "ge") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-nace?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+
+    // Filter out entries with null section_division and NACE_Rev_2_Code
+    const filteredData = data.filter(item => 
+      item.section_division !== null && 
+      item.NACE_Rev_2_Code !== null
+    );
+
+    // Define the exact order from Highcharts legend
+    const sectionOrder = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S'];
+    
+    // Transform the API response to the format needed by the chart
+    const years = ["2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
+    
+    return years.map(year => {
+      const yearData = { year };
+      
+      // Process sections in the exact order from legend
+      sectionOrder.forEach(sectionCode => {
+        const item = filteredData.find(dataItem => dataItem.section_division === sectionCode);
+        if (item) {
+          const activityName = getSectionName(sectionCode, lang);
+          yearData[activityName] = item[year] || 0;
+        }
+      });
+      
+      return yearData;
+    });
+  } catch (error) {
+    console.error("Error fetching enterprise NACE data:", error);
+    return [];
+  }
+};
+
+// Helper function to convert NACE section codes to readable names
+// Using exact order and names from Highcharts legend
+const getSectionName = (sectionCode, lang = "ge") => {
+  const sectionNames = {
+    ge: {
+      'B': 'სამთომომპოვებელი მრეწველობა და კარიერების დამუშავება',
+      'C': 'დამამუშავებელი მრეწველობა',
+      'D': 'ელექტროენერგიის, აირის, ორთქლის და კონდიცირებული ჰაერის მიწოდება',
+      'E': 'წყალმომარაგება; კანალიზაცია, ნარჩენების მართვა და დაბინძურებისაგან გასუფთავების საქმიანობები',
+      'F': 'მშენებლობა',
+      'G': 'საბითუმო და საცალო ვაჭრობა; ავტომობილების და მოტოციკლების რემონტი',
+      'H': 'ტრანსპორტირება და დასაწყობება',
+      'I': 'განთავსების საშუალებებით უზრუნველყოფის და საკვების მიწოდების საქმიანობები',
+      'J': 'ინფორმაცია და კომუნიკაცია',
+      'K': 'საფინანსო და სადაზღვევო საქმიანობები',
+      'L': 'უძრავ ქონებასთან დაკავშირებული საქმიანობები',
+      'M': 'პროფესიული, სამეცნიერო და ტექნიკური საქმიანობები',
+      'N': 'ადმინისტრაციული და დამხმარე მომსახურების საქმიანობები',
+      'P': 'განათლება',
+      'Q': 'ჯანდაცვა და სოციალური მომსახურების საქმიანობები',
+      'R': 'ხელოვნება, გართობა და დასვენება',
+      'S': 'სხვა სახის მომსახურება',
+      'unknown': 'საქმიანობა უცნობია'
+    },
+    en: {
+      'B': 'Mining and quarrying',
+      'C': 'Manufacturing',
+      'D': 'Electricity, gas, steam and air conditioning supply',
+      'E': 'Water supply; sewerage, waste management and remediation activities',
+      'F': 'Construction',
+      'G': 'Wholesale and retail trade; repair of motor vehicles and motorcycles',
+      'H': 'Transportation and storage',
+      'I': 'Accommodation and food service activities',
+      'J': 'Information and communication',
+      'K': 'Financial and insurance activities',
+      'L': 'Real estate activities',
+      'M': 'Professional, scientific and technical activities',
+      'N': 'Administrative and support service activities',
+      'P': 'Education',
+      'Q': 'Human health and social work activities',
+      'R': 'Arts, entertainment and recreation',
+      'S': 'Other service activities',
+      'unknown': 'Unknown activity'
+    }
+  };
+
+  return sectionNames[lang][sectionCode] || sectionNames[lang]['unknown'];
+};
+
+// Color mapping to match exact Highcharts legend order
+export const getSectionColorMapping = () => {
+  return [
+    { section: 'B', color: '#0080BE' },
+    { section: 'C', color: '#EA1E30' },
+    { section: 'D', color: '#19C219' },
+    { section: 'E', color: '#F2741F' },
+    { section: 'F', color: '#5B21A4' },
+    { section: 'G', color: '#F2CF1F' },
+    { section: 'H', color: '#149983' },
+    { section: 'I', color: '#C21979' },
+    { section: 'J', color: '#1B6D9A' },
+    { section: 'K', color: '#8FDE1D' },
+    { section: 'L', color: '#F2F21F' },
+    { section: 'M', color: '#477054' },
+    { section: 'N', color: '#b4b299' },
+    { section: 'P', color: '#07f187' },
+    { section: 'Q', color: '#af4fff' },
+    { section: 'R', color: '#e4748b' },
+    { section: 'S', color: '#61b562' },
+    { section: 'unknown', color: '#000000' }
+  ];
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -346,6 +460,7 @@ export const API = {
   fetchReport9Data,
   fetchReport10Data,
   fetchEnterpriseBirthDeath,
+  fetchEnterpriseNace,
 };
 
 export default API;
