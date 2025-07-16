@@ -1,21 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from "recharts";
+import ReactECharts from "echarts-for-react";
 import { Download, Maximize2, Printer, ChevronDown, FileText, RefreshCw, AlertCircle } from "lucide-react";
 import { fetchEnterpriseBirthDeath } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
@@ -103,6 +87,34 @@ const Charts = ({ isEnglish }) => {
     setActiveDropdown(activeDropdown === chartIndex ? null : chartIndex);
   };
 
+  const texts = {
+    georgian: {
+      title: "სტატისტიკური ანგარიშგება",
+      organizationsByYear:
+        "საწარმოთა დაბადება და გარდაცვალება 2014-2023 წლებში",
+      regionalDistribution: "რეგისტრირებული ორგანიზაციები რეგიონების მიხედვით",
+      activitySectors: "ორგანიზაციები ეკონომიკური საქმიანობის მიხედვით",
+      ownershipTypes: "ორგანიზაციები საკუთრების ფორმების მიხედვით",
+      legalForms: "2023 წლის ორგანიზაციები სამართლებრივი ფორმების მიხედვით",
+      organizationGrowth: "ორგანიზაციების ზრდის დინამიკა (%)",
+      birth: "დაბადება",
+      death: "გარდაცვალება",
+    },
+    english: {
+      title: "Statistical Reports",
+      organizationsByYear: "Organizations Birth and Death 2014-2023",
+      regionalDistribution: "Organizations by Regions",
+      activitySectors: "Organizations by Economic Activity",
+      ownershipTypes: "Organizations by Ownership Types",
+      legalForms: "2023 Organizations by Legal Forms",
+      organizationGrowth: "Organization Growth Dynamics (%)",
+      birth: "Birth",
+      death: "Death",
+    },
+  };
+
+  const currentTexts = isEnglish ? texts.english : texts.georgian;
+
   const handleLegendClick = React.useCallback((dataKey) => {
     setHiddenDataKeys(prev => {
       const newSet = new Set(prev);
@@ -114,6 +126,12 @@ const Charts = ({ isEnglish }) => {
       return newSet;
     });
   }, []);
+
+  const onEChartsLegendSelectChanged = React.useCallback((params) => {
+    const { name } = params;
+    const key = name === currentTexts.birth ? 'birth' : name === currentTexts.death ? 'death' : name.toLowerCase();
+    handleLegendClick(key);
+  }, [handleLegendClick, currentTexts]);
 
   const handlePrintChart = (chartElement, title) => {
     // Close dropdown first
@@ -635,33 +653,299 @@ const Charts = ({ isEnglish }) => {
     { year: "2023", total: 55132 },
   ];
 
-  const texts = {
-    georgian: {
-      title: "სტატისტიკური ანგარიშგება",
-      organizationsByYear:
-        "საწარმოთა დაბადება და გარდაცვალება 2014-2023 წლებში",
-      regionalDistribution: "რეგისტრირებული ორგანიზაციები რეგიონების მიხედვით",
-      activitySectors: "ორგანიზაციები ეკონომიკური საქმიანობის მიხედვით",
-      ownershipTypes: "ორგანიზაციები საკუთრების ფორმების მიხედვით",
-      legalForms: "2023 წლის ორგანიზაციები სამართლებრივი ფორმების მიხედვით",
-      organizationGrowth: "ორგანიზაციების ზრდის დინამიკა (%)",
-      birth: "დაბადება",
-      death: "გარდაცვალება",
+  // ECharts configuration helpers
+  const getBarChartOption = (data) => ({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      },
+      formatter: function(params) {
+        let result = params[0].name + '<br/>';
+        params.forEach(param => {
+          result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()}<br/>`;
+        });
+        return result;
+      }
     },
-    english: {
-      title: "Statistical Reports",
-      organizationsByYear: "Organizations Birth and Death 2014-2023",
-      regionalDistribution: "Organizations by Regions",
-      activitySectors: "Organizations by Economic Activity",
-      ownershipTypes: "Organizations by Ownership Types",
-      legalForms: "2023 Organizations by Legal Forms",
-      organizationGrowth: "Organization Growth Dynamics (%)",
-      birth: "Birth",
-      death: "Death",
+    legend: {
+      data: [currentTexts.birth, currentTexts.death],
+      selected: {
+        [currentTexts.birth]: !hiddenDataKeys.has('birth'),
+        [currentTexts.death]: !hiddenDataKeys.has('death')
+      }
     },
-  };
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map(item => item.year),
+      axisTick: {
+        alignWithLabel: true
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: function(value) {
+          return value.toLocaleString();
+        }
+      }
+    },
+    series: [
+      {
+        name: currentTexts.birth,
+        type: 'bar',
+        data: data.map(item => item.birth),
+        itemStyle: {
+          color: '#2563eb'
+        }
+      },
+      {
+        name: currentTexts.death,
+        type: 'bar',
+        data: data.map(item => item.death),
+        itemStyle: {
+          color: '#dc2626'
+        }
+      }
+    ]
+  });
 
-  const currentTexts = isEnglish ? texts.english : texts.georgian;
+  const getLineChartOption = (data) => ({
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      orient: 'vertical',
+      right: '10%',
+      top: 'center',
+      data: ['Manufacturing', 'Construction', 'Retail', 'Transport', 'Finance', 'Other']
+    },
+    grid: {
+      left: '3%',
+      right: '20%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map(item => item.year)
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name: 'Manufacturing',
+        type: 'line',
+        data: data.map(item => item.manufacturing),
+        lineStyle: { color: '#2563eb', width: 2 },
+        itemStyle: { color: '#2563eb' }
+      },
+      {
+        name: 'Construction',
+        type: 'line',
+        data: data.map(item => item.construction),
+        lineStyle: { color: '#dc2626', width: 2 },
+        itemStyle: { color: '#dc2626' }
+      },
+      {
+        name: 'Retail',
+        type: 'line',
+        data: data.map(item => item.retail),
+        lineStyle: { color: '#16a34a', width: 2 },
+        itemStyle: { color: '#16a34a' }
+      },
+      {
+        name: 'Transport',
+        type: 'line',
+        data: data.map(item => item.transport),
+        lineStyle: { color: '#ca8a04', width: 2 },
+        itemStyle: { color: '#ca8a04' }
+      },
+      {
+        name: 'Finance',
+        type: 'line',
+        data: data.map(item => item.finance),
+        lineStyle: { color: '#7c3aed', width: 2 },
+        itemStyle: { color: '#7c3aed' }
+      },
+      {
+        name: 'Other',
+        type: 'line',
+        data: data.map(item => item.other),
+        lineStyle: { color: '#db2777', width: 2 },
+        itemStyle: { color: '#db2777' }
+      }
+    ]
+  });
+
+  const getHorizontalBarChartOption = (data) => ({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'value'
+    },
+    yAxis: {
+      type: 'category',
+      data: data.map(item => item.year)
+    },
+    series: [{
+      type: 'bar',
+      data: data.map(item => item.total),
+      itemStyle: {
+        color: '#2563eb'
+      }
+    }]
+  });
+
+  const getAreaChartOption = (data) => ({
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data: ['Manufacturing', 'Construction', 'Retail', 'Transport', 'Finance', 'Other']
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map(item => item.year)
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name: 'Manufacturing',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {},
+        data: data.map(item => item.manufacturing),
+        itemStyle: { color: '#2563eb' }
+      },
+      {
+        name: 'Construction',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {},
+        data: data.map(item => item.construction),
+        itemStyle: { color: '#dc2626' }
+      },
+      {
+        name: 'Retail',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {},
+        data: data.map(item => item.retail),
+        itemStyle: { color: '#16a34a' }
+      },
+      {
+        name: 'Transport',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {},
+        data: data.map(item => item.transport),
+        itemStyle: { color: '#ca8a04' }
+      },
+      {
+        name: 'Finance',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {},
+        data: data.map(item => item.finance),
+        itemStyle: { color: '#7c3aed' }
+      },
+      {
+        name: 'Other',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {},
+        data: data.map(item => item.other),
+        itemStyle: { color: '#db2777' }
+      }
+    ]
+  });
+
+  const getGrowthChartOption = (data) => ({
+    tooltip: {
+      trigger: 'axis',
+      formatter: function(params) {
+        return `${params[0].name}<br/>${params[0].marker}${isEnglish ? 'Growth' : 'ზრდა'}: ${params[0].value}%`;
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map(item => item.year)
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: '{value}%'
+      }
+    },
+    series: [{
+      type: 'bar',
+      data: data.map(item => item.growth),
+      itemStyle: {
+        color: '#16a34a'
+      }
+    }]
+  });
+
+  const getPieChartOption = (data) => ({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+      data: data.map(item => item.name)
+    },
+    series: [{
+      name: currentTexts.ownershipTypes,
+      type: 'pie',
+      radius: '50%',
+      data: data.map(item => ({
+        value: item.value,
+        name: item.name,
+        itemStyle: { color: item.color }
+      })),
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowOffsetX: 0,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+      }
+    }]
+  });
 
   const ChartContainer = ({ title, children, onMaximize, chartIndex }) => (
     <div
@@ -928,171 +1212,45 @@ const Charts = ({ isEnglish }) => {
       switch (maximizedChart.type) {
         case "bar":
           return (
-            <BarChart data={maximizedChart.data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis tickFormatter={(value) => value.toLocaleString()} />
-              <Tooltip
-                formatter={(value, name) => [value.toLocaleString(), name]}
-              />
-              <Legend 
-                onClick={(e) => handleLegendClick(e.dataKey)}
-                wrapperStyle={{ 
-                  cursor: 'pointer',
-                  userSelect: 'none'
-                }}
-                iconType="rect"
-                formatter={(value, entry) => (
-                  <span style={{ 
-                    opacity: hiddenDataKeys.has(entry.dataKey) ? 0.5 : 1,
-                    textDecoration: hiddenDataKeys.has(entry.dataKey) ? 'line-through' : 'none'
-                  }}>
-                    {value}
-                  </span>
-                )}
-              />
-              <Bar dataKey="birth" fill="#2563eb" name={currentTexts.birth} hide={hiddenDataKeys.has('birth')} />
-              <Bar dataKey="death" fill="#dc2626" name={currentTexts.death} hide={hiddenDataKeys.has('death')} />
-            </BarChart>
+            <ReactECharts
+              option={getBarChartOption(maximizedChart.data)}
+              style={{ height: '100%', width: '100%' }}
+            />
           );
         case "line":
           return (
-            <LineChart data={maximizedChart.data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis />
-              <Tooltip />
-              <Legend layout="vertical" align="right" verticalAlign="middle" />
-              <Line
-                type="monotone"
-                dataKey="manufacturing"
-                stroke="#2563eb"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="construction"
-                stroke="#dc2626"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="retail"
-                stroke="#16a34a"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="transport"
-                stroke="#ca8a04"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="finance"
-                stroke="#7c3aed"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="other"
-                stroke="#db2777"
-                strokeWidth={2}
-              />
-            </LineChart>
+            <ReactECharts
+              option={getLineChartOption(maximizedChart.data)}
+              style={{ height: '100%', width: '100%' }}
+            />
           );
         case "horizontalBar":
           return (
-            <BarChart data={maximizedChart.data} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="year" type="category" />
-              <Tooltip />
-              <Bar dataKey="total" fill="#2563eb" />
-            </BarChart>
+            <ReactECharts
+              option={getHorizontalBarChartOption(maximizedChart.data)}
+              style={{ height: '100%', width: '100%' }}
+            />
           );
         case "area":
           return (
-            <AreaChart data={maximizedChart.data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Area
-                type="monotone"
-                dataKey="manufacturing"
-                stackId="1"
-                stroke="#2563eb"
-                fill="#2563eb"
-              />
-              <Area
-                type="monotone"
-                dataKey="construction"
-                stackId="1"
-                stroke="#dc2626"
-                fill="#dc2626"
-              />
-              <Area
-                type="monotone"
-                dataKey="retail"
-                stackId="1"
-                stroke="#16a34a"
-                fill="#16a34a"
-              />
-              <Area
-                type="monotone"
-                dataKey="transport"
-                stackId="1"
-                stroke="#ca8a04"
-                fill="#ca8a04"
-              />
-              <Area
-                type="monotone"
-                dataKey="finance"
-                stackId="1"
-                stroke="#7c3aed"
-                fill="#7c3aed"
-              />
-              <Area
-                type="monotone"
-                dataKey="other"
-                stackId="1"
-                stroke="#db2777"
-                fill="#db2777"
-              />
-            </AreaChart>
+            <ReactECharts
+              option={getAreaChartOption(maximizedChart.data)}
+              style={{ height: '100%', width: '100%' }}
+            />
           );
         case "growth":
           return (
-            <BarChart data={maximizedChart.data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis />
-              <Tooltip formatter={(value) => [`${value}%`, "ზრდა"]} />
-              <Bar dataKey="growth" fill="#16a34a" />
-            </BarChart>
+            <ReactECharts
+              option={getGrowthChartOption(maximizedChart.data)}
+              style={{ height: '100%', width: '100%' }}
+            />
           );
         case "pie":
           return (
-            <PieChart>
-              <Pie
-                data={maximizedChart.data}
-                cx="50%"
-                cy="50%"
-                outerRadius={120}
-                fill="#8884d8"
-                dataKey="value"
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
-                }
-              >
-                {maximizedChart.data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+            <ReactECharts
+              option={getPieChartOption(maximizedChart.data)}
+              style={{ height: '100%', width: '100%' }}
+            />
           );
         default:
           return null;
@@ -1114,10 +1272,8 @@ const Charts = ({ isEnglish }) => {
               ✕
             </button>
           </div>
-          <div className="maximize-modal-chart">
-            <ResponsiveContainer width="100%" height={600}>
-              {renderChart()}
-            </ResponsiveContainer>
+          <div className="maximize-modal-chart" style={{ width: '100%', height: '600px' }}>
+            {renderChart()}
           </div>
         </div>
       </div>
@@ -1164,49 +1320,13 @@ const Charts = ({ isEnglish }) => {
                         </button>
                       </div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={organizationsByYear}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="year" />
-                          <YAxis
-                            tickFormatter={(value) => value.toLocaleString()}
-                          />
-                          <Tooltip
-                            formatter={(value, name) => [
-                              value.toLocaleString(),
-                              name,
-                            ]}
-                          />
-                          <Legend 
-                            onClick={(e) => handleLegendClick(e.dataKey)}
-                            wrapperStyle={{ 
-                              cursor: 'pointer',
-                              userSelect: 'none'
-                            }}
-                            iconType="rect"
-                            formatter={(value, entry) => (
-                              <span style={{ 
-                                opacity: hiddenDataKeys.has(entry.dataKey) ? 0.5 : 1,
-                                textDecoration: hiddenDataKeys.has(entry.dataKey) ? 'line-through' : 'none'
-                              }}>
-                                {value}
-                              </span>
-                            )}
-                          />
-                          <Bar
-                            dataKey="birth"
-                            fill="#2563eb"
-                            name={currentTexts.birth}
-                            hide={hiddenDataKeys.has('birth')}
-                          />
-                          <Bar
-                            dataKey="death"
-                            fill="#dc2626"
-                            name={currentTexts.death}
-                            hide={hiddenDataKeys.has('death')}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <ReactECharts
+                        option={getBarChartOption(organizationsByYear)}
+                        style={{ width: '100%', height: '300px' }}
+                        onEvents={{
+                          'legendselectchanged': onEChartsLegendSelectChanged
+                        }}
+                      />
                     )}
                   </ChartContainer>
 
@@ -1222,51 +1342,10 @@ const Charts = ({ isEnglish }) => {
                     }
                     chartIndex={1}
                   >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={activityData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend layout="vertical" align="right" verticalAlign="middle" />
-                        <Line
-                          type="monotone"
-                          dataKey="manufacturing"
-                          stroke="#2563eb"
-                          strokeWidth={2}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="construction"
-                          stroke="#dc2626"
-                          strokeWidth={2}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="retail"
-                          stroke="#16a34a"
-                          strokeWidth={2}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="transport"
-                          stroke="#ca8a04"
-                          strokeWidth={2}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="finance"
-                          stroke="#7c3aed"
-                          strokeWidth={2}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="other"
-                          stroke="#db2777"
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <ReactECharts
+                      option={getLineChartOption(activityData)}
+                      style={{ width: '100%', height: '300px' }}
+                    />
                   </ChartContainer>
 
                   {/* Stacked Bar Chart - Regional Distribution */}
@@ -1281,18 +1360,10 @@ const Charts = ({ isEnglish }) => {
                     }
                     chartIndex={2}
                   >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart
-                        data={organizationGrowthData}
-                        layout="horizontal"
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="year" type="category" />
-                        <Tooltip />
-                        <Bar dataKey="total" fill="#2563eb" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <ReactECharts
+                      option={getHorizontalBarChartOption(organizationGrowthData)}
+                      style={{ width: '100%', height: '300px' }}
+                    />
                   </ChartContainer>
 
                   {/* Stacked Area Chart */}
@@ -1313,57 +1384,10 @@ const Charts = ({ isEnglish }) => {
                     }
                     chartIndex={3}
                   >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={activityData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="year" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Area
-                          type="monotone"
-                          dataKey="manufacturing"
-                          stackId="1"
-                          stroke="#2563eb"
-                          fill="#2563eb"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="construction"
-                          stackId="1"
-                          stroke="#dc2626"
-                          fill="#dc2626"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="retail"
-                          stackId="1"
-                          stroke="#16a34a"
-                          fill="#16a34a"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="transport"
-                          stackId="1"
-                          stroke="#ca8a04"
-                          fill="#ca8a04"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="finance"
-                          stackId="1"
-                          stroke="#7c3aed"
-                          fill="#7c3aed"
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="other"
-                          stackId="1"
-                          stroke="#db2777"
-                          fill="#db2777"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <ReactECharts
+                      option={getAreaChartOption(activityData)}
+                      style={{ width: '100%', height: '300px' }}
+                    />
                   </ChartContainer>
 
                   {/* Growth Percentage Chart */}
@@ -1409,28 +1433,21 @@ const Charts = ({ isEnglish }) => {
                         </button>
                       </div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                          data={organizationsByYear.map((item, index) => ({
-                            year: item.year,
-                            growth:
-                              index > 0
-                                ? (
-                                    ((item.birth -
-                                      organizationsByYear[index - 1].birth) /
-                                      organizationsByYear[index - 1].birth) *
-                                    100
-                                  ).toFixed(1)
-                                : 0,
-                          }))}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="year" />
-                          <YAxis />
-                          <Tooltip formatter={(value) => [`${value}%`, "ზრდა"]} />
-                          <Bar dataKey="growth" fill="#16a34a" />
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <ReactECharts
+                        option={getGrowthChartOption(organizationsByYear.map((item, index) => ({
+                          year: item.year,
+                          growth:
+                            index > 0
+                              ? (
+                                  ((item.birth -
+                                    organizationsByYear[index - 1].birth) /
+                                    organizationsByYear[index - 1].birth) *
+                                  100
+                                ).toFixed(1)
+                              : 0,
+                        })))}
+                        style={{ width: '100%', height: '300px' }}
+                      />
                     )}
                   </ChartContainer>
 
@@ -1446,26 +1463,10 @@ const Charts = ({ isEnglish }) => {
                     }
                     chartIndex={5}
                   >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={ownershipData}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) =>
-                            `${name} ${(percent * 100).toFixed(0)}%`
-                          }
-                        >
-                          {ownershipData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <ReactECharts
+                      option={getPieChartOption(ownershipData)}
+                      style={{ width: '100%', height: '300px' }}
+                    />
                   </ChartContainer>
                 </div>
               </div>
