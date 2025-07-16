@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import { Download, Maximize2, Printer, ChevronDown, FileText, RefreshCw, AlertCircle } from "lucide-react";
-import { fetchEnterpriseBirthDeath } from "../services/api";
+import { fetchEnterpriseBirthDeath, fetchEnterpriseNace } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
 import "../styles/Charts.scss";
 
@@ -10,6 +10,7 @@ const Charts = ({ isEnglish }) => {
   const [maximizedChart, setMaximizedChart] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [organizationsByYear, setOrganizationsByYear] = useState([]);
+  const [activityData, setActivityData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -47,13 +48,21 @@ const Charts = ({ isEnglish }) => {
       try {
         setLoading(true);
         setError(null);
-        const data = await fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge");
-        setOrganizationsByYear(data);
+        
+        // Fetch both datasets in parallel
+        const [birthDeathData, naçeData] = await Promise.all([
+          fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge"),
+          fetchEnterpriseNace(isEnglish ? "en" : "ge")
+        ]);
+        
+        setOrganizationsByYear(birthDeathData);
+        setActivityData(naçeData);
         setRetryCount(0); // Reset retry count on success
       } catch (error) {
-        console.error("Error loading enterprise birth-death data:", error);
+        console.error("Error loading data:", error);
         setError(error.message || "Failed to load data");
         setOrganizationsByYear([]);
+        setActivityData([]);
       } finally {
         setLoading(false);
       }
@@ -524,214 +533,6 @@ const Charts = ({ isEnglish }) => {
     });
   }, []);
 
-  // Sample data for charts - replace with real data from your API
-  const activityData = [
-    {
-      year: "2012",
-      manufacturing: 8,
-      construction: 4,
-      retail: 15,
-      transport: 3,
-      finance: 2,
-      other: 10,
-      test: 15,
-      test2: 20,
-      test3: 25,
-      test4: 30,
-      test5: 35,
-      test6: 40,
-      test7: 45,
-      test8: 50
-    },
-    {
-      year: "2013",
-      manufacturing: 9,
-      construction: 5,
-      retail: 16,
-      transport: 4,
-      finance: 3,
-      other: 11,
-      test: 16,
-      test2: 21,
-      test3: 26,
-      test4: 31,
-      test5: 36,
-      test6: 41,
-      test7: 46,
-      test8: 51
-    },
-    {
-      year: "2014",
-      manufacturing: 12,
-      construction: 6,
-      retail: 18,
-      transport: 5,
-      finance: 4,
-      other: 13,
-      test: 17,
-      test2: 22,
-      test3: 27,
-      test4: 32,
-      test5: 37,
-      test6: 42,
-      test7: 47,
-      test8: 52
-    },
-    {
-      year: "2015",
-      manufacturing: 14,
-      construction: 8,
-      retail: 20,
-      transport: 6,
-      finance: 5,
-      other: 15,
-      test: 18,
-      test2: 23,
-      test3: 28,
-      test4: 33,
-      test5: 38,
-      test6: 43,
-      test7: 48,
-      test8: 53
-    },
-    {
-      year: "2016",
-      manufacturing: 16,
-      construction: 9,
-      retail: 22,
-      transport: 7,
-      finance: 6,
-      other: 17,
-      test: 18,
-      test2: 23,
-      test3: 28,
-      test4: 33,
-      test5: 38,
-      test6: 43,
-      test7: 48,
-      test8: 53
-    },
-    {
-      year: "2017",
-      manufacturing: 18,
-      construction: 10,
-      retail: 24,
-      transport: 8,
-      finance: 7,
-      other: 19,
-      test: 17,
-      test2: 22,
-      test3: 27,
-      test4: 32,
-      test5: 37,
-      test6: 42,
-      test7: 47,
-      test8: 52
-    },
-    {
-      year: "2018",
-      manufacturing: 20,
-      construction: 12,
-      retail: 26,
-      transport: 9,
-      finance: 8,
-      other: 21,
-      test: 18,
-      test2: 23,
-      test3: 28,
-      test4: 33,
-      test5: 38,
-      test6: 43,
-      test7: 48,
-      test8: 53
-    },
-    {
-      year: "2019",
-      manufacturing: 22,
-      construction: 14,
-      retail: 28,
-      transport: 10,
-      finance: 9,
-      other: 23,
-      test: 18,
-      test2: 23,
-      test3: 28,
-      test4: 33,
-      test5: 38,
-      test6: 43,
-      test7: 48,
-      test8: 53
-    },
-    {
-      year: "2020",
-      manufacturing: 18,
-      construction: 10,
-      retail: 24,
-      transport: 8,
-      finance: 7,
-      other: 19,
-      test: 17,
-      test2: 22,
-      test3: 27,
-      test4: 32,
-      test5: 37,
-      test6: 42,
-      test7: 47,
-      test8: 52
-    },
-    {
-      year: "2021",
-      manufacturing: 25,
-      construction: 16,
-      retail: 30,
-      transport: 12,
-      finance: 10,
-      other: 25,
-      test: 19,
-      test2: 24,
-      test3: 29,
-      test4: 34,
-      test5: 39,
-      test6: 44,
-      test7: 49,
-      test8: 54
-    },
-    {
-      year: "2022",
-      manufacturing: 28,
-      construction: 18,
-      retail: 32,
-      transport: 14,
-      finance: 12,
-      other: 27,
-      test: 20,
-      test2: 25,
-      test3: 30,
-      test4: 35,
-      test5: 40,
-      test6: 45,
-      test7: 50,
-      test8: 55
-    },
-    {
-      year: "2023",
-      manufacturing: 30,
-      construction: 20,
-      retail: 35,
-      transport: 16,
-      finance: 14,
-      other: 30,
-      test: 21,
-      test2: 26,
-      test3: 31,
-      test4: 36,
-      test5: 41,
-      test6: 46,
-      test7: 51,
-      test8: 56
-    },
-  ];
-
   const ownershipData = [
     { name: "კერძო", value: 87, color: "#2563eb" },
     { name: "სახელმწიფო", value: 8, color: "#dc2626" },
@@ -886,29 +687,43 @@ const Charts = ({ isEnglish }) => {
 
   // Helper function to check if there are more legend pages
   const hasMoreLegendPages = (currentPage, itemsPerPage = 12) => {
-    const totalSeries = 14; // Total number of series (Manufacturing, Construction, etc.)
+    if (!activityData || activityData.length === 0) return false;
+    
+    // Get total number of series from activity data (excluding 'year' key)
+    const sampleItem = activityData[0] || {};
+    const totalSeries = Object.keys(sampleItem).filter(key => key !== 'year').length;
     const endIndex = (currentPage + 1) * itemsPerPage;
     return endIndex < totalSeries;
   };
 
   const getStackedLineChartOption = (data, currentPage = 0, itemsPerPage = 12) => {
-    // Define all series
-    const allSeries = [
-      { name: 'Manufacturing', dataKey: 'manufacturing', color: '#2563eb' },
-      { name: 'Construction', dataKey: 'construction', color: '#dc2626' },
-      { name: 'Retail', dataKey: 'retail', color: '#16a34a' },
-      { name: 'Transport', dataKey: 'transport', color: '#ca8a04' },
-      { name: 'Finance', dataKey: 'finance', color: '#7c3aed' },
-      { name: 'Other', dataKey: 'other', color: '#db2777' },
-      { name: 'Test', dataKey: 'test', color: '#f97316' },
-      { name: 'Test2', dataKey: 'test2', color: '#f59e0b' },
-      { name: 'Test3', dataKey: 'test3', color: '#facc15' },
-      { name: 'Test4', dataKey: 'test4', color: '#a3e635' },
-      { name: 'Test5', dataKey: 'test5', color: '#84cc16' },
-      { name: 'Test6', dataKey: 'test6', color: '#22c55e' },
-      { name: 'Test7', dataKey: 'test7', color: '#16a34a' },
-      { name: 'Test8', dataKey: 'test8', color: '#15803d' }
+    // If no data, return empty chart configuration
+    if (!data || data.length === 0) {
+      return {
+        title: {
+          text: isEnglish ? 'No data available' : 'მონაცემები არ არის ხელმისაწვდომი',
+          left: 'center',
+          top: 'middle'
+        }
+      };
+    }
+
+    // Get all available data keys from the first item (excluding 'year')
+    const sampleItem = data[0] || {};
+    const allDataKeys = Object.keys(sampleItem).filter(key => key !== 'year');
+    
+    // Define series with colors for each NACE sector
+    const colorPalette = [
+      '#0080BE', '#EA1E30', '#19C219', '#F2741F', '#5B21A4', '#F2CF1F',
+      '#149983', '#C21979', '#1B6D9A', '#8FDE1D', '#F2F21F', '#477054',
+      '#b4b299', '#07f187', '#af4fff', '#e4748b', '#61b562', '#2563eb'
     ];
+
+    const allSeries = allDataKeys.map((key, index) => ({
+      name: key,
+      dataKey: key,
+      color: colorPalette[index % colorPalette.length]
+    }));
 
     // Calculate pagination for legend only
     const startIndex = currentPage * itemsPerPage;
@@ -930,21 +745,23 @@ const Charts = ({ isEnglish }) => {
       },
       legend: {
         orient: 'vertical',
-        right: '5%',
+        right: '2%',
         top: 'middle',
         align: 'left',
         itemGap: 8,
         itemWidth: 18,
         itemHeight: 14,
         textStyle: {
-          fontSize: 12,
-          color: '#333'
+          fontSize: 10,
+          color: '#333',
+          width: 120,
+          overflow: 'truncate'
         },
         data: currentPageLegend.map(s => s.name)
       },
       grid: {
         left: '3%',
-        right: '25%',
+        right: '28%',
         bottom: '3%',
         top: '5%',
         containLabel: true
@@ -969,7 +786,7 @@ const Charts = ({ isEnglish }) => {
         emphasis: {
           focus: 'series'
         },
-        data: data.map(item => item[seriesConfig.dataKey]),
+        data: data.map(item => item[seriesConfig.dataKey] || 0),
         lineStyle: { color: seriesConfig.color, width: 2 },
         itemStyle: { color: seriesConfig.color }
       }))
@@ -1650,7 +1467,7 @@ const Charts = ({ isEnglish }) => {
                             transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'rotate(0deg)' : 'rotate(180deg)',
                             display: 'inline-block'
                           }}>
-                            {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
+                            {legendPage + 1}/{Math.ceil((activityData && activityData.length > 0 ? Object.keys(activityData[0]).filter(key => key !== 'year').length : 0) / legendItemsPerPage)}
                           </span>
                           <ChevronDown size={12} strokeWidth={2} style={{ color: '#9ca3af' }} />
                         </button>
