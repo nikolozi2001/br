@@ -1435,50 +1435,47 @@ const Charts = ({ isEnglish }) => {
                     position: 'absolute',
                     right: '7%',
                     bottom: '40px',
-                    background: hasMoreLegendPages(legendPage, legendItemsPerPage) 
-                      ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
-                      : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
-                    color: 'white',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '12px',
-                    fontWeight: '600',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    color: '#374151',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    fontWeight: '500',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                     zIndex: 10,
-                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-                    transition: 'all 0.3s ease-in-out',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    transition: 'all 0.2s ease',
+                    backdropFilter: 'blur(12px)',
                     transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'none' : 'rotate(180deg)',
-                    backdropFilter: 'blur(10px)'
                   }}
                   onMouseEnter={(e) => {
+                    e.target.style.background = 'rgba(255, 255, 255, 1)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
                     e.target.style.transform = hasMoreLegendPages(legendPage, legendItemsPerPage) 
-                      ? 'translateY(-2px) scale(1.02)' 
-                      : 'rotate(180deg) translateY(2px) scale(1.02)';
-                    e.target.style.boxShadow = '0 6px 25px rgba(0, 0, 0, 0.3)';
+                      ? 'translateY(-1px)' 
+                      : 'rotate(180deg) translateY(1px)';
                   }}
                   onMouseLeave={(e) => {
+                    e.target.style.background = 'rgba(255, 255, 255, 0.95)';
+                    e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
                     e.target.style.transform = hasMoreLegendPages(legendPage, legendItemsPerPage) 
-                      ? 'translateY(0) scale(1)' 
-                      : 'rotate(180deg) translateY(0) scale(1)';
-                    e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                      ? 'translateY(0)' 
+                      : 'rotate(180deg) translateY(0)';
                   }}
                 >
                   <span style={{ 
-                    background: 'rgba(255,255,255,0.25)', 
-                    borderRadius: '6px', 
-                    padding: '3px 7px', 
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    backdropFilter: 'blur(6px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#6b7280',
+                    transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'none' : 'rotate(180deg)'
                   }}>
                     {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
                   </span>
-                  <ChevronDown size={14} />
+                  <ChevronDown size={14} strokeWidth={2} style={{ color: '#9ca3af' }} />
                 </button>
               )}
             </div>
@@ -1619,32 +1616,41 @@ const Charts = ({ isEnglish }) => {
                             position: 'absolute',
                             right: '14%',
                             bottom: '0px',
-                            background: hasMoreLegendPages(legendPage, legendItemsPerPage) 
-                              ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
-                              : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
-                            color: 'white',
-                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            color: '#374151',
+                            border: '1px solid rgba(0, 0, 0, 0.1)',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
                             fontSize: '11px',
-                            fontWeight: '600',
+                            fontWeight: '500',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
                             zIndex: 10,
-                            boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)',
-                            transition: 'all 0.2s ease-in-out',
-                            backdropFilter: 'blur(6px)'
+                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                            transition: 'all 0.15s ease',
+                            backdropFilter: 'blur(8px)',
+                            transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'none' : 'rotate(180deg)',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = 'rgba(255, 255, 255, 1)';
+                            e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = 'rgba(255, 255, 255, 0.95)';
+                            e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
                           }}
                         >
                           <span style={{ 
-                            borderRadius: '4px', 
                             fontSize: '10px',
-                            fontWeight: '700',
-                            backdropFilter: 'blur(4px)',
+                            fontWeight: '600',
+                            color: '#6b7280',
+                            transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'none' : 'rotate(180deg)'
                           }}>
                             {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
                           </span>
-                          <ChevronDown size={12} />
+                          <ChevronDown size={12} strokeWidth={2} style={{ color: '#9ca3af' }} />
                         </button>
                       )}
                     </div>
