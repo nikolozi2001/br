@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import { Download, Maximize2, Printer, ChevronDown, FileText, RefreshCw, AlertCircle } from "lucide-react";
-import { fetchEnterpriseBirthDeath, fetchEnterpriseNace } from "../services/api";
+import { fetchEnterpriseBirthDeath, fetchEnterpriseNace, getSectionColorMapping } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
 import "../styles/Charts.scss";
 
@@ -712,17 +712,61 @@ const Charts = ({ isEnglish }) => {
     const sampleItem = data[0] || {};
     const allDataKeys = Object.keys(sampleItem).filter(key => key !== 'year');
     
-    // Define series with colors for each NACE sector
-    const colorPalette = [
-      '#0080BE', '#EA1E30', '#19C219', '#F2741F', '#5B21A4', '#F2CF1F',
-      '#149983', '#C21979', '#1B6D9A', '#8FDE1D', '#F2F21F', '#477054',
-      '#b4b299', '#07f187', '#af4fff', '#e4748b', '#61b562', '#2563eb'
-    ];
+    // Get color mapping from API
+    const colorMapping = getSectionColorMapping();
+    
+    // Create a function to get color based on section name
+    const getColorForSection = (sectionName) => {
+      // Map section names back to codes to find the right color
+      const sectionMappings = {
+        'სამთომომპოვებელი მრე...': 'B',
+        'დამამუშავებელი მრეწვე...': 'C', 
+        'ელექტროენერგია მიწო...': 'D',
+        'წყალმომარაგება ნარჩე...': 'E',
+        'მშენებლობა': 'F',
+        'ვაჭრობა რემონტი': 'G',
+        'ტრანსპორტირება დასა...': 'H',
+        'განთავსება საკვები': 'I',
+        'ინფორმაცია კომუნიკ...': 'J',
+        'ფინანსური საქმიანო...': 'K',
+        'უძრავი ქონება': 'L',
+        'პროფესიული საქმია...': 'M',
+        'ადმინისტრაციული მომ...': 'N',
+        'განათლება': 'P',
+        'ჯანდაცვა სოციალუ...': 'Q',
+        'ხელოვნება გართობა': 'R',
+        'სხვა მომსახურება': 'S',
+        'უცნობი საქმიანობა': 'unknown',
+        // English mappings
+        'Mining and Quarrying': 'B',
+        'Manufacturing': 'C',
+        'Electricity Supply': 'D',
+        'Water Supply Waste...': 'E',
+        'Construction': 'F',
+        'Trade Repair': 'G',
+        'Transportation Stor...': 'H',
+        'Accommodation Food...': 'I',
+        'Information Comm...': 'J',
+        'Financial Activities': 'K',
+        'Real Estate Activities': 'L',
+        'Professional Activ...': 'M',
+        'Administrative Sup...': 'N',
+        'Education': 'P',
+        'Health Social Work': 'Q',
+        'Arts Entertainment': 'R',
+        'Other Services': 'S',
+        'Unknown Activity': 'unknown'
+      };
+      
+      const sectionCode = sectionMappings[sectionName];
+      const colorInfo = colorMapping.find(cm => cm.section === sectionCode);
+      return colorInfo ? colorInfo.color : '#000000'; // Default to black if not found
+    };
 
-    const allSeries = allDataKeys.map((key, index) => ({
+    const allSeries = allDataKeys.map((key) => ({
       name: key,
       dataKey: key,
-      color: colorPalette[index % colorPalette.length]
+      color: getColorForSection(key)
     }));
 
     // Calculate pagination for legend only
