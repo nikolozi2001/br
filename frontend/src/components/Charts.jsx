@@ -787,7 +787,7 @@ const Charts = ({ isEnglish }) => {
 
   const getStackedLineChartOption = (data) => ({
     tooltip: {
-      trigger: 'axis',
+      trigger: 'item',
       axisPointer: {
         type: 'cross',
         label: {
@@ -795,14 +795,7 @@ const Charts = ({ isEnglish }) => {
         }
       },
       formatter: function(params) {
-        let result = `<strong>${params[0].name}</strong><br/>`;
-        let total = 0;
-        params.forEach(param => {
-          total += param.value;
-          result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()}<br/>`;
-        });
-        result += `<strong>Total: ${total.toLocaleString()}</strong>`;
-        return result;
+        return `<strong>${params.name}</strong><br/>${params.marker}${params.seriesName}: ${params.value.toLocaleString()}`;
       }
     },
     legend: {
