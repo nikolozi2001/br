@@ -13,6 +13,8 @@ const Charts = ({ isEnglish }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [legendPage, setLegendPage] = useState(0);
+  const [legendItemsPerPage] = useState(12);
   
   // Initialize hiddenDataKeys from localStorage or empty Set
   const [hiddenDataKeys, setHiddenDataKeys] = useState(() => {
@@ -81,6 +83,7 @@ const Charts = ({ isEnglish }) => {
 
   const handleCloseMaximized = () => {
     setMaximizedChart(null);
+    setLegendPage(0); // Reset legend page when closing maximized chart
   };
 
   const toggleDropdown = (chartIndex) => {
@@ -531,6 +534,14 @@ const Charts = ({ isEnglish }) => {
       transport: 3,
       finance: 2,
       other: 10,
+      test: 15,
+      test2: 20,
+      test3: 25,
+      test4: 30,
+      test5: 35,
+      test6: 40,
+      test7: 45,
+      test8: 50
     },
     {
       year: "2013",
@@ -540,6 +551,14 @@ const Charts = ({ isEnglish }) => {
       transport: 4,
       finance: 3,
       other: 11,
+      test: 16,
+      test2: 21,
+      test3: 26,
+      test4: 31,
+      test5: 36,
+      test6: 41,
+      test7: 46,
+      test8: 51
     },
     {
       year: "2014",
@@ -549,6 +568,14 @@ const Charts = ({ isEnglish }) => {
       transport: 5,
       finance: 4,
       other: 13,
+      test: 17,
+      test2: 22,
+      test3: 27,
+      test4: 32,
+      test5: 37,
+      test6: 42,
+      test7: 47,
+      test8: 52
     },
     {
       year: "2015",
@@ -558,6 +585,14 @@ const Charts = ({ isEnglish }) => {
       transport: 6,
       finance: 5,
       other: 15,
+      test: 18,
+      test2: 23,
+      test3: 28,
+      test4: 33,
+      test5: 38,
+      test6: 43,
+      test7: 48,
+      test8: 53
     },
     {
       year: "2016",
@@ -567,6 +602,14 @@ const Charts = ({ isEnglish }) => {
       transport: 7,
       finance: 6,
       other: 17,
+      test: 18,
+      test2: 23,
+      test3: 28,
+      test4: 33,
+      test5: 38,
+      test6: 43,
+      test7: 48,
+      test8: 53
     },
     {
       year: "2017",
@@ -576,6 +619,14 @@ const Charts = ({ isEnglish }) => {
       transport: 8,
       finance: 7,
       other: 19,
+      test: 17,
+      test2: 22,
+      test3: 27,
+      test4: 32,
+      test5: 37,
+      test6: 42,
+      test7: 47,
+      test8: 52
     },
     {
       year: "2018",
@@ -585,6 +636,14 @@ const Charts = ({ isEnglish }) => {
       transport: 9,
       finance: 8,
       other: 21,
+      test: 18,
+      test2: 23,
+      test3: 28,
+      test4: 33,
+      test5: 38,
+      test6: 43,
+      test7: 48,
+      test8: 53
     },
     {
       year: "2019",
@@ -594,6 +653,14 @@ const Charts = ({ isEnglish }) => {
       transport: 10,
       finance: 9,
       other: 23,
+      test: 18,
+      test2: 23,
+      test3: 28,
+      test4: 33,
+      test5: 38,
+      test6: 43,
+      test7: 48,
+      test8: 53
     },
     {
       year: "2020",
@@ -603,6 +670,14 @@ const Charts = ({ isEnglish }) => {
       transport: 8,
       finance: 7,
       other: 19,
+      test: 17,
+      test2: 22,
+      test3: 27,
+      test4: 32,
+      test5: 37,
+      test6: 42,
+      test7: 47,
+      test8: 52
     },
     {
       year: "2021",
@@ -612,6 +687,14 @@ const Charts = ({ isEnglish }) => {
       transport: 12,
       finance: 10,
       other: 25,
+      test: 19,
+      test2: 24,
+      test3: 29,
+      test4: 34,
+      test5: 39,
+      test6: 44,
+      test7: 49,
+      test8: 54
     },
     {
       year: "2022",
@@ -621,6 +704,14 @@ const Charts = ({ isEnglish }) => {
       transport: 14,
       finance: 12,
       other: 27,
+      test: 20,
+      test2: 25,
+      test3: 30,
+      test4: 35,
+      test5: 40,
+      test6: 45,
+      test7: 50,
+      test8: 55
     },
     {
       year: "2023",
@@ -630,6 +721,14 @@ const Charts = ({ isEnglish }) => {
       transport: 16,
       finance: 14,
       other: 30,
+      test: 21,
+      test2: 26,
+      test3: 31,
+      test4: 36,
+      test5: 41,
+      test6: 46,
+      test7: 51,
+      test8: 56
     },
   ];
 
@@ -785,122 +884,97 @@ const Charts = ({ isEnglish }) => {
     ]
   });
 
-  const getStackedLineChartOption = (data) => ({
-    tooltip: {
-      trigger: 'item',
-      axisPointer: {
-        type: 'cross',
-        label: {
-          backgroundColor: '#6a7985'
+  // Helper function to check if there are more legend pages
+  const hasMoreLegendPages = (currentPage, itemsPerPage = 12) => {
+    const totalSeries = 14; // Total number of series (Manufacturing, Construction, etc.)
+    const endIndex = (currentPage + 1) * itemsPerPage;
+    return endIndex < totalSeries;
+  };
+
+  const getStackedLineChartOption = (data, currentPage = 0, itemsPerPage = 12) => {
+    // Define all series
+    const allSeries = [
+      { name: 'Manufacturing', dataKey: 'manufacturing', color: '#2563eb' },
+      { name: 'Construction', dataKey: 'construction', color: '#dc2626' },
+      { name: 'Retail', dataKey: 'retail', color: '#16a34a' },
+      { name: 'Transport', dataKey: 'transport', color: '#ca8a04' },
+      { name: 'Finance', dataKey: 'finance', color: '#7c3aed' },
+      { name: 'Other', dataKey: 'other', color: '#db2777' },
+      { name: 'Test', dataKey: 'test', color: '#f97316' },
+      { name: 'Test2', dataKey: 'test2', color: '#f59e0b' },
+      { name: 'Test3', dataKey: 'test3', color: '#facc15' },
+      { name: 'Test4', dataKey: 'test4', color: '#a3e635' },
+      { name: 'Test5', dataKey: 'test5', color: '#84cc16' },
+      { name: 'Test6', dataKey: 'test6', color: '#22c55e' },
+      { name: 'Test7', dataKey: 'test7', color: '#16a34a' },
+      { name: 'Test8', dataKey: 'test8', color: '#15803d' }
+    ];
+
+    // Calculate pagination for legend only
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentPageLegend = allSeries.slice(startIndex, endIndex);
+
+    return {
+      tooltip: {
+        trigger: 'item',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            backgroundColor: '#6a7985'
+          }
+        },
+        formatter: function(params) {
+          return `<strong>${params.name}</strong><br/>${params.marker}${params.seriesName}: ${params.value.toLocaleString()}`;
         }
       },
-      formatter: function(params) {
-        return `<strong>${params.name}</strong><br/>${params.marker}${params.seriesName}: ${params.value.toLocaleString()}`;
-      }
-    },
-    legend: {
-      orient: 'vertical',
-      right: '5%',
-      top: 'middle',
-      align: 'left',
-      itemGap: 8,
-      itemWidth: 18,
-      itemHeight: 14,
-      textStyle: {
-        fontSize: 12,
-        color: '#333'
+      legend: {
+        orient: 'vertical',
+        right: '5%',
+        top: 'middle',
+        align: 'left',
+        itemGap: 8,
+        itemWidth: 18,
+        itemHeight: 14,
+        textStyle: {
+          fontSize: 12,
+          color: '#333'
+        },
+        data: currentPageLegend.map(s => s.name)
       },
-      data: ['Manufacturing', 'Construction', 'Retail', 'Transport', 'Finance', 'Other']
-    },
-    grid: {
-      left: '3%',
-      right: '25%',
-      bottom: '3%',
-      top: '5%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: data.map(item => item.year),
-      boundaryGap: false
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: function(value) {
-          return value.toLocaleString();
+      grid: {
+        left: '3%',
+        right: '25%',
+        bottom: '3%',
+        top: '5%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: data.map(item => item.year),
+        boundaryGap: false
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: {
+          formatter: function(value) {
+            return value.toLocaleString();
+          }
         }
-      }
-    },
-    series: [
-      {
-        name: 'Manufacturing',
-        type: 'line',
-        stack: 'Total',
-        emphasis: {
-          focus: 'series'
-        },
-        data: data.map(item => item.manufacturing),
-        lineStyle: { color: '#2563eb', width: 2 },
-        itemStyle: { color: '#2563eb' }
       },
-      {
-        name: 'Construction',
+      series: allSeries.map(seriesConfig => ({
+        name: seriesConfig.name,
         type: 'line',
         stack: 'Total',
         emphasis: {
           focus: 'series'
         },
-        data: data.map(item => item.construction),
-        lineStyle: { color: '#dc2626', width: 2 },
-        itemStyle: { color: '#dc2626' }
-      },
-      {
-        name: 'Retail',
-        type: 'line',
-        stack: 'Total',
-        emphasis: {
-          focus: 'series'
-        },
-        data: data.map(item => item.retail),
-        lineStyle: { color: '#16a34a', width: 2 },
-        itemStyle: { color: '#16a34a' }
-      },
-      {
-        name: 'Transport',
-        type: 'line',
-        stack: 'Total',
-        emphasis: {
-          focus: 'series'
-        },
-        data: data.map(item => item.transport),
-        lineStyle: { color: '#ca8a04', width: 2 },
-        itemStyle: { color: '#ca8a04' }
-      },
-      {
-        name: 'Finance',
-        type: 'line',
-        stack: 'Total',
-        emphasis: {
-          focus: 'series'
-        },
-        data: data.map(item => item.finance),
-        lineStyle: { color: '#7c3aed', width: 2 },
-        itemStyle: { color: '#7c3aed' }
-      },
-      {
-        name: 'Other',
-        type: 'line',
-        stack: 'Total',
-        emphasis: {
-          focus: 'series'
-        },
-        data: data.map(item => item.other),
-        lineStyle: { color: '#db2777', width: 2 },
-        itemStyle: { color: '#db2777' }
-      }
-    ]
-  });
+        data: data.map(item => item[seriesConfig.dataKey]),
+        lineStyle: { color: seriesConfig.color, width: 2 },
+        itemStyle: { color: seriesConfig.color }
+      }))
+    };
+  };
 
   const getHorizontalBarChartOption = (data) => ({
     tooltip: {
@@ -1343,10 +1417,80 @@ const Charts = ({ isEnglish }) => {
           );
         case "stackedLine":
           return (
-            <ReactECharts
-              option={getStackedLineChartOption(maximizedChart.data)}
-              style={{ height: '100%', width: '100%' }}
-            />
+            <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+              <ReactECharts
+                option={getStackedLineChartOption(maximizedChart.data, legendPage, legendItemsPerPage)}
+                style={{ height: '100%', width: '100%' }}
+              />
+              {hasMoreLegendPages(legendPage, legendItemsPerPage) && (
+                <button
+                  onClick={() => setLegendPage(prev => prev + 1)}
+                  style={{
+                    position: 'absolute',
+                    right: '7%',
+                    bottom: '40px',
+                    background: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    zIndex: 10,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  <ChevronDown size={16} />
+                  {isEnglish ? 'More' : 'მეტი'}
+                </button>
+              )}
+              {legendPage > 0 && (
+                <button
+                  onClick={() => setLegendPage(prev => prev - 1)}
+                  style={{
+                    position: 'absolute',
+                    right: '7%',
+                    bottom: '80px',
+                    background: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    zIndex: 10,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    transform: 'rotate(180deg)'
+                  }}
+                >
+                  <ChevronDown size={16} />
+                </button>
+              )}
+              {(legendPage > 0 || hasMoreLegendPages(legendPage, legendItemsPerPage)) && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: '7%',
+                    bottom: '120px',
+                    background: 'rgba(0,0,0,0.7)',
+                    color: 'white',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '13px',
+                    zIndex: 10,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  {isEnglish ? 'Page' : 'გვერდი'} {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
+                </div>
+              )}
+            </div>
           );
         case "horizontalBar":
           return (
@@ -1466,10 +1610,76 @@ const Charts = ({ isEnglish }) => {
                     }
                     chartIndex={1}
                   >
-                    <ReactECharts
-                      option={getStackedLineChartOption(activityData)}
-                      style={{ width: '100%', height: '300px' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <ReactECharts
+                        option={getStackedLineChartOption(activityData, legendPage, legendItemsPerPage)}
+                        style={{ width: '100%', height: '300px' }}
+                      />
+                      {hasMoreLegendPages(legendPage, legendItemsPerPage) && (
+                        <button
+                          onClick={() => setLegendPage(prev => prev + 1)}
+                          style={{
+                            position: 'absolute',
+                            right: '7%',
+                            bottom: '20px',
+                            background: '#2563eb',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            zIndex: 10
+                          }}
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      )}
+                      {legendPage > 0 && (
+                        <button
+                          onClick={() => setLegendPage(prev => prev - 1)}
+                          style={{
+                            position: 'absolute',
+                            right: '7%',
+                            bottom: '50px',
+                            background: '#6b7280',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            zIndex: 10,
+                            transform: 'rotate(180deg)'
+                          }}
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      )}
+                      {(legendPage > 0 || hasMoreLegendPages(legendPage, legendItemsPerPage)) && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            right: '7%',
+                            bottom: '80px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: 'white',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            zIndex: 10
+                          }}
+                        >
+                          {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
+                        </div>
+                      )}
+                    </div>
                   </ChartContainer>
 
                   {/* Stacked Bar Chart - Regional Distribution */}
