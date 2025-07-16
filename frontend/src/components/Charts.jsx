@@ -1422,73 +1422,64 @@ const Charts = ({ isEnglish }) => {
                 option={getStackedLineChartOption(maximizedChart.data, legendPage, legendItemsPerPage)}
                 style={{ height: '100%', width: '100%' }}
               />
-              {hasMoreLegendPages(legendPage, legendItemsPerPage) && (
+              {(legendPage > 0 || hasMoreLegendPages(legendPage, legendItemsPerPage)) && (
                 <button
-                  onClick={() => setLegendPage(prev => prev + 1)}
+                  onClick={() => {
+                    if (hasMoreLegendPages(legendPage, legendItemsPerPage)) {
+                      setLegendPage(prev => prev + 1);
+                    } else {
+                      setLegendPage(0);
+                    }
+                  }}
                   style={{
                     position: 'absolute',
                     right: '7%',
                     bottom: '40px',
-                    background: '#2563eb',
+                    background: hasMoreLegendPages(legendPage, legendItemsPerPage) 
+                      ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
+                      : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
                     color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '8px 16px',
-                    fontSize: '14px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    fontSize: '12px',
+                    fontWeight: '600',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                     zIndex: 10,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                    transition: 'all 0.3s ease-in-out',
+                    transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'none' : 'rotate(180deg)',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = hasMoreLegendPages(legendPage, legendItemsPerPage) 
+                      ? 'translateY(-2px) scale(1.02)' 
+                      : 'rotate(180deg) translateY(2px) scale(1.02)';
+                    e.target.style.boxShadow = '0 6px 25px rgba(0, 0, 0, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = hasMoreLegendPages(legendPage, legendItemsPerPage) 
+                      ? 'translateY(0) scale(1)' 
+                      : 'rotate(180deg) translateY(0) scale(1)';
+                    e.target.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
                   }}
                 >
-                  <ChevronDown size={16} />
-                  {isEnglish ? 'More' : 'მეტი'}
+                  <span style={{ 
+                    background: 'rgba(255,255,255,0.25)', 
+                    borderRadius: '6px', 
+                    padding: '3px 7px', 
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    backdropFilter: 'blur(6px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                  }}>
+                    {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
+                  </span>
+                  <ChevronDown size={14} />
                 </button>
-              )}
-              {legendPage > 0 && (
-                <button
-                  onClick={() => setLegendPage(prev => prev - 1)}
-                  style={{
-                    position: 'absolute',
-                    right: '7%',
-                    bottom: '80px',
-                    background: '#6b7280',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '8px 16px',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    zIndex: 10,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    transform: 'rotate(180deg)'
-                  }}
-                >
-                  <ChevronDown size={16} />
-                </button>
-              )}
-              {(legendPage > 0 || hasMoreLegendPages(legendPage, legendItemsPerPage)) && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: '7%',
-                    bottom: '120px',
-                    background: 'rgba(0,0,0,0.7)',
-                    color: 'white',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
-                    fontSize: '13px',
-                    zIndex: 10,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                  }}
-                >
-                  {isEnglish ? 'Page' : 'გვერდი'} {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
-                </div>
               )}
             </div>
           );
@@ -1615,69 +1606,46 @@ const Charts = ({ isEnglish }) => {
                         option={getStackedLineChartOption(activityData, legendPage, legendItemsPerPage)}
                         style={{ width: '100%', height: '300px' }}
                       />
-                      {hasMoreLegendPages(legendPage, legendItemsPerPage) && (
+                      {(legendPage > 0 || hasMoreLegendPages(legendPage, legendItemsPerPage)) && (
                         <button
-                          onClick={() => setLegendPage(prev => prev + 1)}
-                          style={{
-                            position: 'absolute',
-                            right: '7%',
-                            bottom: '20px',
-                            background: '#2563eb',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '6px 12px',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            zIndex: 10
+                          onClick={() => {
+                            if (hasMoreLegendPages(legendPage, legendItemsPerPage)) {
+                              setLegendPage(prev => prev + 1);
+                            } else {
+                              setLegendPage(0);
+                            }
                           }}
-                        >
-                          <ChevronDown size={14} />
-                        </button>
-                      )}
-                      {legendPage > 0 && (
-                        <button
-                          onClick={() => setLegendPage(prev => prev - 1)}
                           style={{
                             position: 'absolute',
-                            right: '7%',
-                            bottom: '50px',
-                            background: '#6b7280',
+                            right: '14%',
+                            bottom: '0px',
+                            background: hasMoreLegendPages(legendPage, legendItemsPerPage) 
+                              ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
+                              : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
                             color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '6px 12px',
-                            fontSize: '12px',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '600',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
                             zIndex: 10,
-                            transform: 'rotate(180deg)'
+                            boxShadow: '0 3px 8px rgba(0, 0, 0, 0.15)',
+                            transition: 'all 0.2s ease-in-out',
+                            backdropFilter: 'blur(6px)'
                           }}
                         >
-                          <ChevronDown size={14} />
+                          <span style={{ 
+                            borderRadius: '4px', 
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            backdropFilter: 'blur(4px)',
+                          }}>
+                            {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
+                          </span>
+                          <ChevronDown size={12} />
                         </button>
-                      )}
-                      {(legendPage > 0 || hasMoreLegendPages(legendPage, legendItemsPerPage)) && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            right: '7%',
-                            bottom: '80px',
-                            background: 'rgba(0,0,0,0.7)',
-                            color: 'white',
-                            borderRadius: '4px',
-                            padding: '4px 8px',
-                            fontSize: '11px',
-                            zIndex: 10
-                          }}
-                        >
-                          {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
-                        </div>
                       )}
                     </div>
                   </ChartContainer>
