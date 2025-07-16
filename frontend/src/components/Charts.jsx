@@ -844,20 +844,6 @@ const Charts = ({ isEnglish }) => {
         name: 'Manufacturing',
         type: 'line',
         stack: 'Total',
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: 'rgba(37, 99, 235, 0.8)'
-            }, {
-              offset: 1, color: 'rgba(37, 99, 235, 0.3)'
-            }]
-          }
-        },
         emphasis: {
           focus: 'series'
         },
@@ -869,20 +855,6 @@ const Charts = ({ isEnglish }) => {
         name: 'Construction',
         type: 'line',
         stack: 'Total',
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: 'rgba(220, 38, 38, 0.8)'
-            }, {
-              offset: 1, color: 'rgba(220, 38, 38, 0.3)'
-            }]
-          }
-        },
         emphasis: {
           focus: 'series'
         },
@@ -894,20 +866,6 @@ const Charts = ({ isEnglish }) => {
         name: 'Retail',
         type: 'line',
         stack: 'Total',
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: 'rgba(22, 163, 74, 0.8)'
-            }, {
-              offset: 1, color: 'rgba(22, 163, 74, 0.3)'
-            }]
-          }
-        },
         emphasis: {
           focus: 'series'
         },
@@ -919,20 +877,6 @@ const Charts = ({ isEnglish }) => {
         name: 'Transport',
         type: 'line',
         stack: 'Total',
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: 'rgba(202, 138, 4, 0.8)'
-            }, {
-              offset: 1, color: 'rgba(202, 138, 4, 0.3)'
-            }]
-          }
-        },
         emphasis: {
           focus: 'series'
         },
@@ -944,20 +888,6 @@ const Charts = ({ isEnglish }) => {
         name: 'Finance',
         type: 'line',
         stack: 'Total',
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: 'rgba(124, 58, 237, 0.8)'
-            }, {
-              offset: 1, color: 'rgba(124, 58, 237, 0.3)'
-            }]
-          }
-        },
         emphasis: {
           focus: 'series'
         },
@@ -969,20 +899,6 @@ const Charts = ({ isEnglish }) => {
         name: 'Other',
         type: 'line',
         stack: 'Total',
-        areaStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: 'rgba(219, 39, 119, 0.8)'
-            }, {
-              offset: 1, color: 'rgba(219, 39, 119, 0.3)'
-            }]
-          }
-        },
         emphasis: {
           focus: 'series'
         },
