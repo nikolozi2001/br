@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import ReactECharts from 'echarts-for-react';
 import { X, TrendingUp, TrendingDown } from 'lucide-react';
 
 const ChartComparison = ({ charts, onClose, isEnglish }) => {
@@ -51,6 +51,83 @@ const ChartComparison = ({ charts, onClose, isEnglish }) => {
         return acc;
       }, []);
   };
+
+  const getEChartsOption = () => {
+    const data = getComparisonData();
+    if (data.length === 0) return {};
+
+    const selectedChartObjects = charts.filter(chart => selectedCharts.includes(chart.id));
+    const years = [...new Set(data.map(item => item.year))].sort();
+    
+    return {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        },
+        formatter: function(params) {
+          let result = `<strong>${params[0].name}</strong><br/>`;
+          params.forEach(param => {
+            const value = typeof param.value === 'number' ? param.value.toLocaleString() : param.value;
+            result += `${param.marker} ${param.seriesName}: ${value}<br/>`;
+          });
+          return result;
+        }
+      },
+      legend: {
+        data: selectedChartObjects.map(chart => chart.name || chart.title),
+        top: '5%',
+        type: 'scroll'
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        top: '15%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: years,
+        axisTick: {
+          alignWithLabel: true
+        }
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: {
+          formatter: function(value) {
+            if (value >= 1000000) {
+              return (value / 1000000).toFixed(1) + 'M';
+            } else if (value >= 1000) {
+              return (value / 1000).toFixed(1) + 'K';
+            }
+            return value;
+          }
+        }
+      },
+      series: selectedChartObjects.map((chart, index) => ({
+        name: chart.name || chart.title,
+        type: 'bar',
+        data: years.map(year => {
+          const dataPoint = data.find(d => d.year === year);
+          return dataPoint ? (dataPoint[chart.name] || 0) : 0;
+        }),
+        itemStyle: {
+          color: chart.color || `hsl(${index * 60}, 70%, 50%)`
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      })),
+      animation: true,
+      animationDuration: 1000
+    };
+  };
   
   return (
     <div className="comparison-modal-overlay" onClick={onClose}>
@@ -80,24 +157,11 @@ const ChartComparison = ({ charts, onClose, isEnglish }) => {
         
         <div className="comparison-chart">
           {selectedCharts.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={getComparisonData()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                {charts
-                  .filter(chart => selectedCharts.includes(chart.id))
-                  .map((chart, index) => (
-                    <Bar
-                      key={chart.id}
-                      dataKey={chart.name}
-                      fill={chart.color || `hsl(${index * 60}, 70%, 50%)`}
-                    />
-                  ))}
-              </BarChart>
-            </ResponsiveContainer>
+            <ReactECharts
+              option={getEChartsOption()}
+              style={{ height: '400px', width: '100%' }}
+              opts={{ renderer: 'canvas' }}
+            />
           ) : (
             <div className="no-data">{t.noData}</div>
           )}

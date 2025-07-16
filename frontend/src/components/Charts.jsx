@@ -785,6 +785,214 @@ const Charts = ({ isEnglish }) => {
     ]
   });
 
+  const getStackedLineChartOption = (data) => ({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+        label: {
+          backgroundColor: '#6a7985'
+        }
+      },
+      formatter: function(params) {
+        let result = `<strong>${params[0].name}</strong><br/>`;
+        let total = 0;
+        params.forEach(param => {
+          total += param.value;
+          result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()}<br/>`;
+        });
+        result += `<strong>Total: ${total.toLocaleString()}</strong>`;
+        return result;
+      }
+    },
+    legend: {
+      orient: 'vertical',
+      right: '5%',
+      top: 'middle',
+      align: 'left',
+      itemGap: 8,
+      itemWidth: 18,
+      itemHeight: 14,
+      textStyle: {
+        fontSize: 12,
+        color: '#333'
+      },
+      data: ['Manufacturing', 'Construction', 'Retail', 'Transport', 'Finance', 'Other']
+    },
+    grid: {
+      left: '3%',
+      right: '25%',
+      bottom: '3%',
+      top: '5%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map(item => item.year),
+      boundaryGap: false
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: function(value) {
+          return value.toLocaleString();
+        }
+      }
+    },
+    series: [
+      {
+        name: 'Manufacturing',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(37, 99, 235, 0.8)'
+            }, {
+              offset: 1, color: 'rgba(37, 99, 235, 0.3)'
+            }]
+          }
+        },
+        emphasis: {
+          focus: 'series'
+        },
+        data: data.map(item => item.manufacturing),
+        lineStyle: { color: '#2563eb', width: 2 },
+        itemStyle: { color: '#2563eb' }
+      },
+      {
+        name: 'Construction',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(220, 38, 38, 0.8)'
+            }, {
+              offset: 1, color: 'rgba(220, 38, 38, 0.3)'
+            }]
+          }
+        },
+        emphasis: {
+          focus: 'series'
+        },
+        data: data.map(item => item.construction),
+        lineStyle: { color: '#dc2626', width: 2 },
+        itemStyle: { color: '#dc2626' }
+      },
+      {
+        name: 'Retail',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(22, 163, 74, 0.8)'
+            }, {
+              offset: 1, color: 'rgba(22, 163, 74, 0.3)'
+            }]
+          }
+        },
+        emphasis: {
+          focus: 'series'
+        },
+        data: data.map(item => item.retail),
+        lineStyle: { color: '#16a34a', width: 2 },
+        itemStyle: { color: '#16a34a' }
+      },
+      {
+        name: 'Transport',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(202, 138, 4, 0.8)'
+            }, {
+              offset: 1, color: 'rgba(202, 138, 4, 0.3)'
+            }]
+          }
+        },
+        emphasis: {
+          focus: 'series'
+        },
+        data: data.map(item => item.transport),
+        lineStyle: { color: '#ca8a04', width: 2 },
+        itemStyle: { color: '#ca8a04' }
+      },
+      {
+        name: 'Finance',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(124, 58, 237, 0.8)'
+            }, {
+              offset: 1, color: 'rgba(124, 58, 237, 0.3)'
+            }]
+          }
+        },
+        emphasis: {
+          focus: 'series'
+        },
+        data: data.map(item => item.finance),
+        lineStyle: { color: '#7c3aed', width: 2 },
+        itemStyle: { color: '#7c3aed' }
+      },
+      {
+        name: 'Other',
+        type: 'line',
+        stack: 'Total',
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(219, 39, 119, 0.8)'
+            }, {
+              offset: 1, color: 'rgba(219, 39, 119, 0.3)'
+            }]
+          }
+        },
+        emphasis: {
+          focus: 'series'
+        },
+        data: data.map(item => item.other),
+        lineStyle: { color: '#db2777', width: 2 },
+        itemStyle: { color: '#db2777' }
+      }
+    ]
+  });
+
   const getHorizontalBarChartOption = (data) => ({
     tooltip: {
       trigger: 'axis',
@@ -1224,6 +1432,13 @@ const Charts = ({ isEnglish }) => {
               style={{ height: '100%', width: '100%' }}
             />
           );
+        case "stackedLine":
+          return (
+            <ReactECharts
+              option={getStackedLineChartOption(maximizedChart.data)}
+              style={{ height: '100%', width: '100%' }}
+            />
+          );
         case "horizontalBar":
           return (
             <ReactECharts
@@ -1330,20 +1545,20 @@ const Charts = ({ isEnglish }) => {
                     )}
                   </ChartContainer>
 
-                  {/* Line Chart - Activity Trends */}
+                  {/* Stacked Line Chart - Activity Trends */}
                   <ChartContainer
                     title={currentTexts.activitySectors}
                     onMaximize={() =>
                       handleMaximizeChart(
                         activityData,
-                        "line",
+                        "stackedLine",
                         currentTexts.activitySectors
                       )
                     }
                     chartIndex={1}
                   >
                     <ReactECharts
-                      option={getLineChartOption(activityData)}
+                      option={getStackedLineChartOption(activityData)}
                       style={{ width: '100%', height: '300px' }}
                     />
                   </ChartContainer>
