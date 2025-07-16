@@ -1471,7 +1471,8 @@ const Charts = ({ isEnglish }) => {
                     fontSize: '12px',
                     fontWeight: '600',
                     color: '#6b7280',
-                    transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'none' : 'rotate(180deg)'
+                    transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'rotate(0deg)' : 'rotate(180deg)',
+                    display: 'inline-block'
                   }}>
                     {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
                   </span>
@@ -1646,7 +1647,8 @@ const Charts = ({ isEnglish }) => {
                             fontSize: '10px',
                             fontWeight: '600',
                             color: '#6b7280',
-                            transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'none' : 'rotate(180deg)'
+                            transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'rotate(0deg)' : 'rotate(180deg)',
+                            display: 'inline-block'
                           }}>
                             {legendPage + 1}/{Math.ceil(14 / legendItemsPerPage)}
                           </span>
