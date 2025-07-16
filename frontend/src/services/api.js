@@ -337,14 +337,11 @@ export const fetchEnterpriseNace = async (lang = "ge") => {
     }
     const data = await response.json();
 
-    // Filter out entries with null section_division and NACE_Rev_2_Code
-    const filteredData = data.filter(item => 
-      item.section_division !== null && 
-      item.NACE_Rev_2_Code !== null
-    );
+    // Keep all data, including unknown activities (null section_division)
+    const filteredData = data;
 
-    // Define the exact order from Highcharts legend
-    const sectionOrder = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S'];
+    // Define the exact order from Highcharts legend, including unknown activities
+    const sectionOrder = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'unknown'];
     
     // Transform the API response to the format needed by the chart
     const years = ["2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
@@ -354,7 +351,11 @@ export const fetchEnterpriseNace = async (lang = "ge") => {
       
       // Process sections in the exact order from legend
       sectionOrder.forEach(sectionCode => {
-        const item = filteredData.find(dataItem => dataItem.section_division === sectionCode);
+        const item = filteredData.find(dataItem => 
+          sectionCode === 'unknown' 
+            ? dataItem.section_division === null 
+            : dataItem.section_division === sectionCode
+        );
         if (item) {
           const activityName = getSectionName(sectionCode, lang);
           yearData[activityName] = item[year] || 0;

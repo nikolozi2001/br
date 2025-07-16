@@ -782,7 +782,6 @@ const Charts = ({ isEnglish }) => {
       series: allSeries.map(seriesConfig => ({
         name: seriesConfig.name,
         type: 'line',
-        stack: 'Total',
         emphasis: {
           focus: 'series'
         },
