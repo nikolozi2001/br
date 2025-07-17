@@ -1006,7 +1006,9 @@ const Charts = ({ isEnglish }) => {
           let result = `<strong>${params[0].name}</strong><br/>`;
           let total = 0;
           params.forEach((param) => {
-            result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()}<br/>`;
+            // Show full region name in tooltip, even if legend is truncated
+            const fullRegionName = param.seriesName;
+            result += `${param.marker}${fullRegionName}: ${param.value.toLocaleString()}<br/>`;
             total += param.value;
           });
           result += `<hr style="margin: 4px 0; border: none; border-top: 1px solid #ccc;"/>`;
@@ -1025,8 +1027,16 @@ const Charts = ({ isEnglish }) => {
         textStyle: {
           fontSize: 11,
           color: "#333",
+          width: 120,
+          overflow: "truncate",
         },
-        data: allDataKeys,
+        data: allDataKeys.map(key => {
+          // Truncate long Georgian region names
+          if (key.length > 15) {
+            return key.substring(0, 12) + "...";
+          }
+          return key;
+        }),
       },
       grid: {
         left: "3%",
@@ -1051,7 +1061,7 @@ const Charts = ({ isEnglish }) => {
         },
       },
       series: allDataKeys.map((key) => ({
-        name: key,
+        name: key, // Keep full name for tooltips and data mapping
         type: "bar",
         stack: "Total", // This makes it a stacked bar chart
         emphasis: {
