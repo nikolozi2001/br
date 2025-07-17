@@ -616,17 +616,189 @@ const Charts = ({ isEnglish }) => {
     { name: "საერთაშორისო", value: 2, color: "#ca8a04" },
   ];
 
-  const organizationGrowthData = [
-    { year: "2014", total: 27328 },
-    { year: "2015", total: 32060 },
-    { year: "2016", total: 30708 },
-    { year: "2017", total: 31211 },
-    { year: "2018", total: 38583 },
-    { year: "2019", total: 37742 },
-    { year: "2020", total: 34298 },
-    { year: "2021", total: 55132 },
-    { year: "2022", total: 57580 },
-    { year: "2023", total: 55132 },
+  // Regional distribution data for stacked bar chart
+  const regionalDistributionData = isEnglish ? [
+    { 
+      year: "2014", 
+      "Tbilisi": 15200, 
+      "Imereti": 4100, 
+      "Guria": 1200, 
+      "Samegrelo": 2800, 
+      "Adjara": 2300, 
+      "Kakheti": 1728 
+    },
+    { 
+      year: "2015", 
+      "Tbilisi": 18500, 
+      "Imereti": 4800, 
+      "Guria": 1400, 
+      "Samegrelo": 3200, 
+      "Adjara": 2600, 
+      "Kakheti": 1560 
+    },
+    { 
+      year: "2016", 
+      "Tbilisi": 17600, 
+      "Imereti": 4600, 
+      "Guria": 1350, 
+      "Samegrelo": 3100, 
+      "Adjara": 2500, 
+      "Kakheti": 1558 
+    },
+    { 
+      year: "2017", 
+      "Tbilisi": 18000, 
+      "Imereti": 4700, 
+      "Guria": 1380, 
+      "Samegrelo": 3150, 
+      "Adjara": 2550, 
+      "Kakheti": 1431 
+    },
+    { 
+      year: "2018", 
+      "Tbilisi": 22800, 
+      "Imereti": 5800, 
+      "Guria": 1680, 
+      "Samegrelo": 3900, 
+      "Adjara": 3100, 
+      "Kakheti": 1303 
+    },
+    { 
+      year: "2019", 
+      "Tbilisi": 22200, 
+      "Imereti": 5650, 
+      "Guria": 1630, 
+      "Samegrelo": 3800, 
+      "Adjara": 3000, 
+      "Kakheti": 1462 
+    },
+    { 
+      year: "2020", 
+      "Tbilisi": 20100, 
+      "Imereti": 5100, 
+      "Guria": 1480, 
+      "Samegrelo": 3450, 
+      "Adjara": 2700, 
+      "Kakheti": 1468 
+    },
+    { 
+      year: "2021", 
+      "Tbilisi": 32500, 
+      "Imereti": 8200, 
+      "Guria": 2400, 
+      "Samegrelo": 5600, 
+      "Adjara": 4300, 
+      "Kakheti": 2132 
+    },
+    { 
+      year: "2022", 
+      "Tbilisi": 34000, 
+      "Imereti": 8600, 
+      "Guria": 2500, 
+      "Samegrelo": 5800, 
+      "Adjara": 4500, 
+      "Kakheti": 2180 
+    },
+    { 
+      year: "2023", 
+      "Tbilisi": 32500, 
+      "Imereti": 8200, 
+      "Guria": 2400, 
+      "Samegrelo": 5600, 
+      "Adjara": 4300, 
+      "Kakheti": 2132 
+    },
+  ] : [
+    { 
+      year: "2014", 
+      "თბილისი": 15200, 
+      "იმერეთი": 4100, 
+      "გურია": 1200, 
+      "სამეგრელო": 2800, 
+      "აჭარა": 2300, 
+      "კახეთი": 1728 
+    },
+    { 
+      year: "2015", 
+      "თბილისი": 18500, 
+      "იმერეთი": 4800, 
+      "გურია": 1400, 
+      "სამეგრელო": 3200, 
+      "აჭარა": 2600, 
+      "კახეთი": 1560 
+    },
+    { 
+      year: "2016", 
+      "თბილისი": 17600, 
+      "იმერეთი": 4600, 
+      "გურია": 1350, 
+      "სამეგრელო": 3100, 
+      "აჭარა": 2500, 
+      "კახეთი": 1558 
+    },
+    { 
+      year: "2017", 
+      "თბილისი": 18000, 
+      "იმერეთი": 4700, 
+      "გურია": 1380, 
+      "სამეგრელო": 3150, 
+      "აჭარა": 2550, 
+      "კახეთი": 1431 
+    },
+    { 
+      year: "2018", 
+      "თბილისი": 22800, 
+      "იმერეთი": 5800, 
+      "გურია": 1680, 
+      "სამეგრელო": 3900, 
+      "აჭარა": 3100, 
+      "კახეთი": 1303 
+    },
+    { 
+      year: "2019", 
+      "თბილისი": 22200, 
+      "იმერეთი": 5650, 
+      "გურია": 1630, 
+      "სამეგრელო": 3800, 
+      "აჭარა": 3000, 
+      "კახეთი": 1462 
+    },
+    { 
+      year: "2020", 
+      "თბილისი": 20100, 
+      "იმერეთი": 5100, 
+      "გურია": 1480, 
+      "სამეგრელო": 3450, 
+      "აჭარა": 2700, 
+      "კახეთი": 1468 
+    },
+    { 
+      year: "2021", 
+      "თბილისი": 32500, 
+      "იმერეთი": 8200, 
+      "გურია": 2400, 
+      "სამეგრელო": 5600, 
+      "აჭარა": 4300, 
+      "კახეთი": 2132 
+    },
+    { 
+      year: "2022", 
+      "თბილისი": 34000, 
+      "იმერეთი": 8600, 
+      "გურია": 2500, 
+      "სამეგრელო": 5800, 
+      "აჭარა": 4500, 
+      "კახეთი": 2180 
+    },
+    { 
+      year: "2023", 
+      "თბილისი": 32500, 
+      "იმერეთი": 8200, 
+      "გურია": 2400, 
+      "სამეგრელო": 5600, 
+      "აჭარა": 4300, 
+      "კახეთი": 2132 
+    },
   ];
 
   // ECharts configuration helpers
@@ -928,6 +1100,110 @@ const Charts = ({ isEnglish }) => {
         data: data.map((item) => item[seriesConfig.dataKey] || 0),
         lineStyle: { color: seriesConfig.color, width: 2 },
         itemStyle: { color: seriesConfig.color },
+      })),
+    };
+  };
+
+  const getStackedBarChartOption = (data) => {
+    // If no data, return empty chart configuration
+    if (!data || data.length === 0) {
+      return {
+        title: {
+          text: isEnglish
+            ? "No data available"
+            : "მონაცემები არ არის ხელმისაწვდომი",
+          left: "center",
+          top: "middle",
+        },
+      };
+    }
+
+    // Get all available data keys from the first item (excluding 'year')
+    const sampleItem = data[0] || {};
+    const allDataKeys = Object.keys(sampleItem).filter((key) => key !== "year");
+
+    // Define colors for Georgian regions
+    const regionColors = {
+      "თბილისი": "#2563eb",
+      "იმერეთი": "#dc2626", 
+      "გურია": "#16a34a",
+      "სამეგრელო": "#ca8a04",
+      "აჭარა": "#7c3aed",
+      "კახეთი": "#db2777",
+      // English versions
+      "Tbilisi": "#2563eb",
+      "Imereti": "#dc2626",
+      "Guria": "#16a34a", 
+      "Samegrelo": "#ca8a04",
+      "Adjara": "#7c3aed",
+      "Kakheti": "#db2777",
+    };
+
+    return {
+      tooltip: {
+        trigger: "axis",
+        axisPointer: {
+          type: "shadow",
+        },
+        formatter: function (params) {
+          let result = `<strong>${params[0].name}</strong><br/>`;
+          let total = 0;
+          params.forEach((param) => {
+            result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()}<br/>`;
+            total += param.value;
+          });
+          result += `<hr style="margin: 4px 0; border: none; border-top: 1px solid #ccc;"/>`;
+          result += `<strong>${isEnglish ? 'Total' : 'სულ'}: ${total.toLocaleString()}</strong>`;
+          return result;
+        },
+      },
+      legend: {
+        orient: "vertical",
+        right: "2%",
+        top: "middle",
+        align: "left",
+        itemGap: 8,
+        itemWidth: 18,
+        itemHeight: 14,
+        textStyle: {
+          fontSize: 11,
+          color: "#333",
+        },
+        data: allDataKeys,
+      },
+      grid: {
+        left: "3%",
+        right: "25%",
+        bottom: "3%",
+        top: "5%",
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: data.map((item) => item.year),
+        axisTick: {
+          alignWithLabel: true,
+        },
+      },
+      yAxis: {
+        type: "value",
+        axisLabel: {
+          formatter: function (value) {
+            return value.toLocaleString();
+          },
+        },
+      },
+      series: allDataKeys.map((key) => ({
+        name: key,
+        type: "bar",
+        stack: "Total", // This makes it a stacked bar chart
+        emphasis: {
+          focus: "series",
+        },
+        data: data.map((item) => item[key] || 0),
+        itemStyle: { 
+          color: regionColors[key] || "#64748b", // Default color if region not found
+        },
       })),
     };
   };
@@ -1475,6 +1751,13 @@ const Charts = ({ isEnglish }) => {
               style={{ height: "100%", width: "100%" }}
             />
           );
+        case "stackedBar":
+          return (
+            <ReactECharts
+              option={getStackedBarChartOption(maximizedChart.data)}
+              style={{ height: "100%", width: "100%" }}
+            />
+          );
         case "area":
           return (
             <ReactECharts
@@ -1703,16 +1986,16 @@ const Charts = ({ isEnglish }) => {
                     title={currentTexts.regionalDistribution}
                     onMaximize={() =>
                       handleMaximizeChart(
-                        organizationGrowthData,
-                        "horizontalBar",
+                        regionalDistributionData,
+                        "stackedBar",
                         currentTexts.regionalDistribution
                       )
                     }
                     chartIndex={2}
                   >
                     <ReactECharts
-                      option={getHorizontalBarChartOption(
-                        organizationGrowthData
+                      option={getStackedBarChartOption(
+                        regionalDistributionData
                       )}
                       style={{ width: "100%", height: "300px" }}
                     />
