@@ -370,6 +370,48 @@ export const fetchEnterpriseNace = async (lang = "ge") => {
   }
 };
 
+// Enterprise Death NACE API
+export const fetchEnterpriseDeathNace = async (lang = "ge") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-death-nace?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+
+    // Keep all data, including unknown activities (null section_division)
+    const filteredData = data;
+
+    // Define the exact order from Highcharts legend, including unknown activities
+    const sectionOrder = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'unknown'];
+    
+    // Transform the API response to the format needed by the chart
+    const years = ["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
+    
+    return years.map(year => {
+      const yearData = { year };
+      
+      // Process sections in the exact order from legend
+      sectionOrder.forEach(sectionCode => {
+        const item = filteredData.find(dataItem => 
+          sectionCode === 'unknown' 
+            ? dataItem.section_division === null 
+            : dataItem.section_division === sectionCode
+        );
+        if (item) {
+          const activityName = getSectionName(sectionCode, lang);
+          yearData[activityName] = item[year] || 0;
+        }
+      });
+      
+      return yearData;
+    });
+  } catch (error) {
+    console.error("Error fetching enterprise death NACE data:", error);
+    return [];
+  }
+};
+
 // Helper function to convert NACE section codes to readable names
 // Using exact order and names from Highcharts legend
 const getSectionName = (sectionCode, lang = "ge") => {
@@ -462,6 +504,7 @@ export const API = {
   fetchReport10Data,
   fetchEnterpriseBirthDeath,
   fetchEnterpriseNace,
+  fetchEnterpriseDeathNace,
 };
 
 export default API;

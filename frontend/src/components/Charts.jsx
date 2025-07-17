@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import { Download, Maximize2, Printer, ChevronDown, FileText, RefreshCw, AlertCircle, ListRestart } from "lucide-react";
-import { fetchEnterpriseBirthDeath, fetchEnterpriseNace, getSectionColorMapping } from "../services/api";
+import { fetchEnterpriseBirthDeath, fetchEnterpriseNace, fetchEnterpriseDeathNace, getSectionColorMapping } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
 import "../styles/Charts.scss";
 
@@ -11,6 +11,8 @@ const Charts = ({ isEnglish }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [organizationsByYear, setOrganizationsByYear] = useState([]);
   const [activityData, setActivityData] = useState([]);
+  const [activityDataDeath, setActivityDataDeath] = useState([]);
+  const [isDeathData, setIsDeathData] = useState(false); // Toggle between birth and death data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -49,20 +51,23 @@ const Charts = ({ isEnglish }) => {
         setLoading(true);
         setError(null);
         
-        // Fetch both datasets in parallel
-        const [birthDeathData, naçeData] = await Promise.all([
+        // Fetch all datasets in parallel
+        const [birthDeathData, naçeData, deathNaçeData] = await Promise.all([
           fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge"),
-          fetchEnterpriseNace(isEnglish ? "en" : "ge")
+          fetchEnterpriseNace(isEnglish ? "en" : "ge"),
+          fetchEnterpriseDeathNace(isEnglish ? "en" : "ge")
         ]);
         
         setOrganizationsByYear(birthDeathData);
         setActivityData(naçeData);
+        setActivityDataDeath(deathNaçeData);
         setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error("Error loading data:", error);
         setError(error.message || "Failed to load data");
         setOrganizationsByYear([]);
         setActivityData([]);
+        setActivityDataDeath([]);
       } finally {
         setLoading(false);
       }
@@ -105,7 +110,7 @@ const Charts = ({ isEnglish }) => {
       organizationsByYear:
         "საწარმოთა დაბადება და გარდაცვალება 2014-2023 წლებში",
       regionalDistribution: "რეგისტრირებული ორგანიზაციები რეგიონების მიხედვით",
-      activitySectors: "ორგანიზაციები ეკონომიკური საქმიანობის მიხედვით",
+      activitySectors: "საწარმოთა ეკონომიკური საქმიანობის სახეები",
       ownershipTypes: "ორგანიზაციები საკუთრების ფორმების მიხედვით",
       legalForms: "2023 წლის ორგანიზაციები სამართლებრივი ფორმების მიხედვით",
       organizationGrowth: "ორგანიზაციების ზრდის დინამიკა (%)",
@@ -116,7 +121,7 @@ const Charts = ({ isEnglish }) => {
       title: "Statistical Reports",
       organizationsByYear: "Organizations Birth and Death 2014-2023",
       regionalDistribution: "Organizations by Regions",
-      activitySectors: "Organizations by Economic Activity",
+      activitySectors: "Organizations by Economic Activity Sectors",
       ownershipTypes: "Organizations by Ownership Types",
       legalForms: "2023 Organizations by Legal Forms",
       organizationGrowth: "Organization Growth Dynamics (%)",
@@ -126,6 +131,25 @@ const Charts = ({ isEnglish }) => {
   };
 
   const currentTexts = isEnglish ? texts.english : texts.georgian;
+
+  // Dynamic titles that show current data type
+  const getActivitySectorsTitle = () => {
+    const baseTitle = currentTexts.activitySectors;
+    const dataType = isDeathData 
+      ? (isEnglish ? " (Deaths)" : " (გარდაცვალება)")
+      : (isEnglish ? " (Births)" : " (დაბადება)");
+    return baseTitle + dataType;
+  };
+
+  const getLegalFormsTitle = () => {
+    const baseTitle = isEnglish
+      ? "Organizations by Legal Forms"
+      : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით";
+    const dataType = isDeathData 
+      ? (isEnglish ? " (Deaths)" : " (გარდაცვალება)")
+      : (isEnglish ? " (Births)" : " (დაბადება)");
+    return baseTitle + dataType;
+  };
 
   const handleLegendClick = React.useCallback((dataKey) => {
     setHiddenDataKeys(prev => {
@@ -140,15 +164,27 @@ const Charts = ({ isEnglish }) => {
   }, []);
 
   const handleListRestart = React.useCallback(() => {
+    // Toggle between birth and death data
+    setIsDeathData(prev => !prev);
+    
     // Reset legend page to 0 (first page)
     setLegendPage(0);
     
     // Clear any hidden data keys (show all legend items)
     setHiddenDataKeys(new Set());
     
-    // Optional: Show a brief feedback message
-    console.log(isEnglish ? "Chart reset to initial state" : "დიაგრამა დაბრუნდა საწყის მდგომარეობაში");
-  }, [isEnglish]);
+    // Show feedback message
+    const newMode = !isDeathData ? "death" : "birth";
+    const message = isEnglish 
+      ? `Switched to ${newMode} data` 
+      : `გადავრთეთ ${newMode === "death" ? "გარდაცვალების" : "დაბადების"} მონაცემებზე`;
+    console.log(message);
+  }, [isEnglish, isDeathData]);
+
+  // Get current activity data based on toggle state
+  const getCurrentActivityData = React.useCallback(() => {
+    return isDeathData ? activityDataDeath : activityData;
+  }, [isDeathData, activityData, activityDataDeath]);
 
   const onEChartsLegendSelectChanged = React.useCallback((params) => {
     const { name } = params;
@@ -698,10 +734,11 @@ const Charts = ({ isEnglish }) => {
 
   // Helper function to check if there are more legend pages
   const hasMoreLegendPages = (currentPage, itemsPerPage = 12) => {
-    if (!activityData || activityData.length === 0) return false;
+    const currentData = getCurrentActivityData();
+    if (!currentData || currentData.length === 0) return false;
     
     // Get total number of series from activity data (excluding 'year' key)
-    const sampleItem = activityData[0] || {};
+    const sampleItem = currentData[0] || {};
     const totalSeries = Object.keys(sampleItem).filter(key => key !== 'year').length;
     const endIndex = (currentPage + 1) * itemsPerPage;
     return endIndex < totalSeries;
@@ -1027,7 +1064,10 @@ const Charts = ({ isEnglish }) => {
               <button 
                 className="chart-list-restart" 
                 onClick={handleListRestart}
-                title={isEnglish ? "Reset chart to initial state" : "დიაგრამის საწყის მდგომარეობაში დაბრუნება"}
+                title={isEnglish 
+                  ? `Toggle to ${isDeathData ? 'birth' : 'death'} data`
+                  : `გადართვა ${isDeathData ? 'დაბადების' : 'გარდაცვალების'} მონაცემებზე`
+                }
               >
                 <ListRestart size={16} />
               </button>
@@ -1474,19 +1514,19 @@ const Charts = ({ isEnglish }) => {
 
                   {/* Stacked Line Chart - Activity Trends */}
                   <ChartContainer
-                    title={currentTexts.activitySectors}
+                    title={getActivitySectorsTitle()}
                     onMaximize={() =>
                       handleMaximizeChart(
-                        activityData,
+                        getCurrentActivityData(),
                         "stackedLine",
-                        currentTexts.activitySectors
+                        getActivitySectorsTitle()
                       )
                     }
                     chartIndex={1}
                   >
                     <div style={{ position: 'relative' }}>
                       <ReactECharts
-                        option={getStackedLineChartOption(activityData, legendPage, legendItemsPerPage)}
+                        option={getStackedLineChartOption(getCurrentActivityData(), legendPage, legendItemsPerPage)}
                         style={{ width: '100%', height: '300px' }}
                       />
                       {(legendPage > 0 || hasMoreLegendPages(legendPage, legendItemsPerPage)) && (
@@ -1535,7 +1575,7 @@ const Charts = ({ isEnglish }) => {
                             transform: hasMoreLegendPages(legendPage, legendItemsPerPage) ? 'rotate(0deg)' : 'rotate(180deg)',
                             display: 'inline-block'
                           }}>
-                            {legendPage + 1}/{Math.ceil((activityData && activityData.length > 0 ? Object.keys(activityData[0]).filter(key => key !== 'year').length : 0) / legendItemsPerPage)}
+                            {legendPage + 1}/{Math.ceil((getCurrentActivityData() && getCurrentActivityData().length > 0 ? Object.keys(getCurrentActivityData()[0]).filter(key => key !== 'year').length : 0) / legendItemsPerPage)}
                           </span>
                           <ChevronDown size={12} strokeWidth={2} style={{ color: '#9ca3af' }} />
                         </button>
@@ -1563,24 +1603,18 @@ const Charts = ({ isEnglish }) => {
 
                   {/* Stacked Area Chart */}
                   <ChartContainer
-                    title={
-                      isEnglish
-                        ? "Organizations by Legal Forms"
-                        : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით"
-                    }
+                    title={getLegalFormsTitle()}
                     onMaximize={() =>
                       handleMaximizeChart(
-                        activityData,
+                        getCurrentActivityData(),
                         "area",
-                        isEnglish
-                          ? "Organizations by Legal Forms"
-                          : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით"
+                        getLegalFormsTitle()
                       )
                     }
                     chartIndex={3}
                   >
                     <ReactECharts
-                      option={getAreaChartOption(activityData)}
+                      option={getAreaChartOption(getCurrentActivityData())}
                       style={{ width: '100%', height: '300px' }}
                     />
                   </ChartContainer>
