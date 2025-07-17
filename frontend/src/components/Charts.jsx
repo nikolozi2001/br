@@ -14,6 +14,8 @@ import {
   fetchEnterpriseBirthDeath,
   fetchEnterpriseNace,
   fetchEnterpriseDeathNace,
+  fetchEnterpriseBirthRegion,
+  fetchEnterpriseDeathRegion,
   getSectionColorMapping,
 } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
@@ -26,6 +28,8 @@ const Charts = ({ isEnglish }) => {
   const [organizationsByYear, setOrganizationsByYear] = useState([]);
   const [activityData, setActivityData] = useState([]);
   const [activityDataDeath, setActivityDataDeath] = useState([]);
+  const [regionalData, setRegionalData] = useState([]);
+  const [regionalDataDeath, setRegionalDataDeath] = useState([]);
   const [isDeathData, setIsDeathData] = useState(false); // Toggle between birth and death data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,15 +73,19 @@ const Charts = ({ isEnglish }) => {
         setError(null);
 
         // Fetch all datasets in parallel
-        const [birthDeathData, naçeData, deathNaçeData] = await Promise.all([
+        const [birthDeathData, naçeData, deathNaçeData, birthRegionData, deathRegionData] = await Promise.all([
           fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge"),
           fetchEnterpriseNace(isEnglish ? "en" : "ge"),
           fetchEnterpriseDeathNace(isEnglish ? "en" : "ge"),
+          fetchEnterpriseBirthRegion(isEnglish ? "en" : "ge"),
+          fetchEnterpriseDeathRegion(isEnglish ? "en" : "ge"),
         ]);
 
         setOrganizationsByYear(birthDeathData);
         setActivityData(naçeData);
         setActivityDataDeath(deathNaçeData);
+        setRegionalData(birthRegionData);
+        setRegionalDataDeath(deathRegionData);
         setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error("Error loading data:", error);
@@ -85,6 +93,8 @@ const Charts = ({ isEnglish }) => {
         setOrganizationsByYear([]);
         setActivityData([]);
         setActivityDataDeath([]);
+        setRegionalData([]);
+        setRegionalDataDeath([]);
       } finally {
         setLoading(false);
       }
@@ -176,6 +186,18 @@ const Charts = ({ isEnglish }) => {
     return baseTitle + dataType;
   };
 
+  const getRegionalDistributionTitle = () => {
+    const baseTitle = currentTexts.regionalDistribution;
+    const dataType = isDeathData
+      ? isEnglish
+        ? " (Deaths)"
+        : " (გარდაცვალება)"
+      : isEnglish
+      ? " (Births)"
+      : " (დაბადება)";
+    return baseTitle + dataType;
+  };
+
   const handleLegendClick = React.useCallback((dataKey) => {
     setHiddenDataKeys((prev) => {
       const newSet = new Set(prev);
@@ -203,6 +225,11 @@ const Charts = ({ isEnglish }) => {
   const getCurrentActivityData = React.useCallback(() => {
     return isDeathData ? activityDataDeath : activityData;
   }, [isDeathData, activityData, activityDataDeath]);
+
+  // Get current regional data based on toggle state
+  const getCurrentRegionalData = React.useCallback(() => {
+    return isDeathData ? regionalDataDeath : regionalData;
+  }, [isDeathData, regionalData, regionalDataDeath]);
 
   const onEChartsLegendSelectChanged = React.useCallback(
     (params) => {
@@ -616,191 +643,6 @@ const Charts = ({ isEnglish }) => {
     { name: "საერთაშორისო", value: 2, color: "#ca8a04" },
   ];
 
-  // Regional distribution data for stacked bar chart
-  const regionalDistributionData = isEnglish ? [
-    { 
-      year: "2014", 
-      "Tbilisi": 15200, 
-      "Imereti": 4100, 
-      "Guria": 1200, 
-      "Samegrelo": 2800, 
-      "Adjara": 2300, 
-      "Kakheti": 1728 
-    },
-    { 
-      year: "2015", 
-      "Tbilisi": 18500, 
-      "Imereti": 4800, 
-      "Guria": 1400, 
-      "Samegrelo": 3200, 
-      "Adjara": 2600, 
-      "Kakheti": 1560 
-    },
-    { 
-      year: "2016", 
-      "Tbilisi": 17600, 
-      "Imereti": 4600, 
-      "Guria": 1350, 
-      "Samegrelo": 3100, 
-      "Adjara": 2500, 
-      "Kakheti": 1558 
-    },
-    { 
-      year: "2017", 
-      "Tbilisi": 18000, 
-      "Imereti": 4700, 
-      "Guria": 1380, 
-      "Samegrelo": 3150, 
-      "Adjara": 2550, 
-      "Kakheti": 1431 
-    },
-    { 
-      year: "2018", 
-      "Tbilisi": 22800, 
-      "Imereti": 5800, 
-      "Guria": 1680, 
-      "Samegrelo": 3900, 
-      "Adjara": 3100, 
-      "Kakheti": 1303 
-    },
-    { 
-      year: "2019", 
-      "Tbilisi": 22200, 
-      "Imereti": 5650, 
-      "Guria": 1630, 
-      "Samegrelo": 3800, 
-      "Adjara": 3000, 
-      "Kakheti": 1462 
-    },
-    { 
-      year: "2020", 
-      "Tbilisi": 20100, 
-      "Imereti": 5100, 
-      "Guria": 1480, 
-      "Samegrelo": 3450, 
-      "Adjara": 2700, 
-      "Kakheti": 1468 
-    },
-    { 
-      year: "2021", 
-      "Tbilisi": 32500, 
-      "Imereti": 8200, 
-      "Guria": 2400, 
-      "Samegrelo": 5600, 
-      "Adjara": 4300, 
-      "Kakheti": 2132 
-    },
-    { 
-      year: "2022", 
-      "Tbilisi": 34000, 
-      "Imereti": 8600, 
-      "Guria": 2500, 
-      "Samegrelo": 5800, 
-      "Adjara": 4500, 
-      "Kakheti": 2180 
-    },
-    { 
-      year: "2023", 
-      "Tbilisi": 32500, 
-      "Imereti": 8200, 
-      "Guria": 2400, 
-      "Samegrelo": 5600, 
-      "Adjara": 4300, 
-      "Kakheti": 2132 
-    },
-  ] : [
-    { 
-      year: "2014", 
-      "თბილისი": 15200, 
-      "იმერეთი": 4100, 
-      "გურია": 1200, 
-      "სამეგრელო": 2800, 
-      "აჭარა": 2300, 
-      "კახეთი": 1728 
-    },
-    { 
-      year: "2015", 
-      "თბილისი": 18500, 
-      "იმერეთი": 4800, 
-      "გურია": 1400, 
-      "სამეგრელო": 3200, 
-      "აჭარა": 2600, 
-      "კახეთი": 1560 
-    },
-    { 
-      year: "2016", 
-      "თბილისი": 17600, 
-      "იმერეთი": 4600, 
-      "გურია": 1350, 
-      "სამეგრელო": 3100, 
-      "აჭარა": 2500, 
-      "კახეთი": 1558 
-    },
-    { 
-      year: "2017", 
-      "თბილისი": 18000, 
-      "იმერეთი": 4700, 
-      "გურია": 1380, 
-      "სამეგრელო": 3150, 
-      "აჭარა": 2550, 
-      "კახეთი": 1431 
-    },
-    { 
-      year: "2018", 
-      "თბილისი": 22800, 
-      "იმერეთი": 5800, 
-      "გურია": 1680, 
-      "სამეგრელო": 3900, 
-      "აჭარა": 3100, 
-      "კახეთი": 1303 
-    },
-    { 
-      year: "2019", 
-      "თბილისი": 22200, 
-      "იმერეთი": 5650, 
-      "გურია": 1630, 
-      "სამეგრელო": 3800, 
-      "აჭარა": 3000, 
-      "კახეთი": 1462 
-    },
-    { 
-      year: "2020", 
-      "თბილისი": 20100, 
-      "იმერეთი": 5100, 
-      "გურია": 1480, 
-      "სამეგრელო": 3450, 
-      "აჭარა": 2700, 
-      "კახეთი": 1468 
-    },
-    { 
-      year: "2021", 
-      "თბილისი": 32500, 
-      "იმერეთი": 8200, 
-      "გურია": 2400, 
-      "სამეგრელო": 5600, 
-      "აჭარა": 4300, 
-      "კახეთი": 2132 
-    },
-    { 
-      year: "2022", 
-      "თბილისი": 34000, 
-      "იმერეთი": 8600, 
-      "გურია": 2500, 
-      "სამეგრელო": 5800, 
-      "აჭარა": 4500, 
-      "კახეთი": 2180 
-    },
-    { 
-      year: "2023", 
-      "თბილისი": 32500, 
-      "იმერეთი": 8200, 
-      "გურია": 2400, 
-      "სამეგრელო": 5600, 
-      "აჭარა": 4300, 
-      "კახეთი": 2132 
-    },
-  ];
-
   // ECharts configuration helpers
   const getBarChartOption = (data) => ({
     tooltip: {
@@ -1122,21 +964,36 @@ const Charts = ({ isEnglish }) => {
     const sampleItem = data[0] || {};
     const allDataKeys = Object.keys(sampleItem).filter((key) => key !== "year");
 
-    // Define colors for Georgian regions
+    // Define colors for Georgian regions - mapping API field names
     const regionColors = {
-      "თბილისი": "#2563eb",
-      "იმერეთი": "#dc2626", 
-      "გურია": "#16a34a",
-      "სამეგრელო": "#ca8a04",
-      "აჭარა": "#7c3aed",
-      "კახეთი": "#db2777",
-      // English versions
+      // English API field names
       "Tbilisi": "#2563eb",
-      "Imereti": "#dc2626",
-      "Guria": "#16a34a", 
-      "Samegrelo": "#ca8a04",
-      "Adjara": "#7c3aed",
+      "Abkhazia_A_R": "#dc2626", 
+      "Adjara": "#16a34a",
+      "Guria": "#ca8a04",
+      "Imereti": "#7c3aed",
       "Kakheti": "#db2777",
+      "Mtskheta_Mtianeti": "#f59e0b",
+      "Racha_Lechkhumi_and_Kvemo_Svaneti": "#84cc16",
+      "Samegrelo_Zemo_Svaneti": "#06b6d4",
+      "Samtskhe_Javakheti": "#8b5cf6",
+      "Kvemo_Kartli": "#f97316",
+      "Shida_Kartli": "#ef4444",
+      "Unknown": "#64748b",
+      // Georgian translations (if API returns Georgian names)
+      "თბილისი": "#2563eb",
+      "აფხაზეთის ა.რ.": "#dc2626",
+      "აჭარის ა.რ.": "#16a34a",
+      "გურია": "#ca8a04",
+      "იმერეთი": "#7c3aed",
+      "კახეთი": "#db2777",
+      "მცხეთა-მთიანეთი": "#f59e0b",
+      "რაჭა-ლეჩხუმი და ქვემო სვანეთი": "#84cc16",
+      "სამეგრელო-ზემო სვანეთი": "#06b6d4",
+      "სამცხე-ჯავახეთი": "#8b5cf6",
+      "ქვემო ქართლი": "#f97316",
+      "შიდა ქართლი": "#ef4444",
+      "უცნობი": "#64748b",
     };
 
     return {
@@ -1983,19 +1840,19 @@ const Charts = ({ isEnglish }) => {
 
                   {/* Stacked Bar Chart - Regional Distribution */}
                   <ChartContainer
-                    title={currentTexts.regionalDistribution}
+                    title={getRegionalDistributionTitle()}
                     onMaximize={() =>
                       handleMaximizeChart(
-                        regionalDistributionData,
+                        getCurrentRegionalData(),
                         "stackedBar",
-                        currentTexts.regionalDistribution
+                        getRegionalDistributionTitle()
                       )
                     }
                     chartIndex={2}
                   >
                     <ReactECharts
                       option={getStackedBarChartOption(
-                        regionalDistributionData
+                        getCurrentRegionalData()
                       )}
                       style={{ width: "100%", height: "300px" }}
                     />

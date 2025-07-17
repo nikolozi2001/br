@@ -485,6 +485,36 @@ export const getSectionColorMapping = () => {
   ];
 };
 
+// Fetch Enterprise Birth by Regions
+export const fetchEnterpriseBirthRegion = async (lang = 'ge') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-birth-region?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    return data.recordset || data;
+  } catch (error) {
+    console.error("Error fetching enterprise birth region data:", error);
+    return [];
+  }
+};
+
+// Fetch Enterprise Death by Regions
+export const fetchEnterpriseDeathRegion = async (lang = 'ge') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-death-region?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    return data.recordset || data;
+  } catch (error) {
+    console.error("Error fetching enterprise death region data:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -505,6 +535,8 @@ export const API = {
   fetchEnterpriseBirthDeath,
   fetchEnterpriseNace,
   fetchEnterpriseDeathNace,
+  fetchEnterpriseBirthRegion,
+  fetchEnterpriseDeathRegion,
 };
 
 export default API;

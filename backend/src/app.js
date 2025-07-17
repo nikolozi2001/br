@@ -30,6 +30,8 @@ const report10Router = require('./routes/report10');
 const enterpriseBirthDeathRouter = require('./routes/enterprise_birth_death');
 const enterpriseNaceRouter = require('./routes/enterprice_nace');
 const enterpriseDeathNaceRouter = require('./routes/enterprice_death_nace');
+const enterpriseBirthRegionRouter = require('./routes/enterprice_birth_region');
+const enterpriseDeathRegionRouter = require('./routes/enterprice_death_region');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -51,6 +53,8 @@ app.use('/api/report10', report10Router);
 app.use('/api/enterprise-birth-death', enterpriseBirthDeathRouter);
 app.use('/api/enterprise-nace', enterpriseNaceRouter);
 app.use('/api/enterprise-death-nace', enterpriseDeathNaceRouter);
+app.use('/api/enterprise-birth-region', enterpriseBirthRegionRouter);
+app.use('/api/enterprise-death-region', enterpriseDeathRegionRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
