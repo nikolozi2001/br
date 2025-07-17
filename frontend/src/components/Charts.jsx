@@ -964,6 +964,23 @@ const Charts = ({ isEnglish }) => {
     const sampleItem = data[0] || {};
     const allDataKeys = Object.keys(sampleItem).filter((key) => key !== "year");
 
+    // Translation mapping for Georgian region names
+    const regionTranslations = {
+      "Tbilisi": isEnglish ? "Tbilisi" : "თბილისი",
+      "Abkhazia_A_R": isEnglish ? "Abkhazia A.R." : "აფხაზეთის ა.რ.",
+      "Adjara": isEnglish ? "Adjara" : "აჭარის ა.რ.",
+      "Guria": isEnglish ? "Guria" : "გურია",
+      "Imereti": isEnglish ? "Imereti" : "იმერეთი",
+      "Kakheti": isEnglish ? "Kakheti" : "კახეთი",
+      "Mtskheta_Mtianeti": isEnglish ? "Mtskheta-Mtianeti" : "მცხეთა-მთიანეთი",
+      "Racha_Lechkhumi_and_Kvemo_Svaneti": isEnglish ? "Racha-Lechkhumi and Kvemo Svaneti" : "რაჭა-ლეჩხუმი და ქვემო სვანეთი",
+      "Samegrelo_Zemo_Svaneti": isEnglish ? "Samegrelo-Zemo Svaneti" : "სამეგრელო-ზემო სვანეთი",
+      "Samtskhe_Javakheti": isEnglish ? "Samtskhe-Javakheti" : "სამცხე-ჯავახეთი",
+      "Kvemo_Kartli": isEnglish ? "Kvemo Kartli" : "ქვემო ქართლი",
+      "Shida_Kartli": isEnglish ? "Shida Kartli" : "შიდა ქართლი",
+      "Unknown": isEnglish ? "Unknown" : "უცნობი",
+    };
+
     // Define colors for Georgian regions - mapping API field names
     const regionColors = {
       // English API field names
@@ -980,20 +997,6 @@ const Charts = ({ isEnglish }) => {
       "Kvemo_Kartli": "#f97316",
       "Shida_Kartli": "#ef4444",
       "Unknown": "#64748b",
-      // Georgian translations (if API returns Georgian names)
-      "თბილისი": "#2563eb",
-      "აფხაზეთის ა.რ.": "#dc2626",
-      "აჭარის ა.რ.": "#16a34a",
-      "გურია": "#ca8a04",
-      "იმერეთი": "#7c3aed",
-      "კახეთი": "#db2777",
-      "მცხეთა-მთიანეთი": "#f59e0b",
-      "რაჭა-ლეჩხუმი და ქვემო სვანეთი": "#84cc16",
-      "სამეგრელო-ზემო სვანეთი": "#06b6d4",
-      "სამცხე-ჯავახეთი": "#8b5cf6",
-      "ქვემო ქართლი": "#f97316",
-      "შიდა ქართლი": "#ef4444",
-      "უცნობი": "#64748b",
     };
 
     return {
@@ -1006,9 +1009,8 @@ const Charts = ({ isEnglish }) => {
           let result = `<strong>${params[0].name}</strong><br/>`;
           let total = 0;
           params.forEach((param) => {
-            // Show full region name in tooltip, even if legend is truncated
-            const fullRegionName = param.seriesName;
-            result += `${param.marker}${fullRegionName}: ${param.value.toLocaleString()}<br/>`;
+            // Use series name directly (already translated and truncated)
+            result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()}<br/>`;
             total += param.value;
           });
           result += `<hr style="margin: 4px 0; border: none; border-top: 1px solid #ccc;"/>`;
@@ -1031,11 +1033,12 @@ const Charts = ({ isEnglish }) => {
           overflow: "truncate",
         },
         data: allDataKeys.map(key => {
-          // Truncate long Georgian region names
-          if (key.length > 15) {
-            return key.substring(0, 12) + "...";
+          // Get translated name and truncate if necessary
+          const translatedName = regionTranslations[key] || key;
+          if (translatedName.length > 15) {
+            return translatedName.substring(0, 12) + "...";
           }
-          return key;
+          return translatedName;
         }),
       },
       grid: {
@@ -1060,18 +1063,26 @@ const Charts = ({ isEnglish }) => {
           },
         },
       },
-      series: allDataKeys.map((key) => ({
-        name: key, // Keep full name for tooltips and data mapping
-        type: "bar",
-        stack: "Total", // This makes it a stacked bar chart
-        emphasis: {
-          focus: "series",
-        },
-        data: data.map((item) => item[key] || 0),
-        itemStyle: { 
-          color: regionColors[key] || "#64748b", // Default color if region not found
-        },
-      })),
+      series: allDataKeys.map((key) => {
+        // Get translated name and truncate if necessary
+        const translatedName = regionTranslations[key] || key;
+        const displayName = translatedName.length > 15 
+          ? translatedName.substring(0, 12) + "..." 
+          : translatedName;
+        
+        return {
+          name: displayName, // Use translated and truncated name to match legend
+          type: "bar",
+          stack: "Total", // This makes it a stacked bar chart
+          emphasis: {
+            focus: "series",
+          },
+          data: data.map((item) => item[key] || 0),
+          itemStyle: { 
+            color: regionColors[key] || "#64748b", // Default color if region not found
+          },
+        };
+      }),
     };
   };
 
