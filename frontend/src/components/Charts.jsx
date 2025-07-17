@@ -1007,13 +1007,25 @@ const Charts = ({ isEnglish }) => {
         },
         formatter: function (params) {
           const year = params.name;
-          const region = params.seriesName;
+          const seriesName = params.seriesName;
           const value = params.value;
+          
+          // Find the original key for this series to get the full translated name
+          const originalKey = allDataKeys.find(key => {
+            const translatedName = regionTranslations[key] || key;
+            const displayName = translatedName.length > 15 
+              ? translatedName.substring(0, 12) + "..." 
+              : translatedName;
+            return displayName === seriesName;
+          });
+          
+          // Get the full region name (not truncated)
+          const fullRegionName = originalKey ? (regionTranslations[originalKey] || originalKey) : seriesName;
           
           return `
             <div style="padding: 8px; font-size: 12px; line-height: 1.5;">
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${region}</div>
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${fullRegionName}</div>
               <div><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${value.toLocaleString()}</div>
             </div>
           `;
