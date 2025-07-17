@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
-import { Download, Maximize2, Printer, ChevronDown, FileText, RefreshCw, AlertCircle } from "lucide-react";
+import { Download, Maximize2, Printer, ChevronDown, FileText, RefreshCw, AlertCircle, ListRestart } from "lucide-react";
 import { fetchEnterpriseBirthDeath, fetchEnterpriseNace, getSectionColorMapping } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
 import "../styles/Charts.scss";
@@ -138,6 +138,17 @@ const Charts = ({ isEnglish }) => {
       return newSet;
     });
   }, []);
+
+  const handleListRestart = React.useCallback(() => {
+    // Reset legend page to 0 (first page)
+    setLegendPage(0);
+    
+    // Clear any hidden data keys (show all legend items)
+    setHiddenDataKeys(new Set());
+    
+    // Optional: Show a brief feedback message
+    console.log(isEnglish ? "Chart reset to initial state" : "დიაგრამა დაბრუნდა საწყის მდგომარეობაში");
+  }, [isEnglish]);
 
   const onEChartsLegendSelectChanged = React.useCallback((params) => {
     const { name } = params;
@@ -998,17 +1009,30 @@ const Charts = ({ isEnglish }) => {
     }]
   });
 
-  const ChartContainer = ({ title, children, onMaximize, chartIndex }) => (
-    <div
-      className="chart-container"
-      ref={(el) =>
-        el && (window.chartRefs = { ...window.chartRefs, [chartIndex]: el })
-      }
-    >
-      <div className="chart-header">
-        <h3 className="chart-title">{title}</h3>
-        <div className="chart-actions">
-          <div className="chart-action-dropdown">
+  const ChartContainer = ({ title, children, onMaximize, chartIndex }) => {
+    // Show ListRestart button only for charts 2, 3, 4, and 6 (using 1-based indexing)
+    const showListRestart = [1, 2, 3, 5].includes(chartIndex);
+    
+    return (
+      <div
+        className="chart-container"
+        ref={(el) =>
+          el && (window.chartRefs = { ...window.chartRefs, [chartIndex]: el })
+        }
+      >
+        <div className="chart-header">
+          <h3 className="chart-title">{title}</h3>
+          <div className="chart-actions">
+            {showListRestart && (
+              <button 
+                className="chart-list-restart" 
+                onClick={handleListRestart}
+                title={isEnglish ? "Reset chart to initial state" : "დიაგრამის საწყის მდგომარეობაში დაბრუნება"}
+              >
+                <ListRestart size={16} />
+              </button>
+            )}
+            <div className="chart-action-dropdown">
             <button
               className="chart-action-btn dropdown-trigger"
               onClick={() => toggleDropdown(chartIndex)}
@@ -1254,7 +1278,8 @@ const Charts = ({ isEnglish }) => {
       </div>
       <div className="chart-content">{children}</div>
     </div>
-  );
+    );
+  };
 
   const MaximizedChartModal = () => {
     if (!maximizedChart) return null;
