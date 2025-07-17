@@ -1025,7 +1025,7 @@ const Charts = ({ isEnglish }) => {
           return `
             <div style="padding: 8px; font-size: 12px; line-height: 1.5;">
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${fullRegionName}</div>
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${fullRegionName} -</strong> ${value.toLocaleString()}</div>
               <div><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${value.toLocaleString()}</div>
             </div>
           `;
