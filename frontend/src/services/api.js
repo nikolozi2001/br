@@ -493,7 +493,14 @@ export const fetchEnterpriseBirthRegion = async (lang = 'ge') => {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    return data.recordset || data;
+    const rawData = data.recordset || data;
+    
+    // Filter out "Unknown" region data
+    return rawData.map(item => {
+      const filteredItem = { ...item };
+      delete filteredItem.Unknown;
+      return filteredItem;
+    });
   } catch (error) {
     console.error("Error fetching enterprise birth region data:", error);
     return [];
@@ -508,7 +515,14 @@ export const fetchEnterpriseDeathRegion = async (lang = 'ge') => {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    return data.recordset || data;
+    const rawData = data.recordset || data;
+    
+    // Filter out "Unknown" region data
+    return rawData.map(item => {
+      const filteredItem = { ...item };
+      delete filteredItem.Unknown;
+      return filteredItem;
+    });
   } catch (error) {
     console.error("Error fetching enterprise death region data:", error);
     return [];

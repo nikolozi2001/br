@@ -1018,15 +1018,27 @@ const Charts = ({ isEnglish }) => {
               : translatedName;
             return displayName === seriesName;
           });
-          
+
           // Get the full region name (not truncated)
           const fullRegionName = originalKey ? (regionTranslations[originalKey] || originalKey) : seriesName;
+          
+          // Calculate total for the year by summing all region values
+          const yearData = data.find(item => String(item.year) === String(year));
+          let yearTotal = 0;
+          if (yearData) {
+            allDataKeys.forEach(key => {
+              const regionValue = yearData[key];
+              if (regionValue !== undefined && regionValue !== null) {
+                yearTotal += Number(regionValue) || 0;
+              }
+            });
+          }
           
           return `
             <div style="padding: 8px; font-size: 12px; line-height: 1.5;">
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${fullRegionName} -</strong> ${value.toLocaleString()}</div>
-              <div><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${value.toLocaleString()}</div>
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${fullRegionName}: ${value.toLocaleString()}</div>
+              <div><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${yearTotal.toLocaleString()}</div>
             </div>
           `;
         },
