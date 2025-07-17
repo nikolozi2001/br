@@ -1001,21 +1001,22 @@ const Charts = ({ isEnglish }) => {
 
     return {
       tooltip: {
-        trigger: "axis",
+        trigger: "item",
         axisPointer: {
           type: "shadow",
         },
         formatter: function (params) {
-          let result = `<strong>${params[0].name}</strong><br/>`;
-          let total = 0;
-          params.forEach((param) => {
-            // Use series name directly (already translated and truncated)
-            result += `${param.marker}${param.seriesName}: ${param.value.toLocaleString()}<br/>`;
-            total += param.value;
-          });
-          result += `<hr style="margin: 4px 0; border: none; border-top: 1px solid #ccc;"/>`;
-          result += `<strong>${isEnglish ? 'Total' : 'სულ'}: ${total.toLocaleString()}</strong>`;
-          return result;
+          const year = params.name;
+          const region = params.seriesName;
+          const value = params.value;
+          
+          return `
+            <div style="padding: 8px; font-size: 12px; line-height: 1.5;">
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${region}</div>
+              <div><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${value.toLocaleString()}</div>
+            </div>
+          `;
         },
       },
       legend: {
