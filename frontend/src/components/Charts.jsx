@@ -151,33 +151,41 @@ const Charts = ({ isEnglish }) => {
 
   const dataType = isDeathData
     ? isEnglish
-      ? " (Deaths)"
-      : " (გარდაცვალება)"
+      ? " Deaths"
+      : " გარდაცვალება"
     : isEnglish
-    ? " (Births)"
-    : " (დაბადება)";
+    ? " Births"
+    : " დაბადება";
+
+    const dataTypeOwnership = isDeathData
+    ? isEnglish
+      ? " Deaths"
+      : " გადრაცვლილ"
+    : isEnglish
+    ? " Born in"
+    : " დაბადებულ";
 
   const texts = {
     georgian: {
       title: "სტატისტიკური ანგარიშგება",
       organizationsByYear:
         "საწარმოთა დაბადება და გარდაცვალება 2014-2023 წლებში",
-      regionalDistribution: "რეგისტრირებული ორგანიზაციები რეგიონების მიხედვით",
-      activitySectors: "საწარმოთა ეკონომიკური საქმიანობის სახეები",
-      ownershipTypes: "ორგანიზაციები საკუთრების ფორმების მიხედვით",
+      regionalDistribution: `საწარმოთა ${dataType} რეგიონების მიხედვით`,
+      activitySectors: `საწარმოთა ${dataType} ეკონომიკური საქმიანობის სახეების მიხედვით`,
+      ownershipTypes: `2023 წელს ${dataTypeOwnership} საწარმოთა განაწილება რეგიონების მიხედვით`,
       legalForms: `საწარმოთა ${dataType} დარგების მიხედვით`,
-      organizationGrowth: "ორგანიზაციების ზრდის დინამიკა (%)",
+      organizationGrowth: "საწარმოთა გადარჩენა წლების მიხედვით (%)",
       birth: "დაბადება",
       death: "გარდაცვალება",
     },
     english: {
       title: "Statistical Reports",
       organizationsByYear: "Organizations Birth and Death 2014-2023",
-      regionalDistribution: "Organizations by Regions",
-      activitySectors: "Organizations by Economic Activity Sectors",
-      ownershipTypes: "Organizations by Ownership Types",
+      regionalDistribution: `Organizations ${dataType} by Regions`,
+      activitySectors: `Organizations ${dataType} by Economic Activity Sectors`,
+      ownershipTypes: `Distribution of enterprises ${dataTypeOwnership} by region in 2023`,
       legalForms: `Organizations ${dataType} by Sectors`,
-      organizationGrowth: "Organization Growth Dynamics (%)",
+      organizationGrowth: "Organization Survival by Year (%)",
       birth: "Birth",
       death: "Death",
     },
@@ -188,14 +196,7 @@ const Charts = ({ isEnglish }) => {
   // Dynamic titles that show current data type
   const getActivitySectorsTitle = () => {
     const baseTitle = currentTexts.activitySectors;
-    const dataType = isDeathData
-      ? isEnglish
-        ? " (Deaths)"
-        : " (გარდაცვალება)"
-      : isEnglish
-      ? " (Births)"
-      : " (დაბადება)";
-    return baseTitle + dataType;
+    return baseTitle;
   };
 
   const getLegalFormsTitle = () => {
@@ -206,14 +207,8 @@ const Charts = ({ isEnglish }) => {
 
   const getRegionalDistributionTitle = () => {
     const baseTitle = currentTexts.regionalDistribution;
-    const dataType = isDeathData
-      ? isEnglish
-        ? " (Deaths)"
-        : " (გარდაცვალება)"
-      : isEnglish
-      ? " (Births)"
-      : " (დაბადება)";
-    return baseTitle + dataType;
+    
+    return baseTitle;
   };
 
   const handleLegendClick = React.useCallback((dataKey) => {
