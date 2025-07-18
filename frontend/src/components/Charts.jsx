@@ -127,9 +127,6 @@ const Charts = ({ isEnglish }) => {
     loadData();
   }, [isEnglish, retryCount]);
 
-  console.log(survivalData);
-  
-
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
   };
@@ -166,7 +163,7 @@ const Charts = ({ isEnglish }) => {
     ? " Births"
     : " დაბადება";
 
-    const dataTypeOwnership = isDeathData
+  const dataTypeOwnership = isDeathData
     ? isEnglish
       ? " Deaths"
       : " გადრაცვლილ"
@@ -216,7 +213,7 @@ const Charts = ({ isEnglish }) => {
 
   const getRegionalDistributionTitle = () => {
     const baseTitle = currentTexts.regionalDistribution;
-    
+
     return baseTitle;
   };
 
@@ -1284,9 +1281,24 @@ const Charts = ({ isEnglish }) => {
 
     // Define colors for different sectors
     const sectorColors = [
-      "#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#7c3aed", "#f59e0b",
-      "#f59e0b", "#84cc16", "#06b6d4", "#8b5cf6", "#f97316", "#ef4444",
-      "#10b981", "#db2777", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"
+      "#2563eb",
+      "#dc2626",
+      "#16a34a",
+      "#ca8a04",
+      "#7c3aed",
+      "#f59e0b",
+      "#f59e0b",
+      "#84cc16",
+      "#06b6d4",
+      "#8b5cf6",
+      "#f97316",
+      "#ef4444",
+      "#10b981",
+      "#db2777",
+      "#8b5cf6",
+      "#06b6d4",
+      "#84cc16",
+      "#f97316",
     ];
 
     return {
@@ -1304,25 +1316,35 @@ const Charts = ({ isEnglish }) => {
           const seriesName = params.seriesName;
           const value = params.value;
           const percentage = value.toFixed(1);
-          
+
           // Calculate total for the year by summing all sector percentages
-          const yearData = data.find(item => String(item.year) === String(year));
+          const yearData = data.find(
+            (item) => String(item.year) === String(year)
+          );
           let yearTotal = 0;
           if (yearData) {
-            allDataKeys.forEach(key => {
+            allDataKeys.forEach((key) => {
               const sectorValue = yearData[key];
               if (sectorValue !== undefined && sectorValue !== null) {
                 yearTotal += Number(sectorValue) || 0;
               }
             });
           }
-          
+
           return `
             <div style="padding: 8px; font-size: 12px; line-height: 1.5; text-align: center;">
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Sector' : 'სექტორი'}:</strong> ${seriesName}</div>
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Percentage' : 'პროცენტი'}:</strong> ${percentage}%</div>
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${yearTotal.toFixed(1)}%</div>
+              <div style="margin-bottom: 4px;"><strong>${
+                isEnglish ? "Year" : "წელი"
+              }:</strong> ${year}</div>
+              <div style="margin-bottom: 4px;"><strong>${
+                isEnglish ? "Sector" : "სექტორი"
+              }:</strong> ${seriesName}</div>
+              <div style="margin-bottom: 4px;"><strong>${
+                isEnglish ? "Percentage" : "პროცენტი"
+              }:</strong> ${percentage}%</div>
+              <div style="margin-bottom: 4px;"><strong>${
+                isEnglish ? "Total" : "სულ"
+              }:</strong> ${yearTotal.toFixed(1)}%</div>
             </div>
           `;
         },
@@ -1420,134 +1442,76 @@ const Charts = ({ isEnglish }) => {
     ],
   });
 
-  const getGroupedBarChartOption = () => {
-    // Static survival data from API
-    const survivalData = [
-      {
-        "year": 2013,
-        "survival_1": 71.7
-      },
-      {
-        "year": 2014,
-        "survival_2": 53.2,
-        "survival_1": 70.2
-      },
-      {
-        "year": 2015,
-        "survival_3": 42.3,
-        "survival_2": 50.2,
-        "survival_1": 71.7
-      },
-      {
-        "year": 2016,
-        "survival_4": 34.1,
-        "survival_3": 38.3,
-        "survival_2": 51.8,
-        "survival_1": 77.5
-      },
-      {
-        "year": 2017,
-        "survival_5": 27.2,
-        "survival_4": 29.4,
-        "survival_3": 39,
-        "survival_2": 59.5,
-        "survival_1": 68.1
-      },
-      {
-        "year": 2018,
-        "survival_6": 23,
-        "survival_5": 24.4,
-        "survival_4": 31.4,
-        "survival_3": 47.8,
-        "survival_2": 48.1,
-        "survival_1": 70.4
-      },
-      {
-        "year": 2019,
-        "survival_7": 18.9,
-        "survival_6": 20,
-        "survival_5": 25.6,
-        "survival_4": 39.9,
-        "survival_3": 36.8,
-        "survival_2": 50.1,
-        "survival_1": 70.2
-      },
-      {
-        "year": 2020,
-        "survival_8": 16.4,
-        "survival_7": 17.2,
-        "survival_6": 21.7,
-        "survival_5": 34.5,
-        "survival_4": 30,
-        "survival_3": 39.2,
-        "survival_2": 51.5,
-        "survival_1": 71.8
-      },
-      {
-        "year": 2021,
-        "survival_9": 14.3,
-        "survival_8": 14.9,
-        "survival_7": 18.8,
-        "survival_6": 29.9,
-        "survival_5": 25.1,
-        "survival_4": 31.8,
-        "survival_3": 40.9,
-        "survival_2": 52.8,
-        "survival_1": 74.4
-      },
-      {
-        "year": 2022,
-        "survival_10": 12.8,
-        "survival_9": 13.2,
-        "survival_8": 16.6,
-        "survival_7": 26.6,
-        "survival_6": 21.6,
-        "survival_5": 26.9,
-        "survival_4": 34.2,
-        "survival_3": 42.3,
-        "survival_2": 54.6,
-        "survival_1": 75.3
-      },
-      {
-        "year": 2023,
-        "survival_11": 8.9,
-        "survival_10": 9.3,
-        "survival_9": 11.9,
-        "survival_8": 18.6,
-        "survival_7": 16.1,
-        "survival_6": 20,
-        "survival_5": 24.8,
-        "survival_4": 31.9,
-        "survival_3": 39,
-        "survival_2": 51.7,
-        "survival_1": 73.5
-      }
-    ];
+  const getGroupedBarChartOption = (data) => {
+    // Use API data from survivalData state
+    const apiData = data || survivalData;
+
+    // If no data, return empty chart configuration
+    if (!apiData || apiData.length === 0) {
+      return {
+        title: {
+          text: isEnglish
+            ? "No data available"
+            : "მონაცემები არ არის ხელმისაწვდომი",
+          left: "center",
+          top: "middle",
+        },
+      };
+    }
 
     const years = [
-      "2013", "2014", "2015", "2016", "2017", "2018",
-      "2019", "2020", "2021", "2022", "2023"
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
     ];
 
     const survivalYears = [
-      "survival_1", "survival_2", "survival_3", "survival_4", "survival_5", "survival_6",
-      "survival_7", "survival_8", "survival_9", "survival_10", "survival_11"
+      "survival_1",
+      "survival_2",
+      "survival_3",
+      "survival_4",
+      "survival_5",
+      "survival_6",
+      "survival_7",
+      "survival_8",
+      "survival_9",
+      "survival_10",
+      "survival_11",
     ];
 
     const colors = [
-      "#2f7ed8", "#0d233a", "#8bbc21", "#910000", "#1aadce",
-      "#492970", "#f28f43", "#77a1e5", "#c42525", "#a6c96a", "#f45b5b"
+      "#2f7ed8",
+      "#0d233a",
+      "#8bbc21",
+      "#910000",
+      "#1aadce",
+      "#492970",
+      "#f28f43",
+      "#77a1e5",
+      "#c42525",
+      "#a6c96a",
+      "#f45b5b",
     ];
 
     const series = survivalYears.map((survivalKey, index) => {
-      const yearNum = survivalKey.split('_')[1];
-      const name = isEnglish 
-        ? `${yearNum} ${yearNum === '1' ? 'Year' : 'Years'} Survival`
+      const yearNum = survivalKey.split("_")[1];
+      const name = isEnglish
+        ? `${yearNum} ${yearNum === "1" ? "Year" : "Years"} Survival`
         : `${yearNum} წლის გადარჩენა`;
 
-      // Extract data for this survival year
-      const data = years.map(year => {
-        const yearData = survivalData.find(item => item.year.toString() === year);
+      // Extract data for this survival year from API data
+      const data = years.map((year) => {
+        const yearData = apiData.find(
+          (item) => item.year.toString() === year
+        );
         return yearData && yearData[survivalKey] ? yearData[survivalKey] : null;
       });
 
@@ -1556,21 +1520,21 @@ const Charts = ({ isEnglish }) => {
         type: "bar",
         barGap: "10%",
         emphasis: {
-          focus: "series"
+          focus: "series",
         },
         itemStyle: {
-          color: colors[index % colors.length]
+          color: colors[index % colors.length],
         },
-        data: data
+        data: data,
       };
     });
 
     const options = {
       title: {
-        text: isEnglish 
+        text: isEnglish
           ? "Enterprise Survival Rates by Year (%)"
           : "საწარმოო გადარჩენის მაჩვენებლები წლების მიხედვით (%)",
-        left: "center"
+        left: "center",
       },
       tooltip: {
         trigger: "axis",
@@ -1579,11 +1543,13 @@ const Charts = ({ isEnglish }) => {
           let result = params[0].name + "<br/>";
           params.forEach((param) => {
             if (param.value !== null && param.value !== undefined) {
-              result += `${param.marker}${param.seriesName}: ${param.value.toFixed(1)}%<br/>`;
+              result += `${param.marker}${
+                param.seriesName
+              }: ${param.value.toFixed(1)}%<br/>`;
             }
           });
           return result;
-        }
+        },
       },
       legend: {
         bottom: 0,
@@ -1596,11 +1562,11 @@ const Charts = ({ isEnglish }) => {
         right: "4%",
         bottom: "15%",
         top: "15%",
-        containLabel: true
+        containLabel: true,
       },
       xAxis: {
         type: "category",
-        data: years
+        data: years,
       },
       yAxis: {
         type: "value",
@@ -1609,7 +1575,7 @@ const Charts = ({ isEnglish }) => {
           formatter: "{value}%",
         },
       },
-      series
+      series,
     };
 
     return options;
@@ -2050,7 +2016,7 @@ const Charts = ({ isEnglish }) => {
         case "groupedbar":
           return (
             <ReactECharts
-              option={getGroupedBarChartOption()}
+              option={getGroupedBarChartOption(maximizedChart.data)}
               style={{ height: "100%", width: "100%" }}
             />
           );
@@ -2289,7 +2255,9 @@ const Charts = ({ isEnglish }) => {
                     chartIndex={3}
                   >
                     <ReactECharts
-                      option={getNormalizedStackedBarChartOption(getCurrentSectorData())}
+                      option={getNormalizedStackedBarChartOption(
+                        getCurrentSectorData()
+                      )}
                       style={{ width: "100%", height: "300px" }}
                     />
                   </ChartContainer>
@@ -2342,7 +2310,7 @@ const Charts = ({ isEnglish }) => {
                       </div>
                     ) : (
                       <ReactECharts
-                        option={getGroupedBarChartOption()}
+                        option={getGroupedBarChartOption(survivalData)}
                         style={{ width: "100%", height: "300px" }}
                       />
                     )}
