@@ -73,7 +73,13 @@ const Charts = ({ isEnglish }) => {
         setError(null);
 
         // Fetch all datasets in parallel
-        const [birthDeathData, naçeData, deathNaçeData, birthRegionData, deathRegionData] = await Promise.all([
+        const [
+          birthDeathData,
+          naçeData,
+          deathNaçeData,
+          birthRegionData,
+          deathRegionData,
+        ] = await Promise.all([
           fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge"),
           fetchEnterpriseNace(isEnglish ? "en" : "ge"),
           fetchEnterpriseDeathNace(isEnglish ? "en" : "ge"),
@@ -131,6 +137,14 @@ const Charts = ({ isEnglish }) => {
     setActiveDropdown(activeDropdown === chartIndex ? null : chartIndex);
   };
 
+  const dataType = isDeathData
+    ? isEnglish
+      ? " (Deaths)"
+      : " (გარდაცვალება)"
+    : isEnglish
+    ? " (Births)"
+    : " (დაბადება)";
+
   const texts = {
     georgian: {
       title: "სტატისტიკური ანგარიშგება",
@@ -139,7 +153,7 @@ const Charts = ({ isEnglish }) => {
       regionalDistribution: "რეგისტრირებული ორგანიზაციები რეგიონების მიხედვით",
       activitySectors: "საწარმოთა ეკონომიკური საქმიანობის სახეები",
       ownershipTypes: "ორგანიზაციები საკუთრების ფორმების მიხედვით",
-      legalForms: "2023 წლის ორგანიზაციები სამართლებრივი ფორმების მიხედვით",
+      legalForms: `საწარმოთა ${dataType} დარგების მიხედვით`,
       organizationGrowth: "ორგანიზაციების ზრდის დინამიკა (%)",
       birth: "დაბადება",
       death: "გარდაცვალება",
@@ -150,7 +164,7 @@ const Charts = ({ isEnglish }) => {
       regionalDistribution: "Organizations by Regions",
       activitySectors: "Organizations by Economic Activity Sectors",
       ownershipTypes: "Organizations by Ownership Types",
-      legalForms: "2023 Organizations by Legal Forms",
+      legalForms: `Organizations ${dataType} by Sectors`,
       organizationGrowth: "Organization Growth Dynamics (%)",
       birth: "Birth",
       death: "Death",
@@ -173,17 +187,9 @@ const Charts = ({ isEnglish }) => {
   };
 
   const getLegalFormsTitle = () => {
-    const baseTitle = isEnglish
-      ? "Organizations by Legal Forms"
-      : "ორგანიზაციები სამართლებრივი ფორმების მიხედვით";
-    const dataType = isDeathData
-      ? isEnglish
-        ? " (Deaths)"
-        : " (გარდაცვალება)"
-      : isEnglish
-      ? " (Births)"
-      : " (დაბადება)";
-    return baseTitle + dataType;
+    const baseTitle = currentTexts.legalForms;
+
+    return baseTitle;
   };
 
   const getRegionalDistributionTitle = () => {
@@ -966,37 +972,41 @@ const Charts = ({ isEnglish }) => {
 
     // Translation mapping for Georgian region names
     const regionTranslations = {
-      "Tbilisi": isEnglish ? "Tbilisi" : "თბილისი",
-      "Abkhazia_A_R": isEnglish ? "Abkhazia A.R." : "აფხაზეთის ა.რ.",
-      "Adjara": isEnglish ? "Adjara" : "აჭარის ა.რ.",
-      "Guria": isEnglish ? "Guria" : "გურია",
-      "Imereti": isEnglish ? "Imereti" : "იმერეთი",
-      "Kakheti": isEnglish ? "Kakheti" : "კახეთი",
-      "Mtskheta_Mtianeti": isEnglish ? "Mtskheta-Mtianeti" : "მცხეთა-მთიანეთი",
-      "Racha_Lechkhumi_and_Kvemo_Svaneti": isEnglish ? "Racha-Lechkhumi and Kvemo Svaneti" : "რაჭა-ლეჩხუმი და ქვემო სვანეთი",
-      "Samegrelo_Zemo_Svaneti": isEnglish ? "Samegrelo-Zemo Svaneti" : "სამეგრელო-ზემო სვანეთი",
-      "Samtskhe_Javakheti": isEnglish ? "Samtskhe-Javakheti" : "სამცხე-ჯავახეთი",
-      "Kvemo_Kartli": isEnglish ? "Kvemo Kartli" : "ქვემო ქართლი",
-      "Shida_Kartli": isEnglish ? "Shida Kartli" : "შიდა ქართლი",
-      "Unknown": isEnglish ? "Unknown" : "უცნობი",
+      Tbilisi: isEnglish ? "Tbilisi" : "თბილისი",
+      Abkhazia_A_R: isEnglish ? "Abkhazia A.R." : "აფხაზეთის ა.რ.",
+      Adjara: isEnglish ? "Adjara" : "აჭარის ა.რ.",
+      Guria: isEnglish ? "Guria" : "გურია",
+      Imereti: isEnglish ? "Imereti" : "იმერეთი",
+      Kakheti: isEnglish ? "Kakheti" : "კახეთი",
+      Mtskheta_Mtianeti: isEnglish ? "Mtskheta-Mtianeti" : "მცხეთა-მთიანეთი",
+      Racha_Lechkhumi_and_Kvemo_Svaneti: isEnglish
+        ? "Racha-Lechkhumi and Kvemo Svaneti"
+        : "რაჭა-ლეჩხუმი და ქვემო სვანეთი",
+      Samegrelo_Zemo_Svaneti: isEnglish
+        ? "Samegrelo-Zemo Svaneti"
+        : "სამეგრელო-ზემო სვანეთი",
+      Samtskhe_Javakheti: isEnglish ? "Samtskhe-Javakheti" : "სამცხე-ჯავახეთი",
+      Kvemo_Kartli: isEnglish ? "Kvemo Kartli" : "ქვემო ქართლი",
+      Shida_Kartli: isEnglish ? "Shida Kartli" : "შიდა ქართლი",
+      Unknown: isEnglish ? "Unknown" : "უცნობი",
     };
 
     // Define colors for Georgian regions - mapping API field names
     const regionColors = {
       // English API field names
-      "Tbilisi": "#2563eb",
-      "Abkhazia_A_R": "#dc2626", 
-      "Adjara": "#16a34a",
-      "Guria": "#ca8a04",
-      "Imereti": "#7c3aed",
-      "Kakheti": "#db2777",
-      "Mtskheta_Mtianeti": "#f59e0b",
-      "Racha_Lechkhumi_and_Kvemo_Svaneti": "#84cc16",
-      "Samegrelo_Zemo_Svaneti": "#06b6d4",
-      "Samtskhe_Javakheti": "#8b5cf6",
-      "Kvemo_Kartli": "#f97316",
-      "Shida_Kartli": "#ef4444",
-      "Unknown": "#64748b",
+      Tbilisi: "#2563eb",
+      Abkhazia_A_R: "#dc2626",
+      Adjara: "#16a34a",
+      Guria: "#ca8a04",
+      Imereti: "#7c3aed",
+      Kakheti: "#db2777",
+      Mtskheta_Mtianeti: "#f59e0b",
+      Racha_Lechkhumi_and_Kvemo_Svaneti: "#84cc16",
+      Samegrelo_Zemo_Svaneti: "#06b6d4",
+      Samtskhe_Javakheti: "#8b5cf6",
+      Kvemo_Kartli: "#f97316",
+      Shida_Kartli: "#ef4444",
+      Unknown: "#64748b",
     };
 
     return {
@@ -1009,36 +1019,47 @@ const Charts = ({ isEnglish }) => {
           const year = params.name;
           const seriesName = params.seriesName;
           const value = params.value;
-          
+
           // Find the original key for this series to get the full translated name
-          const originalKey = allDataKeys.find(key => {
+          const originalKey = allDataKeys.find((key) => {
             const translatedName = regionTranslations[key] || key;
-            const displayName = translatedName.length > 15 
-              ? translatedName.substring(0, 12) + "..." 
-              : translatedName;
+            const displayName =
+              translatedName.length > 15
+                ? translatedName.substring(0, 12) + "..."
+                : translatedName;
             return displayName === seriesName;
           });
 
           // Get the full region name (not truncated)
-          const fullRegionName = originalKey ? (regionTranslations[originalKey] || originalKey) : seriesName;
-          
+          const fullRegionName = originalKey
+            ? regionTranslations[originalKey] || originalKey
+            : seriesName;
+
           // Calculate total for the year by summing all region values
-          const yearData = data.find(item => String(item.year) === String(year));
+          const yearData = data.find(
+            (item) => String(item.year) === String(year)
+          );
           let yearTotal = 0;
           if (yearData) {
-            allDataKeys.forEach(key => {
+            allDataKeys.forEach((key) => {
               const regionValue = yearData[key];
               if (regionValue !== undefined && regionValue !== null) {
                 yearTotal += Number(regionValue) || 0;
               }
             });
           }
-          
+
           return `
             <div style="padding: 8px; font-size: 12px; line-height: 1.5;">
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
-              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Region' : 'რეგიონი'}:</strong> ${fullRegionName}: ${value.toLocaleString()}</div>
-              <div><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${yearTotal.toLocaleString()}</div>
+              <div style="margin-bottom: 4px;"><strong>${
+                isEnglish ? "Year" : "წელი"
+              }:</strong> ${year}</div>
+              <div style="margin-bottom: 4px;"><strong>${
+                isEnglish ? "Region" : "რეგიონი"
+              }:</strong> ${fullRegionName}: ${value.toLocaleString()}</div>
+              <div><strong>${
+                isEnglish ? "Total" : "სულ"
+              }:</strong> ${yearTotal.toLocaleString()}</div>
             </div>
           `;
         },
@@ -1057,7 +1078,7 @@ const Charts = ({ isEnglish }) => {
           width: 120,
           overflow: "truncate",
         },
-        data: allDataKeys.map(key => {
+        data: allDataKeys.map((key) => {
           // Get translated name and truncate if necessary
           const translatedName = regionTranslations[key] || key;
           if (translatedName.length > 15) {
@@ -1091,10 +1112,11 @@ const Charts = ({ isEnglish }) => {
       series: allDataKeys.map((key) => {
         // Get translated name and truncate if necessary
         const translatedName = regionTranslations[key] || key;
-        const displayName = translatedName.length > 15 
-          ? translatedName.substring(0, 12) + "..." 
-          : translatedName;
-        
+        const displayName =
+          translatedName.length > 15
+            ? translatedName.substring(0, 12) + "..."
+            : translatedName;
+
         return {
           name: displayName, // Use translated and truncated name to match legend
           type: "bar",
@@ -1103,7 +1125,7 @@ const Charts = ({ isEnglish }) => {
             focus: "series",
           },
           data: data.map((item) => item[key] || 0),
-          itemStyle: { 
+          itemStyle: {
             color: regionColors[key] || "#64748b", // Default color if region not found
           },
         };
