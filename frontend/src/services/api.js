@@ -529,6 +529,72 @@ export const fetchEnterpriseDeathRegion = async (lang = 'ge') => {
   }
 };
 
+// Fetch Enterprise Birth by Sectors
+export const fetchEnterpriseBirthSector = async (lang = 'ge') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-birth-sector?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    const rawData = data.recordset || data;
+    
+    // Filter out the "სულ" (Total) row
+    const filteredData = rawData.filter(item => item.legend_title !== "სულ");
+    
+    // Transform the API response to the format needed by the chart
+    const years = ["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
+    
+    return years.map(year => {
+      const yearData = { year };
+      
+      // Process each sector
+      filteredData.forEach(item => {
+        const sectorName = item.legend_title;
+        yearData[sectorName] = item[year] || 0;
+      });
+      
+      return yearData;
+    });
+  } catch (error) {
+    console.error("Error fetching enterprise birth sector data:", error);
+    return [];
+  }
+};
+
+// Fetch Enterprise Death by Sectors
+export const fetchEnterpriseDeathSector = async (lang = 'ge') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-death-sector?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+    const rawData = data.recordset || data;
+    
+    // Filter out the "სულ" (Total) row
+    const filteredData = rawData.filter(item => item.legend_title !== "სულ");
+    
+    // Transform the API response to the format needed by the chart
+    const years = ["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
+    
+    return years.map(year => {
+      const yearData = { year };
+      
+      // Process each sector
+      filteredData.forEach(item => {
+        const sectorName = item.legend_title;
+        yearData[sectorName] = item[year] || 0;
+      });
+      
+      return yearData;
+    });
+  } catch (error) {
+    console.error("Error fetching enterprise death sector data:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -551,6 +617,8 @@ export const API = {
   fetchEnterpriseDeathNace,
   fetchEnterpriseBirthRegion,
   fetchEnterpriseDeathRegion,
+  fetchEnterpriseBirthSector,
+  fetchEnterpriseDeathSector,
 };
 
 export default API;

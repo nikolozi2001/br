@@ -16,6 +16,8 @@ import {
   fetchEnterpriseDeathNace,
   fetchEnterpriseBirthRegion,
   fetchEnterpriseDeathRegion,
+  fetchEnterpriseBirthSector,
+  fetchEnterpriseDeathSector,
   getSectionColorMapping,
 } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
@@ -30,6 +32,8 @@ const Charts = ({ isEnglish }) => {
   const [activityDataDeath, setActivityDataDeath] = useState([]);
   const [regionalData, setRegionalData] = useState([]);
   const [regionalDataDeath, setRegionalDataDeath] = useState([]);
+  const [sectorData, setSectorData] = useState([]);
+  const [sectorDataDeath, setSectorDataDeath] = useState([]);
   const [isDeathData, setIsDeathData] = useState(false); // Toggle between birth and death data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -79,12 +83,16 @@ const Charts = ({ isEnglish }) => {
           deathNaçeData,
           birthRegionData,
           deathRegionData,
+          birthSectorData,
+          deathSectorData,
         ] = await Promise.all([
           fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge"),
           fetchEnterpriseNace(isEnglish ? "en" : "ge"),
           fetchEnterpriseDeathNace(isEnglish ? "en" : "ge"),
           fetchEnterpriseBirthRegion(isEnglish ? "en" : "ge"),
           fetchEnterpriseDeathRegion(isEnglish ? "en" : "ge"),
+          fetchEnterpriseBirthSector(isEnglish ? "en" : "ge"),
+          fetchEnterpriseDeathSector(isEnglish ? "en" : "ge"),
         ]);
 
         setOrganizationsByYear(birthDeathData);
@@ -92,6 +100,8 @@ const Charts = ({ isEnglish }) => {
         setActivityDataDeath(deathNaçeData);
         setRegionalData(birthRegionData);
         setRegionalDataDeath(deathRegionData);
+        setSectorData(birthSectorData);
+        setSectorDataDeath(deathSectorData);
         setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error("Error loading data:", error);
@@ -101,6 +111,8 @@ const Charts = ({ isEnglish }) => {
         setActivityDataDeath([]);
         setRegionalData([]);
         setRegionalDataDeath([]);
+        setSectorData([]);
+        setSectorDataDeath([]);
       } finally {
         setLoading(false);
       }
@@ -236,6 +248,11 @@ const Charts = ({ isEnglish }) => {
   const getCurrentRegionalData = React.useCallback(() => {
     return isDeathData ? regionalDataDeath : regionalData;
   }, [isDeathData, regionalData, regionalDataDeath]);
+
+  // Get current sector data based on toggle state
+  const getCurrentSectorData = React.useCallback(() => {
+    return isDeathData ? sectorDataDeath : sectorData;
+  }, [isDeathData, sectorData, sectorDataDeath]);
 
   const onEChartsLegendSelectChanged = React.useCallback(
     (params) => {
@@ -1243,6 +1260,117 @@ const Charts = ({ isEnglish }) => {
     ],
   });
 
+  const getNormalizedStackedBarChartOption = (data) => {
+    // If no data, return empty chart configuration
+    if (!data || data.length === 0) {
+      return {
+        title: {
+          text: isEnglish
+            ? "No data available"
+            : "მონაცემები არ არის ხელმისაწვდომი",
+          left: "center",
+          top: "middle",
+        },
+      };
+    }
+
+    // Get all available data keys from the first item (excluding 'year')
+    const sampleItem = data[0] || {};
+    const allDataKeys = Object.keys(sampleItem).filter((key) => key !== "year");
+
+    // Define colors for different sectors
+    const sectorColors = [
+      "#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#7c3aed", "#db2777",
+      "#f59e0b", "#84cc16", "#06b6d4", "#8b5cf6", "#f97316", "#ef4444",
+      "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"
+    ];
+
+    return {
+      tooltip: {
+        trigger: "item",
+        axisPointer: {
+          type: "shadow",
+        },
+        formatter: function (params) {
+          const year = params.name;
+          const seriesName = params.seriesName;
+          const value = params.value;
+          const percentage = value.toFixed(1);
+          
+          return `
+            <div style="padding: 8px; font-size: 12px; line-height: 1.5;">
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Sector' : 'სექტორი'}:</strong> ${seriesName}</div>
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Percentage' : 'პროცენტი'}:</strong> ${percentage}%</div>
+            </div>
+          `;
+        },
+      },
+      legend: {
+        orient: "vertical",
+        right: "2%",
+        top: "middle",
+        align: "left",
+        itemGap: 6,
+        itemWidth: 18,
+        itemHeight: 14,
+        textStyle: {
+          fontSize: 9,
+          color: "#333",
+          width: 140,
+          overflow: "truncate",
+        },
+        data: allDataKeys.map(key => {
+          // Truncate long sector names for legend display
+          if (key.length > 20) {
+            return key.substring(0, 17) + "...";
+          }
+          return key;
+        }),
+      },
+      grid: {
+        left: "3%",
+        right: "32%",
+        bottom: "3%",
+        top: "5%",
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: data.map((item) => item.year),
+        axisTick: {
+          alignWithLabel: true,
+        },
+      },
+      yAxis: {
+        type: "value",
+        axisLabel: {
+          formatter: "{value}%",
+        },
+        max: 100,
+      },
+      series: allDataKeys.map((key, index) => {
+        const displayName = key.length > 20 ? key.substring(0, 17) + "..." : key;
+        
+        return {
+          name: displayName,
+          type: "bar",
+          stack: "Total",
+          emphasis: {
+            focus: "series",
+          },
+          data: data.map((item) => {
+            const value = Number(item[key]) || 0;
+            return value; // The API already returns percentages
+          }),
+          itemStyle: {
+            color: sectorColors[index % sectorColors.length],
+          },
+        };
+      }),
+    };
+  };
+
   const getGrowthChartOption = (data) => ({
     tooltip: {
       trigger: "axis",
@@ -1704,6 +1832,13 @@ const Charts = ({ isEnglish }) => {
               style={{ height: "100%", width: "100%" }}
             />
           );
+        case "normalizedStackedBar":
+          return (
+            <ReactECharts
+              option={getNormalizedStackedBarChartOption(maximizedChart.data)}
+              style={{ height: "100%", width: "100%" }}
+            />
+          );
         default:
           return null;
       }
@@ -1926,20 +2061,20 @@ const Charts = ({ isEnglish }) => {
                     />
                   </ChartContainer>
 
-                  {/* Stacked Area Chart */}
+                  {/* Normalized Stacked Bar Chart */}
                   <ChartContainer
                     title={getLegalFormsTitle()}
                     onMaximize={() =>
                       handleMaximizeChart(
-                        getCurrentActivityData(),
-                        "area",
+                        getCurrentSectorData(),
+                        "normalizedStackedBar",
                         getLegalFormsTitle()
                       )
                     }
                     chartIndex={3}
                   >
                     <ReactECharts
-                      option={getAreaChartOption(getCurrentActivityData())}
+                      option={getNormalizedStackedBarChartOption(getCurrentSectorData())}
                       style={{ width: "100%", height: "300px" }}
                     />
                   </ChartContainer>
