@@ -595,6 +595,51 @@ export const fetchEnterpriseDeathSector = async (lang = 'ge') => {
   }
 };
 
+// Enterprise Survival Year API
+export const fetchEnterpriseSurvivalYear = async (lang = 'ge') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-survival-year?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    
+    // Check if data is in recordset format
+    const results = data.recordset || data;
+    
+    if (!results || results.length === 0) {
+      return [];
+    }
+    
+    // Transform the data structure from "Born_in_YYYY" to "survival_X" format
+    return results.map(item => {
+      const transformedItem = { year: item.year };
+      
+      // Get all Born_in_YYYY keys and transform them
+      Object.keys(item).forEach(key => {
+        if (key.startsWith('Born_in_')) {
+          const birthYear = parseInt(key.split('_')[2]);
+          const currentYear = item.year;
+          const survivalYears = currentYear - birthYear;
+          
+          // Only include non-zero values and positive survival years
+          if (item[key] > 0 && survivalYears > 0) {
+            transformedItem[`survival_${survivalYears}`] = item[key];
+          }
+        }
+      });
+      
+      return transformedItem;
+    }).filter(item => {
+      // Filter out items that have no survival data (only year property)
+      return Object.keys(item).length > 1;
+    });
+  } catch (error) {
+    console.error("Error fetching enterprise survival year data:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -619,6 +664,7 @@ export const API = {
   fetchEnterpriseDeathRegion,
   fetchEnterpriseBirthSector,
   fetchEnterpriseDeathSector,
+  fetchEnterpriseSurvivalYear,
 };
 
 export default API;
