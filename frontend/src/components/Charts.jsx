@@ -1280,9 +1280,9 @@ const Charts = ({ isEnglish }) => {
 
     // Define colors for different sectors
     const sectorColors = [
-      "#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#7c3aed", "#db2777",
+      "#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#7c3aed", "#f59e0b",
       "#f59e0b", "#84cc16", "#06b6d4", "#8b5cf6", "#f97316", "#ef4444",
-      "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"
+      "#10b981", "#db2777", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"
     ];
 
     return {
@@ -1301,11 +1301,24 @@ const Charts = ({ isEnglish }) => {
           const value = params.value;
           const percentage = value.toFixed(1);
           
+          // Calculate total for the year by summing all sector percentages
+          const yearData = data.find(item => String(item.year) === String(year));
+          let yearTotal = 0;
+          if (yearData) {
+            allDataKeys.forEach(key => {
+              const sectorValue = yearData[key];
+              if (sectorValue !== undefined && sectorValue !== null) {
+                yearTotal += Number(sectorValue) || 0;
+              }
+            });
+          }
+          
           return `
             <div style="padding: 8px; font-size: 12px; line-height: 1.5; text-align: center;">
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Sector' : 'სექტორი'}:</strong> ${seriesName}</div>
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Percentage' : 'პროცენტი'}:</strong> ${percentage}%</div>
+              <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Total' : 'სულ'}:</strong> ${yearTotal.toFixed(1)}%</div>
             </div>
           `;
         },
