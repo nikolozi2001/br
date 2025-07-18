@@ -131,6 +131,9 @@ const Charts = ({ isEnglish }) => {
     setRetryCount((prev) => prev + 1);
   };
 
+  console.log("survivalData:", survivalData);
+  
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest(".chart-action-dropdown")) {
@@ -1502,16 +1505,15 @@ const Charts = ({ isEnglish }) => {
     ];
 
     const series = survivalYears.map((survivalKey, index) => {
-      const yearNum = survivalKey.split("_")[1];
+      // const yearNum = survivalKey.split("_")[1];
+      const yearNum = (parseInt(survivalKey.split("_")[1], 10) + 2011).toString();
       const name = isEnglish
-        ? `${yearNum} ${yearNum === "1" ? "Year" : "Years"} Survival`
-        : `${yearNum} წლის გადარჩენა`;
+        ? `Born in ${yearNum}`
+        : `დაბადებული ${yearNum} წელს`;
 
       // Extract data for this survival year from API data
       const data = years.map((year) => {
-        const yearData = apiData.find(
-          (item) => item.year.toString() === year
-        );
+        const yearData = apiData.find((item) => item.year.toString() === year);
         return yearData && yearData[survivalKey] ? yearData[survivalKey] : null;
       });
 
@@ -1530,12 +1532,6 @@ const Charts = ({ isEnglish }) => {
     });
 
     const options = {
-      title: {
-        text: isEnglish
-          ? "Enterprise Survival Rates by Year (%)"
-          : "საწარმოო გადარჩენის მაჩვენებლები წლების მიხედვით (%)",
-        left: "center",
-      },
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
@@ -1552,9 +1548,15 @@ const Charts = ({ isEnglish }) => {
         },
       },
       legend: {
-        bottom: 0,
+        bottom: "2%",
+        type: "scroll",
+        pageButtonItemGap: 10,
         textStyle: {
           fontSize: 11,
+          color: "#333",
+        },
+        itemStyle: {
+          borderWidth: 0,
         },
       },
       grid: {
