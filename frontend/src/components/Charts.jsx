@@ -173,8 +173,8 @@ const Charts = ({ isEnglish }) => {
       regionalDistribution: `საწარმოთა ${dataType} რეგიონების მიხედვით`,
       activitySectors: `საწარმოთა ${dataType} ეკონომიკური საქმიანობის სახეების მიხედვით`,
       ownershipTypes: `2023 წელს ${dataTypeOwnership} საწარმოთა განაწილება რეგიონების მიხედვით`,
-      legalForms: `საწარმოთა ${dataType} დარგების მიხედვით`,
-      organizationGrowth: "საწარმოთა გადარჩენა წლების მიხედვით (%)",
+      enterpriceSectors: `საწარმოთა ${dataType} დარგების მიხედვით`,
+      organizationSurvival: "საწარმოთა გადარჩენა წლების მიხედვით (%)",
       birth: "დაბადება",
       death: "გარდაცვალება",
     },
@@ -184,8 +184,8 @@ const Charts = ({ isEnglish }) => {
       regionalDistribution: `Organizations ${dataType} by Regions`,
       activitySectors: `Organizations ${dataType} by Economic Activity Sectors`,
       ownershipTypes: `Distribution of enterprises ${dataTypeOwnership} by region in 2023`,
-      legalForms: `Organizations ${dataType} by Sectors`,
-      organizationGrowth: "Organization Survival by Year (%)",
+      enterpriceSectors: `Organizations ${dataType} by Sectors`,
+      organizationSurvival: "Organization Survival by Year (%)",
       birth: "Birth",
       death: "Death",
     },
@@ -200,7 +200,7 @@ const Charts = ({ isEnglish }) => {
   };
 
   const getLegalFormsTitle = () => {
-    const baseTitle = currentTexts.legalForms;
+    const baseTitle = currentTexts.enterpriceSectors;
 
     return baseTitle;
   };
@@ -2085,7 +2085,7 @@ const Charts = ({ isEnglish }) => {
 
                   {/* Growth Percentage Chart */}
                   <ChartContainer
-                    title={currentTexts.organizationGrowth}
+                    title={currentTexts.organizationSurvival}
                     onMaximize={() =>
                       handleMaximizeChart(
                         organizationsByYear.map((item, index) => ({
@@ -2101,7 +2101,7 @@ const Charts = ({ isEnglish }) => {
                               : 0,
                         })),
                         "growth",
-                        currentTexts.organizationGrowth
+                        currentTexts.organizationSurvival
                       )
                     }
                     chartIndex={4}
