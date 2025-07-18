@@ -1462,33 +1462,25 @@ const Charts = ({ isEnglish }) => {
       };
     }
 
-    const years = [
-      "2013",
-      "2014",
-      "2015",
-      "2016",
-      "2017",
-      "2018",
-      "2019",
-      "2020",
-      "2021",
-      "2022",
-      "2023",
-    ];
+    // Dynamically extract years from the data
+    const years = apiData.map((item) => item.year.toString()).sort();
 
-    const survivalYears = [
-      "survival_1",
-      "survival_2",
-      "survival_3",
-      "survival_4",
-      "survival_5",
-      "survival_6",
-      "survival_7",
-      "survival_8",
-      "survival_9",
-      "survival_10",
-      "survival_11",
-    ];
+    // Dynamically extract all survival keys from the data
+    const allSurvivalKeys = new Set();
+    apiData.forEach((item) => {
+      Object.keys(item).forEach((key) => {
+        if (key.startsWith('survival_')) {
+          allSurvivalKeys.add(key);
+        }
+      });
+    });
+
+    // Sort survival keys by number for consistent ordering
+    const survivalYears = Array.from(allSurvivalKeys).sort((a, b) => {
+      const numA = parseInt(a.split('_')[1], 10);
+      const numB = parseInt(b.split('_')[1], 10);
+      return numA - numB;
+    });
 
     const colors = [
       "#2f7ed8",
