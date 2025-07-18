@@ -1291,6 +1291,10 @@ const Charts = ({ isEnglish }) => {
         axisPointer: {
           type: "shadow",
         },
+        position: "top",
+        textStyle: {
+          textAlign: "center",
+        },
         formatter: function (params) {
           const year = params.name;
           const seriesName = params.seriesName;
@@ -1298,7 +1302,7 @@ const Charts = ({ isEnglish }) => {
           const percentage = value.toFixed(1);
           
           return `
-            <div style="padding: 8px; font-size: 12px; line-height: 1.5;">
+            <div style="padding: 8px; font-size: 12px; line-height: 1.5; text-align: center;">
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Year' : 'წელი'}:</strong> ${year}</div>
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Sector' : 'სექტორი'}:</strong> ${seriesName}</div>
               <div style="margin-bottom: 4px;"><strong>${isEnglish ? 'Percentage' : 'პროცენტი'}:</strong> ${percentage}%</div>
@@ -1320,13 +1324,7 @@ const Charts = ({ isEnglish }) => {
           width: 140,
           overflow: "truncate",
         },
-        data: allDataKeys.map(key => {
-          // Truncate long sector names for legend display
-          if (key.length > 20) {
-            return key.substring(0, 17) + "...";
-          }
-          return key;
-        }),
+        data: allDataKeys,
       },
       grid: {
         left: "3%",
@@ -1350,10 +1348,8 @@ const Charts = ({ isEnglish }) => {
         max: 100,
       },
       series: allDataKeys.map((key, index) => {
-        const displayName = key.length > 20 ? key.substring(0, 17) + "..." : key;
-        
         return {
-          name: displayName,
+          name: key,
           type: "bar",
           stack: "Total",
           emphasis: {
