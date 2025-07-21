@@ -1600,16 +1600,17 @@ const Charts = ({ isEnglish }) => {
 
     // Define colors for pie chart segments
     const pieColors = [
-      "#2563eb",
-      "#dc2626",
-      "#16a34a",
-      "#ca8a04",
-      "#7c3aed",
-      "#db2777",
-      "#f59e0b",
-      "#84cc16",
-      "#06b6d4",
-      "#8b5cf6",
+      "rgb(0, 128, 190)", // თბილისი
+      "rgb(25, 194, 25)", // აჭარა
+      "rgb(234, 30, 48)", // გურია
+      "rgb(22, 163, 74)", // იმერეთი
+      "rgb(242, 116, 31)", // კახეთი
+      "rgb(91, 33, 164)", // მცხეთა-მთიანეთი
+      "rgb(242, 207, 31)", // რაჭა-ლეჩხუმი და ქვემო სვანეთი
+      "rgb(20, 153, 131)", // სამეგრელო
+      "rgb(194, 25, 121)", // სამხრე-ჯავახეთი
+      "rgb(27, 109, 154)", // ქვემო სვანეთი
+      "rgb(143, 222, 29)", // შიდა ქართლი
     ];
 
     // Merge duplicate entries and filter very small values
@@ -1654,11 +1655,11 @@ const Charts = ({ isEnglish }) => {
       },
       legend: {
         orient: "vertical",
-        right: "2%",
+        right: "5%",
         top: "middle",
-        itemGap: 8,
+        itemGap: 10,
         textStyle: {
-          fontSize: 11,
+          fontSize: 12,
           color: "#333",
         },
         data: chartData.map((item) => item.name),
@@ -1667,8 +1668,12 @@ const Charts = ({ isEnglish }) => {
         {
           name: currentTexts.ownershipTypes,
           type: "pie",
-          radius: "50%",
+          radius: "65%",
+          center: ["40%", "50%"],
           data: chartData,
+          label: {
+            show: false,
+          },
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
