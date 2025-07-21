@@ -1642,6 +1642,10 @@ const Charts = ({ isEnglish }) => {
     return {
       tooltip: {
         trigger: "item",
+        position: "center",
+        textStyle: {
+          textAlign: "center",
+        },
         formatter: function (params) {
           return `${params.seriesName}<br/>${params.marker}${
             params.name
