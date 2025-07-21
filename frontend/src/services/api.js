@@ -640,6 +640,52 @@ export const fetchEnterpriseSurvivalYear = async (lang = 'ge') => {
   }
 };
 
+// Enterprise Birth Distribution API
+export const fetchEnterpriseBirthDistribution = async (lang = 'ge') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-birth-distribution?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    
+    // Check if data is in recordset format
+    const results = data.recordset || data;
+    
+    if (!results || results.length === 0) {
+      return [];
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Error fetching enterprise birth distribution data:', error);
+    return [];
+  }
+};
+
+// Enterprise Death Distribution API
+export const fetchEnterpriseDeathDistribution = async (lang = 'ge') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enterprise-death-distribution?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    
+    // Check if data is in recordset format
+    const results = data.recordset || data;
+    
+    if (!results || results.length === 0) {
+      return [];
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Error fetching enterprise death distribution data:', error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -665,6 +711,8 @@ export const API = {
   fetchEnterpriseBirthSector,
   fetchEnterpriseDeathSector,
   fetchEnterpriseSurvivalYear,
+  fetchEnterpriseBirthDistribution,
+  fetchEnterpriseDeathDistribution,
 };
 
 export default API;

@@ -19,6 +19,8 @@ import {
   fetchEnterpriseBirthSector,
   fetchEnterpriseDeathSector,
   fetchEnterpriseSurvivalYear,
+  fetchEnterpriseBirthDistribution,
+  fetchEnterpriseDeathDistribution,
   getSectionColorMapping,
 } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
@@ -36,6 +38,8 @@ const Charts = ({ isEnglish }) => {
   const [sectorData, setSectorData] = useState([]);
   const [sectorDataDeath, setSectorDataDeath] = useState([]);
   const [survivalData, setSurvivalData] = useState([]);
+  const [distributionData, setDistributionData] = useState([]);
+  const [distributionDataDeath, setDistributionDataDeath] = useState([]);
   const [isDeathData, setIsDeathData] = useState(false); // Toggle between birth and death data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -88,6 +92,8 @@ const Charts = ({ isEnglish }) => {
           birthSectorData,
           deathSectorData,
           survivalYearData,
+          birthDistributionData,
+          deathDistributionData,
         ] = await Promise.all([
           fetchEnterpriseBirthDeath(isEnglish ? "en" : "ge"),
           fetchEnterpriseNace(isEnglish ? "en" : "ge"),
@@ -97,6 +103,8 @@ const Charts = ({ isEnglish }) => {
           fetchEnterpriseBirthSector(isEnglish ? "en" : "ge"),
           fetchEnterpriseDeathSector(isEnglish ? "en" : "ge"),
           fetchEnterpriseSurvivalYear(isEnglish ? "en" : "ge"),
+          fetchEnterpriseBirthDistribution(isEnglish ? "en" : "ge"),
+          fetchEnterpriseDeathDistribution(isEnglish ? "en" : "ge"),
         ]);
 
         setOrganizationsByYear(birthDeathData);
@@ -107,6 +115,8 @@ const Charts = ({ isEnglish }) => {
         setSectorData(birthSectorData);
         setSectorDataDeath(deathSectorData);
         setSurvivalData(survivalYearData);
+        setDistributionData(birthDistributionData);
+        setDistributionDataDeath(deathDistributionData);
         setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error("Error loading data:", error);
@@ -119,6 +129,8 @@ const Charts = ({ isEnglish }) => {
         setSectorData([]);
         setSectorDataDeath([]);
         setSurvivalData([]);
+        setDistributionData([]);
+        setDistributionDataDeath([]);
       } finally {
         setLoading(false);
       }
@@ -132,7 +144,6 @@ const Charts = ({ isEnglish }) => {
   };
 
   // console.log("survivalData:", survivalData);
-  
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -257,6 +268,11 @@ const Charts = ({ isEnglish }) => {
   const getCurrentSectorData = React.useCallback(() => {
     return isDeathData ? sectorDataDeath : sectorData;
   }, [isDeathData, sectorData, sectorDataDeath]);
+
+  // Get current distribution data based on toggle state
+  const getCurrentDistributionData = React.useCallback(() => {
+    return isDeathData ? distributionDataDeath : distributionData;
+  }, [isDeathData, distributionData, distributionDataDeath]);
 
   const onEChartsLegendSelectChanged = React.useCallback(
     (params) => {
@@ -662,13 +678,6 @@ const Charts = ({ isEnglish }) => {
     },
     []
   );
-
-  const ownershipData = [
-    { name: "კერძო", value: 87, color: "#2563eb" },
-    { name: "სახელმწიფო", value: 8, color: "#dc2626" },
-    { name: "მუნიციპალური", value: 3, color: "#16a34a" },
-    { name: "საერთაშორისო", value: 2, color: "#ca8a04" },
-  ];
 
   // ECharts configuration helpers
   const getBarChartOption = (data) => ({
@@ -1469,7 +1478,7 @@ const Charts = ({ isEnglish }) => {
     const allSurvivalKeys = new Set();
     apiData.forEach((item) => {
       Object.keys(item).forEach((key) => {
-        if (key.startsWith('Born_in_')) {
+        if (key.startsWith("Born_in_")) {
           allSurvivalKeys.add(key);
         }
       });
@@ -1477,8 +1486,8 @@ const Charts = ({ isEnglish }) => {
 
     // Sort survival keys by year for consistent ordering (big to small)
     const survivalYears = Array.from(allSurvivalKeys).sort((a, b) => {
-      const yearA = parseInt(a.split('_')[2], 10); // Extract year from Born_in_YYYY
-      const yearB = parseInt(b.split('_')[2], 10); // Extract year from Born_in_YYYY
+      const yearA = parseInt(a.split("_")[2], 10); // Extract year from Born_in_YYYY
+      const yearB = parseInt(b.split("_")[2], 10); // Extract year from Born_in_YYYY
       return yearB - yearA; // Reverse order: big to small (newest to oldest)
     });
 
@@ -1498,7 +1507,7 @@ const Charts = ({ isEnglish }) => {
 
     const series = survivalYears.map((survivalKey, index) => {
       // Extract year from Born_in_YYYY format
-      const yearNum = survivalKey.split('_')[2]; // Get the year directly from Born_in_YYYY
+      const yearNum = survivalKey.split("_")[2]; // Get the year directly from Born_in_YYYY
       const name = isEnglish
         ? `Born in ${yearNum}`
         : `დაბადებული ${yearNum} წელს`;
@@ -1575,36 +1584,98 @@ const Charts = ({ isEnglish }) => {
     return options;
   };
 
-  const getPieChartOption = (data) => ({
-    tooltip: {
-      trigger: "item",
-      formatter: "{a} <br/>{b}: {c} ({d}%)",
-    },
-    legend: {
-      orient: "vertical",
-      left: "left",
-      data: data.map((item) => item.name),
-    },
-    series: [
-      {
-        name: currentTexts.ownershipTypes,
-        type: "pie",
-        radius: "50%",
-        data: data.map((item) => ({
-          value: item.value,
-          name: item.name,
-          itemStyle: { color: item.color },
-        })),
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: "rgba(0, 0, 0, 0.5)",
-          },
+  const getPieChartOption = (data) => {
+    // If no data, return empty chart configuration
+    if (!data || data.length === 0) {
+      return {
+        title: {
+          text: isEnglish
+            ? "No data available"
+            : "მონაცემები არ არის ხელმისაწვდომი",
+          left: "center",
+          top: "middle",
+        },
+      };
+    }
+
+    // Define colors for pie chart segments
+    const pieColors = [
+      "#2563eb",
+      "#dc2626",
+      "#16a34a",
+      "#ca8a04",
+      "#7c3aed",
+      "#db2777",
+      "#f59e0b",
+      "#84cc16",
+      "#06b6d4",
+      "#8b5cf6",
+    ];
+
+    // Merge duplicate entries and filter very small values
+    const mergedData = {};
+    data.forEach((item) => {
+      const name = item.name || "Unknown";
+      const share = item.share || item.value || item.count || 0;
+
+      if (mergedData[name]) {
+        mergedData[name] += share;
+      } else {
+        mergedData[name] = share;
+      }
+    });
+
+    // Convert back to array and filter out very small values (less than 0.1%)
+    const filteredData = Object.entries(mergedData)
+      .filter(([, share]) => share >= 0.1)
+      .map(([name, share]) => ({ name, share }));
+
+    // Transform API data to expected format
+    const chartData = filteredData.map((item, index) => ({
+      value: item.share,
+      name: item.name,
+      itemStyle: {
+        color: pieColors[index % pieColors.length],
+      },
+    }));
+
+    return {
+      tooltip: {
+        trigger: "item",
+        formatter: function (params) {
+          return `${params.seriesName}<br/>${params.marker}${
+            params.name
+          }: ${params.value.toFixed(2)}% (${params.percent}%)`;
         },
       },
-    ],
-  });
+      legend: {
+        orient: "vertical",
+        right: "2%",
+        top: "middle",
+        itemGap: 8,
+        textStyle: {
+          fontSize: 11,
+          color: "#333",
+        },
+        data: chartData.map((item) => item.name),
+      },
+      series: [
+        {
+          name: currentTexts.ownershipTypes,
+          type: "pie",
+          radius: "50%",
+          data: chartData,
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: "rgba(0, 0, 0, 0.5)",
+            },
+          },
+        },
+      ],
+    };
+  };
 
   const ChartContainer = ({ title, children, onMaximize, chartIndex }) => {
     // Show ListRestart button only for charts 2, 3, 4, and 6 (using 1-based indexing)
@@ -2310,12 +2381,12 @@ const Charts = ({ isEnglish }) => {
                     )}
                   </ChartContainer>
 
-                  {/* Pie Chart - Ownership Types */}
+                  {/* Pie Chart - Enterprise Distribution */}
                   <ChartContainer
                     title={currentTexts.ownershipTypes}
                     onMaximize={() =>
                       handleMaximizeChart(
-                        ownershipData,
+                        getCurrentDistributionData(),
                         "pie",
                         currentTexts.ownershipTypes
                       )
@@ -2323,7 +2394,7 @@ const Charts = ({ isEnglish }) => {
                     chartIndex={5}
                   >
                     <ReactECharts
-                      option={getPieChartOption(ownershipData)}
+                      option={getPieChartOption(getCurrentDistributionData())}
                       style={{ width: "100%", height: "300px" }}
                     />
                   </ChartContainer>
