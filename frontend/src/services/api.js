@@ -624,7 +624,7 @@ export const fetchEnterpriseSurvivalYear = async (lang = 'ge') => {
           
           // Only include non-zero values and positive survival years
           if (item[key] > 0 && survivalYears > 0) {
-            transformedItem[`survival_${survivalYears}`] = item[key];
+            transformedItem[`Born_in_${birthYear}`] = item[key];
           }
         }
       });

@@ -131,7 +131,7 @@ const Charts = ({ isEnglish }) => {
     setRetryCount((prev) => prev + 1);
   };
 
-  console.log("survivalData:", survivalData);
+  // console.log("survivalData:", survivalData);
   
 
   useEffect(() => {
@@ -1469,17 +1469,17 @@ const Charts = ({ isEnglish }) => {
     const allSurvivalKeys = new Set();
     apiData.forEach((item) => {
       Object.keys(item).forEach((key) => {
-        if (key.startsWith('survival_')) {
+        if (key.startsWith('Born_in_')) {
           allSurvivalKeys.add(key);
         }
       });
     });
 
-    // Sort survival keys by number for consistent ordering
+    // Sort survival keys by year for consistent ordering (big to small)
     const survivalYears = Array.from(allSurvivalKeys).sort((a, b) => {
-      const numA = parseInt(a.split('_')[1], 10);
-      const numB = parseInt(b.split('_')[1], 10);
-      return numA - numB;
+      const yearA = parseInt(a.split('_')[2], 10); // Extract year from Born_in_YYYY
+      const yearB = parseInt(b.split('_')[2], 10); // Extract year from Born_in_YYYY
+      return yearB - yearA; // Reverse order: big to small (newest to oldest)
     });
 
     const colors = [
@@ -1497,8 +1497,8 @@ const Charts = ({ isEnglish }) => {
     ];
 
     const series = survivalYears.map((survivalKey, index) => {
-      // const yearNum = survivalKey.split("_")[1];
-      const yearNum = (parseInt(survivalKey.split("_")[1], 10) + 2011).toString();
+      // Extract year from Born_in_YYYY format
+      const yearNum = survivalKey.split('_')[2]; // Get the year directly from Born_in_YYYY
       const name = isEnglish
         ? `Born in ${yearNum}`
         : `დაბადებული ${yearNum} წელს`;
