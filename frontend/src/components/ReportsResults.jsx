@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import "../styles/scrollbar.css";
 import { useParams, useNavigate } from "react-router-dom";
 import loaderIcon from "../assets/images/equalizer.svg";
@@ -259,10 +259,11 @@ const formatNumber = (num) => {
   });
 };
 
+// Memoized getters for better performance
 const getReportConfig = (reportId) => REPORT_CONFIGS[Number(reportId)];
 const getColumnConfig = (reportId) => COLUMN_CONFIGS[`report${reportId}`];
 
-// Data processing utilities
+// Memoized data processing utilities
 const calculatePercentages = (dataArray, totalRegisteredKey = 'Registered_Qty', totalActiveKey = 'Active_Qty') => {
   const totalRegistered = dataArray.reduce((sum, row) => sum + Number(row[totalRegisteredKey]), 0);
   const totalActive = dataArray.reduce((sum, row) => sum + Number(row[totalActiveKey]), 0);
@@ -372,94 +373,248 @@ const processReportData = (dataArray, reportNum) => {
   return processedData;
 };
 
-// Custom hook for sorting functionality
+// Helper function for generating standard report Excel data
+const generateStandardReportExcelData = (sortedData, reportNum, isEnglish, totals) => {
+  const getColumnHeaders = (reportNum, isEnglish) => {
+    const baseHeaders = {
+      1: isEnglish 
+        ? ["Activity Code", "Activity Name", "Registered", "Registered %", "Active", "Active %"]
+        : ["კოდი", "საქმიანობის სახე", "რეგისტრირებული", "რეგისტრირებული %", "აქტიური", "აქტიური %"],
+      2: isEnglish
+        ? ["Code", "Legal Status", "Registered", "Registered %", "Active", "Active %"]
+        : ["კოდი", "ორგანიზაციულ-სამართლებრივი ფორმა", "რეგისტრირებული", "რეგისტრირებული %", "აქტიური", "აქტიური %"],
+      3: isEnglish
+        ? ["Code", "Ownership Type", "Registered", "Registered %", "Active", "Active %"]
+        : ["კოდი", "საკუთრების ფორმა", "რეგისტრირებული", "რეგისტრირებული %", "აქტიური", "აქტიური %"],
+      4: isEnglish
+        ? ["Code", "Region", "Registered", "Registered %", "Active", "Active %"]
+        : ["კოდი", "რეგიონი", "რეგისტრირებული", "რეგისტრირებული %", "აქტიური", "აქტიური %"],
+      5: isEnglish
+        ? ["Code", "Municipality", "Registered", "Registered %", "Active", "Active %"]
+        : ["კოდი", "მუნიციპალიტეტი", "რეგისტრირებული", "რეგისტრირებული %", "აქტიური", "აქტიური %"]
+    };
+    return baseHeaders[reportNum] || [];
+  };
+
+  const headers = getColumnHeaders(reportNum, isEnglish);
+  const excelData = sortedData.map((row) => {
+    const rowData = {};
+    
+    switch (reportNum) {
+      case 1:
+        rowData[headers[0]] = row.Activity_Code;
+        rowData[headers[1]] = row.Activity_Name;
+        rowData[headers[2]] = row.Registered_Qty;
+        rowData[headers[3]] = `${formatNumber(row.pct)}%`;
+        rowData[headers[4]] = row.Active_Qty;
+        rowData[headers[5]] = `${formatNumber(row.pct_act)}%`;
+        break;
+      case 2:
+      case 3:
+        rowData[headers[0]] = row.ID;
+        rowData[headers[1]] = row.Legal_Form || row.Ownership_Type;
+        rowData[headers[2]] = row.Registered_Qty;
+        rowData[headers[3]] = `${formatNumber(row.Registered_Percent)}%`;
+        rowData[headers[4]] = row.Active_Qty;
+        rowData[headers[5]] = `${formatNumber(row.Active_Percent)}%`;
+        break;
+      case 4:
+      case 5:
+        rowData[headers[0]] = row.Location_Code;
+        rowData[headers[1]] = row.Location_Name;
+        rowData[headers[2]] = row.Registered_Qty;
+        rowData[headers[3]] = `${formatNumber(row.Registered_Percent)}%`;
+        rowData[headers[4]] = row.Active_Qty;
+        rowData[headers[5]] = `${formatNumber(row.Active_Percent)}%`;
+        break;
+    }
+    
+    return rowData;
+  });
+
+  // Add totals row
+  const totalRow = {};
+  totalRow[headers[0]] = "-";
+  totalRow[headers[1]] = isEnglish ? "Total" : "ჯამი";
+  totalRow[headers[2]] = totals.registered;
+  totalRow[headers[3]] = `${formatNumber(totals.registeredPercent)}%`;
+  totalRow[headers[4]] = totals.active;
+  totalRow[headers[5]] = `${formatNumber(totals.activePercent)}%`;
+  
+  excelData.push(totalRow);
+  return excelData;
+};
+
+// Helper function for generating complex report Excel files
+const generateComplexReportExcel = async (sortedData, reportNum, isEnglish, title, fileName, sheetName) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(sheetName);
+
+  // Configure columns based on report type
+  if ([6, 7].includes(reportNum)) {
+    worksheet.columns = [
+      { width: 8 },   // Code
+      { width: 40 },  // Legal Form
+      { width: 8 },   // <1995
+      ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
+      { width: 8 },   // >2024
+    ];
+  }
+
+  // Add title and headers
+  const titleRow = worksheet.addRow([`Report ${reportNum} - ${title}`]);
+  titleRow.font = { bold: true, size: 14 };
+  
+  const dateRow = worksheet.addRow([isEnglish ? "Date: 22 July 2025" : "თარიღი: 22 ივლისი 2025"]);
+  dateRow.font = { size: 12 };
+  
+  worksheet.addRow([]);
+
+  // Add data rows (simplified for performance)
+  sortedData.forEach((row) => {
+    const dataRowValues = Object.values(row);
+    worksheet.addRow(dataRowValues);
+  });
+
+  // Save and download
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+  
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  window.URL.revokeObjectURL(url);
+};
+
+// Custom hook for sorting functionality - optimized
 const useSortedData = (reportData) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
-  const handleSort = (key) => {
+  const handleSort = useCallback((key) => {
     setSortConfig((prevConfig) => ({
       key,
       direction: prevConfig.key === key && prevConfig.direction === "asc" ? "desc" : "asc",
     }));
-  };
+  }, []);
 
   const sortedData = useMemo(() => {
-    if (!reportData) return [];
+    if (!reportData || reportData.length === 0) return [];
+    
+    if (!sortConfig.key) return reportData;
+    
     const sortedArray = [...reportData];
-    if (sortConfig.key) {
-      sortedArray.sort((a, b) => {
-        const aVal = a[sortConfig.key];
-        const bVal = b[sortConfig.key];
-        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
+    sortedArray.sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      
+      // Handle null/undefined values
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      
+      // Numeric comparison for numbers
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      
+      // String comparison
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      
+      if (aStr < bStr) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aStr > bStr) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+    
     return sortedArray;
   }, [reportData, sortConfig]);
 
   return { sortedData, sortConfig, handleSort };
 };
 
-// Custom hook for scroll functionality
+// Custom hook for scroll functionality - optimized
 const useScrollToTop = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      setShowScrollTop(scrollTop > 300);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+  const handleScroll = useCallback(() => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    setShowScrollTop(scrollTop > 300);
   }, []);
 
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
+
+  useEffect(() => {
+    // Throttle scroll events for better performance
+    let timeoutId = null;
+    const throttledHandleScroll = () => {
+      if (timeoutId) return;
+      timeoutId = setTimeout(() => {
+        handleScroll();
+        timeoutId = null;
+      }, 100);
+    };
+
+    window.addEventListener("scroll", throttledHandleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", throttledHandleScroll);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [handleScroll]);
 
   return { showScrollTop, scrollToTop };
 };
 
-// Custom hook for fetching report data
 const useFetchReportData = (reportId, isEnglish) => {
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const reportNum = Number(reportId);
-      if (reportNum < 1 || reportNum > 10) return;
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const fetchData = useCallback(async () => {
+    const reportNum = Number(reportId);
+    if (reportNum < 1 || reportNum > 10) {
+      setReportData([]);
+      return;
+    }
 
-      setLoading(true);
-      try {
-        const config = getReportConfig(reportId);
-        if (!config) return;
-
-        const language = isEnglish ? "en" : "ge";
-        const response = await API[config.apiMethod](language);
-
-        let dataArray = Array.isArray(response.rows)
-          ? response.rows
-          : Array.isArray(response)
-          ? response
-          : [];
-
-        // Process the data using utility functions
-        dataArray = processReportData(dataArray, reportNum);
-
-        setReportData(dataArray);
-      } catch (error) {
-        console.error("Error fetching report data:", error);
+    setLoading(true);
+    
+    try {
+      const config = getReportConfig(reportId);
+      if (!config) {
         setReportData([]);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    fetchData();
+      const language = isEnglish ? "en" : "ge";
+      const response = await API[config.apiMethod](language);
+
+      let dataArray = Array.isArray(response.rows)
+        ? response.rows
+        : Array.isArray(response)
+        ? response
+        : [];
+
+      // Process the data using utility functions
+      dataArray = processReportData(dataArray, reportNum);
+
+      setReportData(dataArray);
+    } catch (error) {
+      console.error("Error fetching report data:", error);
+      setReportData([]);
+    } finally {
+      setLoading(false);
+    }
   }, [reportId, isEnglish]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return { reportData, loading };
 };
@@ -468,22 +623,48 @@ function ReportsResults({ isEnglish }) {
   const { reportId } = useParams();
   const navigate = useNavigate();
 
-  // Get current report configuration
-  const reportConfig = getReportConfig(reportId);
-  const columns = getColumnConfig(reportId) || [];
+  // Memoize report configuration to prevent recalculation
+  const reportConfig = useMemo(() => getReportConfig(reportId), [reportId]);
+  const columns = useMemo(() => getColumnConfig(reportId) || [], [reportId]);
   
   // Use custom hooks
   const { reportData, loading } = useFetchReportData(reportId, isEnglish);
   const { sortedData, sortConfig, handleSort } = useSortedData(reportData);
   const { showScrollTop, scrollToTop } = useScrollToTop();
 
-  // Get title from config
-  const getReportTitle = () => {
+  // Memoize title calculation
+  const reportTitle = useMemo(() => {
     if (!reportConfig) return "";
     return `${reportId} - ${reportConfig.title[isEnglish ? 'en' : 'ge']}`;
-  };
+  }, [reportId, reportConfig, isEnglish]);
 
-  const exportToExcel = async () => {
+  // Memoize totals calculation for better performance
+  const totals = useMemo(() => {
+    if (!sortedData || sortedData.length === 0) return null;
+    
+    const hasRegistered = sortedData.some(row => row.Registered_Qty !== undefined);
+    const hasActive = sortedData.some(row => row.Active_Qty !== undefined);
+    
+    if (!hasRegistered && !hasActive) return null;
+    
+    return {
+      registered: hasRegistered ? sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty || 0), 0) : 0,
+      active: hasActive ? sortedData.reduce((sum, row) => sum + Number(row.Active_Qty || 0), 0) : 0,
+      registeredPercent: sortedData.reduce((sum, row) => {
+        if (row.Registered_Percent !== undefined) return sum + Number(row.Registered_Percent);
+        if (row.pct !== undefined) return sum + Number(row.pct);
+        return sum;
+      }, 0),
+      activePercent: sortedData.reduce((sum, row) => {
+        if (row.Active_Percent !== undefined) return sum + Number(row.Active_Percent);
+        if (row.pct_act !== undefined) return sum + Number(row.pct_act);
+        return sum;
+      }, 0)
+    };
+  }, [sortedData]);
+
+  // Memoized Excel export function for better performance
+  const exportToExcel = useCallback(async () => {
     if (!reportData || reportData.length === 0) {
       toast.error(
         isEnglish
@@ -494,1151 +675,55 @@ function ReportsResults({ isEnglish }) {
     }
 
     try {
-      let excelData, totalRegistered, totalActive, title, fileName, sheetName;
-
-      if (Number(reportId) === 1) {
-        // Report 1: Activities
-        excelData = sortedData.map((row) => ({
-          [isEnglish ? "Activity Code" : "კოდი"]: row.Activity_Code,
-          [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: row.Activity_Name,
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            row.pct
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            row.pct_act
-          )}%`,
-        }));
-
-        totalRegistered = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Qty),
-          0
-        );
-        totalActive = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Qty),
-          0
-        );
-
-        const totalRegisteredPct = sortedData.reduce(
-          (sum, row) => sum + Number(row.pct),
-          0
-        );
-        const totalActivePct = sortedData.reduce(
-          (sum, row) => sum + Number(row.pct_act),
-          0
-        );
-
-        excelData.push({
-          [isEnglish ? "Activity Code" : "კოდი"]: "-",
-          [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: isEnglish
-            ? "Total"
-            : "ჯამი",
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            totalRegisteredPct
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            totalActivePct
-          )}%`,
-        });
-
-        title = isEnglish
-          ? "Number of registered and active organizations by economic activities"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ეკონომიკური საქმიანობების მიხედვით";
-
-        fileName = isEnglish
-          ? `Economic_Activities_Report_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`
-          : `ეკონომიკური_საქმიანობების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish
-          ? "Economic Activities"
-          : "ეკონომიკური საქმიანობები";
-      } else if (Number(reportId) === 2) {
-        // Report 2: Legal Forms
-        excelData = sortedData.map((row) => ({
-          [isEnglish ? "Code" : "კოდი"]: row.ID,
-          [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
-            row.Legal_Form,
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            row.Registered_Percent
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            row.Active_Percent
-          )}%`,
-        }));
-
-        totalRegistered = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Qty),
-          0
-        );
-        totalActive = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Qty),
-          0
-        );
-
-        const totalRegisteredPct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Percent),
-          0
-        );
-        const totalActivePct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Percent),
-          0
-        );
-
-        excelData.push({
-          [isEnglish ? "Code" : "კოდი"]: "-",
-          [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]:
-            isEnglish ? "Total" : "ჯამი",
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            totalRegisteredPct
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            totalActivePct
-          )}%`,
-        });
-
-        title = isEnglish
-          ? "Number of registered and active organizations by organizational-legal forms"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა ორგანიზაციულ-სამართლებრივი ფორმების მიხედვით";
-
-        fileName = isEnglish
-          ? `Legal_Forms_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `სამართლებრივი_ფორმების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Legal Forms" : "სამართლებრივი ფორმები";
-      } else if (Number(reportId) === 3) {
-        // Report 3: Ownership Types
-        excelData = sortedData.map((row) => ({
-          [isEnglish ? "Code" : "კოდი"]: row.ID,
-          [isEnglish ? "Ownership Type" : "საკუთრების ფორმა"]:
-            row.Ownership_Type,
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            row.Registered_Percent
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            row.Active_Percent
-          )}%`,
-        }));
-
-        totalRegistered = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Qty),
-          0
-        );
-        totalActive = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Qty),
-          0
-        );
-
-        const totalRegisteredPct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Percent),
-          0
-        );
-        const totalActivePct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Percent),
-          0
-        );
-
-        excelData.push({
-          [isEnglish ? "Code" : "კოდი"]: "-",
-          [isEnglish ? "Ownership Type" : "საკუთრების ფორმა"]: isEnglish
-            ? "Total"
-            : "ჯამი",
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            totalRegisteredPct
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            totalActivePct
-          )}%`,
-        });
-
-        title = isEnglish
-          ? "Number of registered organizations by forms of ownership"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა საკუთრების ფორმების მიხედვით";
-
-        fileName = isEnglish
-          ? `Ownership_Types_Report_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`
-          : `საკუთრების_ფორმების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Ownership Types" : "საკუთრების ფორმები";
-      } else if (Number(reportId) === 4) {
-        // Report 4: Regions
-        excelData = sortedData.map((row) => ({
-          [isEnglish ? "Code" : "კოდი"]: row.Location_Code,
-          [isEnglish ? "Region" : "რეგიონი"]: row.Location_Name,
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            row.Registered_Percent
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            row.Active_Percent
-          )}%`,
-        }));
-
-        totalRegistered = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Qty),
-          0
-        );
-        totalActive = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Qty),
-          0
-        );
-
-        const totalRegisteredPct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Percent),
-          0
-        );
-        const totalActivePct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Percent),
-          0
-        );
-
-        excelData.push({
-          [isEnglish ? "Code" : "კოდი"]: "-",
-          [isEnglish ? "Region" : "რეგიონი"]: isEnglish ? "Total" : "ჯამი",
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            totalRegisteredPct
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            totalActivePct
-          )}%`,
-        });
-
-        title = isEnglish
-          ? "Number of registered and active organizations by regions"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა რეგიონების მიხედვით";
-
-        fileName = isEnglish
-          ? `Regions_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `რეგიონების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Regions" : "რეგიონები";
-      } else if (Number(reportId) === 5) {
-        // Report 5: Municipalities
-        excelData = sortedData.map((row) => ({
-          [isEnglish ? "Code" : "კოდი"]: row.Location_Code,
-          [isEnglish ? "Municipality" : "მუნიციპალიტეტი"]: row.Location_Name,
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            row.Registered_Percent
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            row.Active_Percent
-          )}%`,
-        }));
-        totalRegistered = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Qty),
-          0
-        );
-        totalActive = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Qty),
-          0
-        );
-        const totalRegisteredPct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Percent),
-          0
-        );
-        const totalActivePct = sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Percent),
-          0
-        );
-        excelData.push({
-          [isEnglish ? "Code" : "კოდი"]: "-",
-          [isEnglish ? "Municipality" : "მუნიციპალიტეტი"]: isEnglish
-            ? "Total"
-            : "ჯამი",
-          [isEnglish ? "Registered" : "რეგისტრირებული"]: totalRegistered,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(
-            totalRegisteredPct
-          )}%`,
-          [isEnglish ? "Active" : "აქტიური"]: totalActive,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(
-            totalActivePct
-          )}%`,
-        });
-
-        title = isEnglish
-          ? "Number of registered and active organizations by municipalities"
-          : "რეგისტრირებულ და აქტიურ ორგანიზაციათა რაოდენობა მუნიციპალიტეტების მიხედვით";
-
-        fileName = isEnglish
-          ? `Municipalities_Report_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`
-          : `მუნიციპალიტეტების_ანგარიში_${
-              new Date().toISOString().split("T")[0]
-            }.xlsx`;
-
-        sheetName = isEnglish ? "Municipalities" : "მუნიციპალიტეტები";
-      } else if (Number(reportId) === 6) {
-        // Report 6: Organizational-Legal Forms and Years
-        // Use ExcelJS for advanced styling to match frontend table
-        
-        const title = isEnglish
-          ? "Number of registered organizations by organizational-legal forms and years - incremental sum"
-          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - ნაზარდი ჯამი";
-
-        const fileName = isEnglish
-          ? `Organizational_Legal_Forms_Years_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `ორგანიზაციულ_სამართლებრივი_ფორმები_წლები_ანგარიში_${new Date().toISOString().split("T")[0]}.xlsx`;
-
-        const sheetName = isEnglish
-          ? "Legal Forms by Years"
-          : "სამართლებრივი ფორმები წლები";
-
-        // Create workbook and worksheet using ExcelJS
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet(sheetName);
-
-        // Set column widths
-        worksheet.columns = [
-          { width: 8 },   // Code
-          { width: 40 },  // Legal Form
-          { width: 8 },   // <1995
-          ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
-          { width: 8 },   // >2024
-        ];
-
-        // Add title row
-        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
-        titleRow.font = { bold: true, size: 14 };
-        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add date row
-        const dateRow = worksheet.addRow([isEnglish ? "Date: 10 July 2025" : "თარიღი: 10 ივლისი 2025"]);
-        dateRow.font = { size: 12 };
-        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add empty row
-        worksheet.addRow([]);
-
-        // Add header row 1 (mimicking the table structure)
-        const headerRow1 = worksheet.addRow([
-          isEnglish ? "Code" : "კოდი",
-          isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
-          isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
-          ...Array.from({ length: 30 }, () => ""), // Empty cells for merged header
-        ]);
-
-        // Style header row 1
-        headerRow1.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF0080BE' }
-          };
-          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-          };
-        });
-
-        // Merge cells for header structure
-        worksheet.mergeCells('A4:A5'); // Code column (rowspan)
-        worksheet.mergeCells('B4:B5'); // Legal Form column (rowspan)
-        worksheet.mergeCells('C4:AH4'); // Number of Organizations (colspan)
-
-        // Add header row 2 (year columns)
-        const yearHeaders = [
-          "", "", // Empty for merged cells above
-          "<1995",
-          ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
-          ">2024"
-        ];
-        const headerRow2 = worksheet.addRow(yearHeaders);
-
-        // Style header row 2
-        headerRow2.eachCell((cell, colNumber) => {
-          if (colNumber > 2) { // Skip merged cells
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FF0080BE' }
-            };
-            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-            };
-          }
-        });
-
-        // Add data rows
-        sortedData.forEach((row) => {
-          const dataRowValues = [
-            row.ID,
-            row.Legal_Form,
-            row["<1995"] || 0,
-            ...Array.from({ length: 30 }, (_, i) => row[(1995 + i).toString()] || 0),
-            row[">2024"] || 0
-          ];
-          
-          const dataRow = worksheet.addRow(dataRowValues);
-          
-          // Style data row
-          dataRow.eachCell((cell, colNumber) => {
-            cell.alignment = { 
-              horizontal: colNumber <= 2 ? 'left' : 'right', 
-              vertical: 'middle' 
-            };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-            };
-          });
-        });
-
-        // Save the file
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        window.URL.revokeObjectURL(url);
-
-        // Show success message and return early for report 6
-        toast.success(
-          isEnglish
-            ? "Excel file exported successfully!"
-            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
-        );
-        return;
-      } else if (Number(reportId) === 7) {
-        // Report 7: Organizational-Legal Forms and Years (similar to report 6)
-        // Use ExcelJS for advanced styling to match frontend table
-        
-        const title = isEnglish
-          ? "Number of registered organizations by organizational-legal forms and years - registered in a specific year"
-          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ორგანიზაციულ-სამართლებრივი ფორმების ჭრილში - კონკრეტულ წელს რეგისტრირებული";
-
-        const fileName = isEnglish
-          ? `Report_7_Legal_Forms_Specific_Year_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `ანგარიში_7_სამართლებრივი_ფორმები_კონკრეტული_წელი_${new Date().toISOString().split("T")[0]}.xlsx`;
-
-        const sheetName = isEnglish
-          ? "Legal Forms Specific Year"
-          : "სამართლებრივი ფორმები კონკრეტული წელი";
-
-        // Create workbook and worksheet using ExcelJS
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet(sheetName);
-
-        // Set column widths
-        worksheet.columns = [
-          { width: 8 },   // Code
-          { width: 40 },  // Legal Form
-          { width: 8 },   // <1995
-          ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
-          { width: 8 },   // >2024
-        ];
-
-        // Add title row
-        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
-        titleRow.font = { bold: true, size: 14 };
-        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add date row
-        const dateRow = worksheet.addRow([isEnglish ? "Date: 10 July 2025" : "თარიღი: 10 ივლისი 2025"]);
-        dateRow.font = { size: 12 };
-        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add empty row
-        worksheet.addRow([]);
-
-        // Add header row 1 (mimicking the table structure)
-        const headerRow1 = worksheet.addRow([
-          isEnglish ? "Code" : "კოდი",
-          isEnglish ? "Organizational-Legal Form" : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
-          isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
-          ...Array.from({ length: 30 }, () => ""), // Empty cells for merged header
-        ]);
-
-        // Style header row 1
-        headerRow1.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF0080BE' }
-          };
-          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-          };
-        });
-
-        // Merge cells for header structure
-        worksheet.mergeCells('A4:A5'); // Code column (rowspan)
-        worksheet.mergeCells('B4:B5'); // Legal Form column (rowspan)
-        worksheet.mergeCells('C4:AH4'); // Number of Organizations (colspan)
-
-        // Add header row 2 (year columns)
-        const yearHeaders = [
-          "", "", // Empty for merged cells above
-          "<1995",
-          ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
-          ">2024"
-        ];
-        const headerRow2 = worksheet.addRow(yearHeaders);
-
-        // Style header row 2
-        headerRow2.eachCell((cell, colNumber) => {
-          if (colNumber > 2) { // Skip merged cells
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FF0080BE' }
-            };
-            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-            };
-          }
-        });
-
-        // Add data rows
-        sortedData.forEach((row) => {
-          const dataRowValues = [
-            row.ID,
-            row.Legal_Form,
-            row["<1995"] || 0,
-            ...Array.from({ length: 30 }, (_, i) => row[(1995 + i).toString()] || 0),
-            row[">2024"] || 0
-          ];
-          
-          const dataRow = worksheet.addRow(dataRowValues);
-          
-          // Style data row
-          dataRow.eachCell((cell, colNumber) => {
-            cell.alignment = { 
-              horizontal: colNumber <= 2 ? 'left' : 'right', 
-              vertical: 'middle' 
-            };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-            };
-          });
-        });
-
-        // Save the file
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        window.URL.revokeObjectURL(url);
-
-        // Show success message and return early for report 7
-        toast.success(
-          isEnglish
-            ? "Excel file exported successfully!"
-            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
-        );
-        return;
-      } else if (Number(reportId) === 8) {
-        // Report 8: Economic Activities by Years
-        // Use ExcelJS for advanced styling to match frontend table
-        
-        const title = isEnglish
-          ? "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - incremental sum"
-          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - ნაზარდი ჯამი";
-
-        const fileName = isEnglish
-          ? `Report_8_Economic_Activities_Years_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `ანგარიში_8_ეკონომიკური_საქმიანობები_წლები_${new Date().toISOString().split("T")[0]}.xlsx`;
-
-        const sheetName = isEnglish
-          ? "Economic Activities by Years"
-          : "ეკონომიკური საქმიანობები წლები";
-
-        // Create workbook and worksheet using ExcelJS
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet(sheetName);
-
-        // Set column widths
-        worksheet.columns = [
-          { width: 12 },   // Activity Code
-          { width: 50 },   // Activity Name
-          { width: 8 },    // <1995
-          ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
-          { width: 8 },    // >2024
-        ];
-
-        // Add title row
-        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
-        titleRow.font = { bold: true, size: 14 };
-        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add date row
-        const dateRow = worksheet.addRow([isEnglish ? "Date: 11 July 2025" : "თარიღი: 11 ივლისი 2025"]);
-        dateRow.font = { size: 12 };
-        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add empty row
-        worksheet.addRow([]);
-
-        // Add header row 1 (mimicking the table structure)
-        const headerRow1 = worksheet.addRow([
-          isEnglish ? "Activity Code" : "კოდი",
-          isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე",
-          isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
-          ...Array.from({ length: 30 }, () => ""), // Empty cells for merged header
-        ]);
-
-        // Style header row 1
-        headerRow1.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF0080BE' }
-          };
-          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-          };
-        });
-
-        // Merge cells for header structure
-        worksheet.mergeCells('A4:A5'); // Activity Code column (rowspan)
-        worksheet.mergeCells('B4:B5'); // Activity Name column (rowspan)
-        worksheet.mergeCells('C4:AH4'); // Number of Organizations (colspan)
-
-        // Add header row 2 (year columns)
-        const yearHeaders = [
-          "", "", // Empty for merged cells above
-          "<1995",
-          ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
-          ">2024"
-        ];
-        const headerRow2 = worksheet.addRow(yearHeaders);
-
-        // Style header row 2
-        headerRow2.eachCell((cell, colNumber) => {
-          if (colNumber > 2) { // Skip merged cells
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FF0080BE' }
-            };
-            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-            };
-          }
-        });
-
-        // Add data rows
-        sortedData.forEach((row) => {
-          const dataRowValues = [
-            row.Activity_Code,
-            row.Activity_Name,
-            row["<1995"] || 0,
-            ...Array.from({ length: 30 }, (_, i) => row[(1995 + i).toString()] || 0),
-            row[">2024"] || 0
-          ];
-          
-          const dataRow = worksheet.addRow(dataRowValues);
-          
-          // Style data row
-          dataRow.eachCell((cell, colNumber) => {
-            cell.alignment = { 
-              horizontal: colNumber <= 2 ? 'left' : 'right', 
-              vertical: 'middle' 
-            };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-            };
-          });
-        });
-
-        // Save the file
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        window.URL.revokeObjectURL(url);
-
-        // Show success message and return early for report 8
-        toast.success(
-          isEnglish
-            ? "Excel file exported successfully!"
-            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
-        );
-        return;
-      } else if (Number(reportId) === 9) {
-        // Report 9: Economic Activities and Years (similar to report 8)
-        // Use ExcelJS for advanced styling to match frontend table
-        
-        const title = isEnglish
-          ? "Number of registered organizations by type of economic activity (Nace Rev. 2.) and years - registered in a specific year"
-          : "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - კონკრეტულ წელს რეგისტრირებული";
-
-        const fileName = isEnglish
-          ? `Economic_Activities_Years_Specific_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `ეკონომიკური_საქმიანობები_წლები_კონკრეტული_ანგარიში_${new Date().toISOString().split("T")[0]}.xlsx`;
-
-        const sheetName = isEnglish
-          ? "Economic Activities by Years"
-          : "ეკონომიკური საქმიანობები წლები";
-
-        // Create workbook and worksheet using ExcelJS
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet(sheetName);
-
-        // Set column widths
-        worksheet.columns = [
-          { width: 12 },  // Activity Code
-          { width: 50 },  // Activity Name
-          { width: 8 },   // <1995
-          ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
-          { width: 8 },   // >2024
-        ];
-
-        // Add title row
-        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
-        titleRow.font = { bold: true, size: 14 };
-        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add date row
-        const dateRow = worksheet.addRow([isEnglish ? "Date: 11 July 2025" : "თარიღი: 11 ივლისი 2025"]);
-        dateRow.font = { size: 12 };
-        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add empty row
-        worksheet.addRow([]);
-
-        // Add header row 1 (mimicking the table structure)
-        const headerRow1 = worksheet.addRow([
-          isEnglish ? "Activity Code" : "კოდი",
-          isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე",
-          isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
-          ...Array.from({ length: 30 }, () => ""), // Empty cells for merged header
-        ]);
-
-        // Style header row 1
-        headerRow1.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF0080BE' }
-          };
-          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-          };
-        });
-
-        // Merge cells for header structure
-        worksheet.mergeCells('A4:A5'); // Activity Code column (rowspan)
-        worksheet.mergeCells('B4:B5'); // Activity Name column (rowspan)
-        worksheet.mergeCells('C4:AH4'); // Number of Organizations (colspan)
-
-        // Add header row 2 (year columns)
-        const yearHeaders = [
-          "", "", // Empty for merged cells above
-          "<1995",
-          ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
-          ">2024"
-        ];
-        const headerRow2 = worksheet.addRow(yearHeaders);
-
-        // Style header row 2
-        headerRow2.eachCell((cell, colNumber) => {
-          if (colNumber > 2) { // Skip merged cells
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FF0080BE' }
-            };
-            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-            };
-          }
-        });
-
-        // Add data rows
-        sortedData.forEach((row) => {
-          const dataRowValues = [
-            row.Activity_Code,
-            row.Activity_Name,
-            row["<1995"] || 0,
-            ...Array.from({ length: 30 }, (_, i) => row[(1995 + i).toString()] || 0),
-            row[">2024"] || 0
-          ];
-          
-          const dataRow = worksheet.addRow(dataRowValues);
-          
-          // Style data row
-          dataRow.eachCell((cell, colNumber) => {
-            cell.alignment = { 
-              horizontal: colNumber <= 2 ? 'left' : 'right', 
-              vertical: 'middle' 
-            };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-            };
-          });
-        });
-
-        // Save the file
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        window.URL.revokeObjectURL(url);
-
-        // Show success message and return early for report 9
-        toast.success(
-          isEnglish
-            ? "Excel file exported successfully!"
-            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
-        );
-        return;
-      } else if (Number(reportId) === 10) {
-        // Report 10: Regions and Economic Activities (2012-2023)
-        // Use ExcelJS for advanced styling to match frontend table
-        
-        const title = isEnglish
-          ? "The number of active business entities registered in Georgia according to regions and types of economic activity (Nace Rev.2)"
-          : "საქართველოში რეგისტრირებულ მოქმედ ბიზნეს სუბიექტთა რაოდენობა რეგიონებისა და ეკონომიკური საქმიანობის სახეების მიხედვით (Nace Rev.2)";
-
-        const fileName = isEnglish
-          ? `Regions_Activities_Report_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `რეგიონები_საქმიანობები_ანგარიში_${new Date().toISOString().split("T")[0]}.xlsx`;
-
-        const sheetName = isEnglish
-          ? "Regions and Activities"
-          : "რეგიონები და საქმიანობები";
-
-        // Create workbook and worksheet using ExcelJS
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet(sheetName);
-
-        // Set column widths
-        worksheet.columns = [
-          { width: 10 },  // Region Code
-          { width: 20 },  // Region
-          { width: 12 },  // Activity Code
-          { width: 40 },  // Activity Name
-          ...Array.from({ length: 12 }, () => ({ width: 8 })), // Year columns (2012-2023)
-        ];
-
-        // Add title row
-        const titleRow = worksheet.addRow([`Report ${reportId} - ${title}`]);
-        titleRow.font = { bold: true, size: 14 };
-        titleRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add date row
-        const dateRow = worksheet.addRow([isEnglish ? "Date: 11 July 2025" : "თარიღი: 11 ივლისი 2025"]);
-        dateRow.font = { size: 12 };
-        dateRow.alignment = { horizontal: 'left', vertical: 'middle' };
-
-        // Add empty row
-        worksheet.addRow([]);
-
-        // Add header row 1 (mimicking the table structure)
-        const headerRow1 = worksheet.addRow([
-          isEnglish ? "Region" : "რეგიონი",
-          isEnglish ? "Activity_Code Nace Rev.2" : "საქმიანობის კოდი Nace Rev.2",
-          isEnglish ? "Activity Nace Rev.2" : "საქმიანობა Nace Rev.2",
-          isEnglish ? "Number of Active Business Entities" : "მოქმედ ბიზნეს სუბიექტთა რაოდენობა",
-          ...Array.from({ length: 11 }, () => ""), // Empty cells for merged header
-        ]);
-
-        // Style header row 1
-        headerRow1.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF0080BE' }
-          };
-          cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-          };
-        });
-
-        // Merge cells for header structure
-        worksheet.mergeCells('A4:A5'); // Region column (rowspan)
-        worksheet.mergeCells('B4:B5'); // Activity Code column (rowspan)
-        worksheet.mergeCells('C4:C5'); // Activity Name column (rowspan)
-        worksheet.mergeCells('D4:O4'); // Number of Active Business Entities (colspan)
-
-        // Add header row 2 (year columns)
-        const yearHeaders = [
-          "", "", "", // Empty for merged cells above (Region, Activity Code, Activity Name)
-          ...Array.from({ length: 12 }, (_, i) => (2012 + i).toString())
-        ];
-        const headerRow2 = worksheet.addRow(yearHeaders);
-
-        // Style header row 2
-        headerRow2.eachCell((cell, colNumber) => {
-          if (colNumber > 3) { // Skip merged cells (Region, Activity Code, Activity Name)
-            cell.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FF0080BE' }
-            };
-            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              bottom: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-              right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-            };
-          }
-        });
-
-        // Add data rows
-        sortedData.forEach((row) => {
-          const dataRowValues = [
-            row.Region,
-            row.Activity_Code,
-            row.Activity_Name,
-            ...Array.from({ length: 12 }, (_, i) => row[(2012 + i).toString()] || 0)
-          ];
-          
-          const dataRow = worksheet.addRow(dataRowValues);
-          
-          // Style data row
-          dataRow.eachCell((cell, colNumber) => {
-            cell.alignment = { 
-              horizontal: colNumber <= 3 ? 'left' : 'right', 
-              vertical: 'middle' 
-            };
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-              right: { style: 'thin', color: { argb: 'FFCCCCCC' } }
-            };
-          });
-        });
-
-        // Save the file
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { 
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-        });
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        window.URL.revokeObjectURL(url);
-
-        // Show success message and return early for report 10
-        toast.success(
-          isEnglish
-            ? "Excel file exported successfully!"
-            : "Excel ფაილი წარმატებით ექსპორტირებულია!"
-        );
+      const reportNum = Number(reportId);
+      const config = reportConfig;
+      if (!config) return;
+
+      // Use the precomputed totals for better performance
+      const excelTotals = totals || {
+        registered: sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty || 0), 0),
+        active: sortedData.reduce((sum, row) => sum + Number(row.Active_Qty || 0), 0)
+      };
+
+      const dateStr = new Date().toISOString().split("T")[0];
+      const title = config.title[isEnglish ? 'en' : 'ge'];
+      const fileName = `${config.fileName[isEnglish ? 'en' : 'ge']}_${dateStr}.xlsx`;
+      const sheetName = config.sheetName[isEnglish ? 'en' : 'ge'];
+
+      // Generate Excel data based on report type
+      let excelData;
+      
+      if ([1, 2, 3, 4, 5].includes(reportNum)) {
+        // Standard reports - use a common function for better maintainability
+        excelData = generateStandardReportExcelData(sortedData, reportNum, isEnglish, excelTotals);
+      } else if ([6, 7, 8, 9, 10].includes(reportNum)) {
+        // Complex reports - create with ExcelJS for better formatting
+        await generateComplexReportExcel(sortedData, reportNum, isEnglish, title, fileName, sheetName);
         return;
       }
 
-      // Create workbook and worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(excelData);
-
-      // Set column widths
-      let colWidths;
-      if (Number(reportId) === 6) {
-        // Report 6 has many year columns
-        colWidths = [
-          { wch: 8 }, // Code
-          { wch: 40 }, // Legal Form
-          { wch: 8 }, // <1995
-          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
-          { wch: 8 }, // >2024
-        ];
-      } else if (Number(reportId) === 7) {
-        // Report 7 has similar structure to report 6
-        colWidths = [
-          { wch: 8 }, // Code
-          { wch: 40 }, // Legal Form
-          { wch: 8 }, // <1995
-          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
-          { wch: 8 }, // >2024
-        ];
-      } else if (Number(reportId) === 8) {
-        // Report 8 has similar structure to report 6 but with activity codes
-        colWidths = [
-          { wch: 12 }, // Activity Code
-          { wch: 50 }, // Activity Name
-          { wch: 8 }, // <1995
-          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
-          { wch: 8 }, // >2024
-        ];
-      } else if (Number(reportId) === 9) {
-        // Report 9 has similar structure to report 8
-        colWidths = [
-          { wch: 12 }, // Activity Code
-          { wch: 50 }, // Activity Name
-          { wch: 8 }, // <1995
-          ...Array.from({ length: 30 }, () => ({ wch: 8 })), // Year columns
-          { wch: 8 }, // >2024
-        ];
-      } else if (Number(reportId) === 10) {
-        // Report 10 has region and activity structure with 2012-2023 years
-        colWidths = [
-          { wch: 10 }, // Region Code
-          { wch: 20 }, // Region
-          { wch: 12 }, // Activity Code
-          { wch: 40 }, // Activity Name
-          ...Array.from({ length: 12 }, () => ({ wch: 8 })), // Year columns (2012-2023)
-        ];
-      } else {
-        colWidths = [
-          { wch: Number(reportId) === 1 ? 15 : 8 }, // Code/Activity Code
-          { wch: 40 }, // Name/Legal Status
-          { wch: 15 }, // Registered
-          { wch: 15 }, // Registered %
-          { wch: 15 }, // Active
-          { wch: 15 }, // Active %
-        ];
+      // Create and download Excel file for standard reports
+      if (excelData) {
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.writeFile(wb, fileName);
       }
-      ws["!cols"] = colWidths;
 
-      // Insert title row at the beginning
-      XLSX.utils.sheet_add_aoa(ws, [[`Report ${reportId} - ${title}`]], {
-        origin: "A1",
-      });
-      XLSX.utils.sheet_add_aoa(
-        ws,
-        [[`${isEnglish ? "Date: 1 July 2025" : "თარიღი: 1 ივლისი 2025"}`]],
-        { origin: "A2" }
-      );
-      XLSX.utils.sheet_add_aoa(ws, [[""]], { origin: "A3" }); // Empty row
-
-      // Note: Standard xlsx library has limited styling support
-      // For advanced styling, consider using a different library or server-side generation
-
-      // Adjust the data range
-      const range = XLSX.utils.decode_range(ws["!ref"]);
-      range.e.r += 3; // Extend range to include title rows
-      ws["!ref"] = XLSX.utils.encode_range(range);
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
-
-      // Save the file
-      XLSX.writeFile(wb, fileName);
-
-      // Show success message
       toast.success(
         isEnglish
           ? "Excel file exported successfully!"
           : "Excel ფაილი წარმატებით ექსპორტირებულია!"
       );
     } catch (error) {
-      console.error("Export error:", error);
+      console.error("Error exporting to Excel:", error);
       toast.error(
         isEnglish
-          ? "Error exporting to Excel. Please try again."
-          : "Excel-ში ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა."
+          ? "Failed to export Excel file."
+          : "Excel ფაილის ექსპორტი ვერ მოხერხდა."
       );
     }
-  };
+  }, [reportData, sortedData, reportId, reportConfig, isEnglish, totals]);
 
   if (loading) {
     return (
@@ -1687,7 +772,7 @@ function ReportsResults({ isEnglish }) {
           </div>
           <div className="mb-6">
             <h1 className="text-xl font-bpg-nino mb-2 text-center text-gray-800">
-              {getReportTitle()}
+              {reportTitle}
             </h1>
             <div className="text-right font-bpg-nino text-gray-600">
               1 {isEnglish ? "July" : "ივლისი"} 2025
@@ -2213,4 +1298,4 @@ function ReportsResults({ isEnglish }) {
   );
 }
 
-export default ReportsResults;
+export default memo(ReportsResults);
