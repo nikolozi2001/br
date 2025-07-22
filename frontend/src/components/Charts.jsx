@@ -60,6 +60,9 @@ const Charts = ({ isEnglish }) => {
     return new Set();
   });
 
+  // Add cache for API responses
+  const [dataCache, setDataCache] = useState(new Map());
+
   // Save hiddenDataKeys to localStorage whenever it changes
   useEffect(() => {
     try {
@@ -81,6 +84,25 @@ const Charts = ({ isEnglish }) => {
       try {
         setLoading(true);
         setError(null);
+
+        const cacheKey = `${isEnglish ? "en" : "ge"}-${retryCount}`;
+        
+        // Check cache first
+        if (dataCache.has(cacheKey)) {
+          const cachedData = dataCache.get(cacheKey);
+          setOrganizationsByYear(cachedData.birthDeathData);
+          setActivityData(cachedData.naçeData);
+          setActivityDataDeath(cachedData.deathNaçeData);
+          setRegionalData(cachedData.birthRegionData);
+          setRegionalDataDeath(cachedData.deathRegionData);
+          setSectorData(cachedData.birthSectorData);
+          setSectorDataDeath(cachedData.deathSectorData);
+          setSurvivalData(cachedData.survivalYearData);
+          setDistributionData(cachedData.birthDistributionData);
+          setDistributionDataDeath(cachedData.deathDistributionData);
+          setLoading(false);
+          return;
+        }
 
         // Fetch all datasets in parallel
         const [
@@ -106,6 +128,31 @@ const Charts = ({ isEnglish }) => {
           fetchEnterpriseBirthDistribution(isEnglish ? "en" : "ge"),
           fetchEnterpriseDeathDistribution(isEnglish ? "en" : "ge"),
         ]);
+
+        // Cache the results
+        const cacheData = {
+          birthDeathData,
+          naçeData,
+          deathNaçeData,
+          birthRegionData,
+          deathRegionData,
+          birthSectorData,
+          deathSectorData,
+          survivalYearData,
+          birthDistributionData,
+          deathDistributionData,
+        };
+        
+        setDataCache(prev => {
+          const newCache = new Map(prev);
+          newCache.set(cacheKey, cacheData);
+          // Keep only last 4 cache entries to prevent memory leaks
+          if (newCache.size > 4) {
+            const firstKey = newCache.keys().next().value;
+            newCache.delete(firstKey);
+          }
+          return newCache;
+        });
 
         setOrganizationsByYear(birthDeathData);
         setActivityData(naçeData);
@@ -137,7 +184,7 @@ const Charts = ({ isEnglish }) => {
     };
 
     loadData();
-  }, [isEnglish, retryCount]);
+  }, [isEnglish, retryCount, dataCache]);
 
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);

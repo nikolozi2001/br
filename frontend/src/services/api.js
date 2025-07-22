@@ -3,20 +3,37 @@ const API_BASE_URL = "http://192.168.1.27:5000/api";
 // Generic API utility functions for reports
 const handleReportApiResponse = async (response) => {
   if (!response.ok) {
-    throw new Error("Network response was not ok");
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText || 'Network response was not ok'}`);
   }
-  const data = await response.json();
-  return data.recordset || data;
+  
+  try {
+    const data = await response.json();
+    return data.recordset || data;
+  } catch {
+    throw new Error('Failed to parse response as JSON');
+  }
 };
 
 const createReportApiCall = (reportNumber) => {
   return async (lang = "ge") => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/report${reportNumber}?lang=${lang}`);
+      const response = await fetch(
+        `${API_BASE_URL}/report${reportNumber}?lang=${lang}`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
       return await handleReportApiResponse(response);
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error(`Request timeout for report ${reportNumber}`);
+      }
       console.error(`Error fetching report ${reportNumber} data:`, error);
-      return [];
+      throw error; // Re-throw to allow higher-level error handling
     }
   };
 };
