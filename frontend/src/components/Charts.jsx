@@ -650,22 +650,30 @@ const Charts = ({ isEnglish }) => {
         const fileName = `${cleanFileName}_chart`;
 
         if (format === "svg") {
-          // Try SVG export, but fall back to canvas->SVG conversion if not supported
-          try {
-            const svgStr = echartsInstance.renderToSVGString();
-            const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-            const url = URL.createObjectURL(svgBlob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${fileName}.svg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            return;
-          } catch (error) {
-            console.warn("SVG direct export failed, falling back to canvas method:", error);
-            // Continue to canvas method below and convert to SVG
+          // Check if ECharts is using SVG renderer before attempting direct SVG export
+          const rendererType = echartsInstance.getZr().painter.getType();
+          
+          if (rendererType === 'svg') {
+            // Try SVG export only if using SVG renderer
+            try {
+              const svgStr = echartsInstance.renderToSVGString();
+              const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+              const url = URL.createObjectURL(svgBlob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${fileName}.svg`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              return;
+            } catch (error) {
+              console.warn("SVG direct export failed despite SVG renderer:", error);
+              // Continue to canvas method below
+            }
+          } else {
+            // Skip direct SVG export for canvas renderer, go straight to canvas conversion
+            console.log("Using canvas renderer, converting canvas to SVG format");
           }
         }
 
