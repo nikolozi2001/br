@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "perf-test": "node performance-test.js",
+    "perf-test:watch": "nodemon performance-test.js"
   },
   "keywords": [],
   "author": "",
