@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
+import * as echarts from "echarts";
 import {
   Download,
   Maximize2,
@@ -424,306 +425,408 @@ const Charts = ({ isEnglish }) => {
     }, 100);
   };
 
-  const downloadChart = React.useCallback(
-    async (format, chartElement, title) => {
-      // Close dropdown first to avoid capturing it
-      setActiveDropdown(null);
+  // Simple fallback download method using HTML5 canvas
+  const fallbackDownload = React.useCallback(
+    (format, chartContainer, title) => {
+      try {
+        const svgElement = chartContainer.querySelector('.chart-content svg');
+        if (!svgElement) {
+          alert(isEnglish ? 
+            "Unable to download chart. SVG not found." : 
+            "გრაფიკის ჩამოტვირთვა შეუძლებელია. SVG ვერ მოიძებნა."
+          );
+          return;
+        }
 
-      // Wait a bit for dropdown to close
-      await new Promise((resolve) => setTimeout(resolve, 100));
+        // Wait a bit to ensure SVG is fully rendered
+        setTimeout(() => {
+          try {
+            // Check if SVG has content by looking for actual chart elements
+            const hasChartElements = svgElement.querySelector('g[clip-path], path, rect, circle, line, text') !== null;
+            if (!hasChartElements) {
+              alert(isEnglish ? 
+                "Chart appears to be empty. Please wait for data to load completely." : 
+                "გრაფიკი ცარიელია. გთხოვთ, დაელოდოთ მონაცემების სრულ ჩატვირთვას."
+              );
+              return;
+            }
 
-      // Get the chart content area specifically, not the whole container
-      const chartContent = chartElement.querySelector(".chart-content");
-      const svgElement = chartContent?.querySelector("svg");
+            // Get the bounding box more reliably
+            let bbox;
+            try {
+              bbox = svgElement.getBBox();
+            } catch (error) {
+              // Fallback if getBBox fails
+              const rect = svgElement.getBoundingClientRect();
+              bbox = { width: rect.width || 800, height: rect.height || 600 };
+            }
 
-      if (!svgElement) {
-        console.error("No SVG element found in chart");
-        return;
-      }
+            if (bbox.width === 0 || bbox.height === 0) {
+              alert(isEnglish ? 
+                "Chart appears to be empty. Please wait for data to load." : 
+                "გრაფიკი ცარიელია. გთხოვთ, დაელოდოთ მონაცემების ჩატვირთვას."
+              );
+              return;
+            }
 
-      // Get the actual rendered dimensions
-      const svgRect = svgElement.getBoundingClientRect();
-      const svgWidth = svgRect.width || 800;
-      const svgHeight = svgRect.height || 400;
+            // Clone and prepare SVG for export
+            const svgClone = svgElement.cloneNode(true);
+            
+            // Ensure SVG has proper dimensions
+            svgClone.setAttribute('width', bbox.width || 800);
+            svgClone.setAttribute('height', bbox.height || 600);
+            svgClone.setAttribute('viewBox', `0 0 ${bbox.width || 800} ${bbox.height || 600}`);
+            
+            const svgData = new XMLSerializer().serializeToString(svgClone);
+            
+            // Create filename
+            const fileName = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').toLowerCase() || 'chart';
+            
+            if (format === 'svg') {
+              // Direct SVG download
+              const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+              const url = URL.createObjectURL(svgBlob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${fileName}.svg`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              return;
+            }
 
-      // Clone the SVG to avoid modifying the original
-      const svgClone = svgElement.cloneNode(true);
+            // For raster formats, convert SVG to canvas with higher quality
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
 
-      // Set explicit dimensions on the clone
-      svgClone.setAttribute("width", svgWidth);
-      svgClone.setAttribute("height", svgHeight);
-      svgClone.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+            // Use higher resolution for better quality
+            const scale = Math.max(window.devicePixelRatio || 1, 2);
+            canvas.width = (bbox.width || 800) * scale;
+            canvas.height = (bbox.height || 600) * scale;
+            canvas.style.width = (bbox.width || 800) + 'px';
+            canvas.style.height = (bbox.height || 600) + 'px';
+            ctx.scale(scale, scale);
 
-      const svgData = new XMLSerializer().serializeToString(svgClone);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
 
-      // Create a clean filename that works with Georgian text
-      let cleanFileName = title;
-      // Replace Georgian characters and special characters with safe alternatives
-      cleanFileName = cleanFileName
-        .replace(/[^\w\s-_.]/g, "") // Remove special characters except word chars, spaces, hyphens, underscores, dots
-        .replace(/\s+/g, "_") // Replace spaces with underscores
-        .toLowerCase();
-
-      // Fallback if filename becomes empty
-      if (!cleanFileName || cleanFileName.length < 3) {
-        cleanFileName = `chart_${Date.now()}`;
-      }
-
-      const fileName = `${cleanFileName}_chart`;
-
-      if (format === "svg") {
-        // Direct SVG download
-        const svgBlob = new Blob([svgData], {
-          type: "image/svg+xml;charset=utf-8",
-        });
-        const url = URL.createObjectURL(svgBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${fileName}.svg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        return;
-      }
-
-      // For raster formats, convert SVG to canvas
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      // Set canvas size with high DPI for better quality (ensure 100% data capture)
-      const dpr = Math.max(window.devicePixelRatio || 1, 2); // At least 2x for high quality
-      canvas.width = svgWidth * dpr;
-      canvas.height = svgHeight * dpr;
-      canvas.style.width = svgWidth + "px";
-      canvas.style.height = svgHeight + "px";
-      ctx.scale(dpr, dpr);
-
-      // Improve rendering quality
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-
-      return new Promise((resolve) => {
-        const img = new Image();
-
-        img.onload = () => {
-          // Fill with white background
-          ctx.fillStyle = "white";
-          ctx.fillRect(0, 0, svgWidth, svgHeight);
-
-          // Draw the chart
-          ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
-
-          switch (format) {
-            case "png": {
-              canvas.toBlob(
-                (blob) => {
+            img.onload = () => {
+              // White background
+              ctx.fillStyle = 'white';
+              ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
+              
+              // Draw image
+              ctx.drawImage(img, 0, 0);
+              
+              if (format === 'png' || format === 'jpeg') {
+                canvas.toBlob((blob) => {
                   if (blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `${fileName}.png`;
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `${fileName}.${format === 'jpeg' ? 'jpg' : format}`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }
-                  resolve();
-                },
-                "image/png",
-                1.0
-              ); // Maximum quality
-              break;
-            }
-
-            case "jpeg": {
-              canvas.toBlob(
-                (blob) => {
-                  if (blob) {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `${fileName}.jpg`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  }
-                  resolve();
-                },
-                "image/jpeg",
-                1.0
-              ); // Maximum quality
-              break;
-            }
-
-            case "pdf": {
-              // For PDF, we'll use the canvas to create a simple PDF
-              import("jspdf")
-                .then(({ jsPDF }) => {
-                  const orientation =
-                    svgWidth > svgHeight ? "landscape" : "portrait";
-                  const pdf = new jsPDF({
-                    orientation,
-                    unit: "mm",
-                    format: "a4",
-                  });
-
-                  // Calculate dimensions to fit A4
-                  const a4Width = orientation === "landscape" ? 297 : 210;
-                  const a4Height = orientation === "landscape" ? 210 : 297;
-                  const margin = 20;
-
-                  const maxWidth = a4Width - margin * 2;
-                  const maxHeight = a4Height - margin * 3; // Extra margin for title
-
-                  // Calculate scale to fit
-                  const scaleX = maxWidth / (svgWidth * 0.264583); // Convert px to mm
-                  const scaleY = maxHeight / (svgHeight * 0.264583);
-                  const scale = Math.min(scaleX, scaleY);
-
-                  const finalWidth = svgWidth * 0.264583 * scale;
-                  const finalHeight = svgHeight * 0.264583 * scale;
-
-                  // Center the image
-                  const x = (a4Width - finalWidth) / 2;
-                  const y = margin + 15; // Space for title
-
-                  // Handle Georgian text properly by converting to image
-                  // Create a temporary canvas for the title
-                  const titleCanvas = document.createElement("canvas");
-                  const titleCtx = titleCanvas.getContext("2d");
-
-                  // Set canvas size for title (higher resolution for better quality)
-                  const titleDpr = 2;
-                  titleCanvas.width = a4Width * 3.779 * titleDpr; // Convert mm to px (72 DPI) with high resolution
-                  titleCanvas.height = 100 * titleDpr; // Increased height for better spacing
-                  titleCtx.scale(titleDpr, titleDpr);
-
-                  // Set font for title (use system fonts that support Georgian)
-                  titleCtx.fillStyle = "white";
-                  titleCtx.fillRect(
-                    0,
-                    0,
-                    titleCanvas.width / titleDpr,
-                    titleCanvas.height / titleDpr
-                  );
-                  titleCtx.fillStyle = "#1f2937"; // Dark gray for better readability
-
-                  // Try to load web fonts first, fallback to system fonts
-                  titleCtx.font =
-                    'bold 28px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", "Segoe UI", "Arial Unicode MS", sans-serif';
-                  titleCtx.textAlign = "center";
-                  titleCtx.textBaseline = "middle";
-                  titleCtx.imageSmoothingEnabled = true;
-                  titleCtx.imageSmoothingQuality = "high";
-
-                  // Draw title text with better positioning
-                  const titleWidth = titleCanvas.width / titleDpr;
-                  const titleHeight = titleCanvas.height / titleDpr;
-
-                  // Split long titles into multiple lines if needed
-                  const words = title.split(" ");
-                  const titleMaxWidth = titleWidth - 60; // Increased margin for better spacing
-                  let line = "";
-                  const lines = [];
-
-                  for (let i = 0; i < words.length; i++) {
-                    const testLine = line + words[i] + " ";
-                    const metrics = titleCtx.measureText(testLine);
-                    const testWidth = metrics.width;
-
-                    if (testWidth > titleMaxWidth && line !== "") {
-                      lines.push(line.trim());
-                      line = words[i] + " ";
-                    } else {
-                      line = testLine;
-                    }
-                  }
-                  lines.push(line.trim());
-
-                  // Draw each line with better spacing
-                  const lineHeight = 24; // Increased line height for better readability
-                  const startY =
-                    titleHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
-
-                  lines.forEach((line, index) => {
-                    titleCtx.fillText(
-                      line,
-                      titleWidth / 2,
-                      startY + index * lineHeight
+                    URL.revokeObjectURL(downloadUrl);
+                  } else {
+                    alert(isEnglish ? 
+                      "Failed to create image file." : 
+                      "გამოსახულების ფაილის შექმნა ვერ მოხერხდა."
                     );
-                  });
+                  }
+                }, format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1.0);
+              }
+              
+              URL.revokeObjectURL(url);
+            };
 
-                  // Add title as image to PDF with proper sizing
-                  const titleImageData = titleCanvas.toDataURL("image/png");
-                  const titleHeightMm = Math.min(25, lines.length * 10); // Adjusted height calculation
+            img.onerror = () => {
+              URL.revokeObjectURL(url);
+              alert(isEnglish ? 
+                "Failed to process chart image." : 
+                "გრაფიკის გამოსახულების დამუშავება ვერ მოხერხდა."
+              );
+            };
 
-                  pdf.addImage(
-                    titleImageData,
-                    "PNG",
-                    margin,
-                    margin - 5,
-                    maxWidth,
-                    titleHeightMm
-                  );
+            img.src = url;
+          } catch (innerError) {
+            console.error('Inner fallback download failed:', innerError);
+            alert(isEnglish ? 
+              "Download failed. Please try again later." : 
+              "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, მოგვიანებით სცადოთ."
+            );
+          }
+        }, 100); // Wait 100ms for SVG to fully render
 
-                  // Adjust chart position based on title height
-                  const adjustedY = margin + titleHeightMm + 8; // Increased spacing
+      } catch (error) {
+        console.error('Fallback download failed:', error);
+        alert(isEnglish ? 
+          "Download failed. Please try again later." : 
+          "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, მოგვიანებით სცადოთ."
+        );
+      }
+    },
+    [isEnglish]
+  );
 
-                  // Add chart with adjusted position
-                  pdf.addImage(
-                    canvas.toDataURL("image/png"),
-                    "PNG",
-                    x,
-                    Math.max(adjustedY, y), // Use either adjusted position or original, whichever is lower
-                    finalWidth,
-                    finalHeight
-                  );
+  // Store chart refs for download access
+  const chartRefs = React.useRef({});
 
-                  // Clean filename for Georgian text
-                  const cleanFileName =
-                    fileName.replace(/[^\w\s-]/g, "").trim() || "chart";
-                  pdf.save(`${cleanFileName}.pdf`);
-                  resolve();
-                })
-                .catch((error) => {
-                  console.error("PDF generation failed:", error);
-                  // Fallback: download as PNG
-                  canvas.toBlob((blob) => {
-                    if (blob) {
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `${fileName}.png`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                    }
-                    resolve();
-                  }, "image/png");
-                });
-              break;
+  // Alternative download method using stored chart references
+  const downloadChartFromECharts = React.useCallback(
+    async (format, chartContainer, title, chartIndex) => {
+      try {
+        setActiveDropdown(null);
+        
+        // Wait longer for chart to fully render and for data to be processed
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Try to get ECharts instance using stored ref
+        const chartRef = chartRefs.current[chartIndex];
+        let echartsInstance = null;
+
+        if (chartRef) {
+          echartsInstance = chartRef.getEchartsInstance?.();
+        }
+
+        // Fallback: try to find instance through DOM
+        if (!echartsInstance) {
+          const chartDiv = chartContainer.querySelector('.chart-content > div');
+          if (chartDiv) {
+            // Check multiple possible ways to get the instance
+            echartsInstance = chartDiv._echarts_instance_ || 
+                             echarts?.getInstanceByDom(chartDiv) ||
+                             (window.echarts && window.echarts.getInstanceByDom(chartDiv));
+          }
+        }
+        
+        if (!echartsInstance) {
+          console.error("ECharts instance not accessible, falling back to SVG method");
+          return fallbackDownload(format, chartContainer, title);
+        }
+
+        // Verify that the chart has data and is rendered
+        const option = echartsInstance.getOption();
+        if (!option || !option.series || option.series.length === 0) {
+          alert(isEnglish ? 
+            "Chart has no data to export. Please wait for data to load." : 
+            "გრაფიკს ექსპორტისთვის მონაცემები არ აქვს. გთხოვთ, დაელოდოთ მონაცემების ჩატვირთვას."
+          );
+          return;
+        }
+
+        // Check if any series has actual data
+        const hasData = option.series.some(series => 
+          series.data && series.data.length > 0 && 
+          series.data.some(dataItem => dataItem !== null && dataItem !== undefined && dataItem !== 0)
+        );
+
+        if (!hasData) {
+          alert(isEnglish ? 
+            "Chart appears to have no data. Please wait for data to load completely." : 
+            "გრაფიკში მონაცემები არ არის. გთხოვთ, დაელოდოთ მონაცემების სრულ ჩატვირთვას."
+          );
+          return;
+        }
+
+        // Force chart to re-render to ensure all data is displayed
+        echartsInstance.resize();
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Create clean filename
+        let cleanFileName = title
+          .replace(/[^\w\s-_.]/g, "")
+          .replace(/\s+/g, "_")
+          .toLowerCase();
+        
+        if (!cleanFileName || cleanFileName.length < 3) {
+          cleanFileName = `chart_${Date.now()}`;
+        }
+
+        const fileName = `${cleanFileName}_chart`;
+
+        if (format === "svg") {
+          // Try SVG export, but fall back to canvas->SVG conversion if not supported
+          try {
+            const svgStr = echartsInstance.renderToSVGString();
+            const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(svgBlob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${fileName}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            return;
+          } catch (error) {
+            console.warn("SVG direct export failed, falling back to canvas method:", error);
+            // Continue to canvas method below and convert to SVG
+          }
+        }
+
+        // For all formats (including SVG fallback), use ECharts canvas export
+        let canvas;
+        try {
+          // Try the new method first with higher quality settings
+          canvas = echartsInstance.renderToCanvas({
+            pixelRatio: Math.max(window.devicePixelRatio || 1, 3), // Higher quality
+            backgroundColor: '#ffffff',
+            excludeComponents: ['toolbox'] // Exclude toolbox if present
+          });
+        } catch (error) {
+          console.warn("renderToCanvas failed, trying deprecated getRenderedCanvas:", error);
+          try {
+            // Fallback to deprecated method with higher quality
+            canvas = echartsInstance.getRenderedCanvas({
+              pixelRatio: Math.max(window.devicePixelRatio || 1, 3), // Higher quality
+              backgroundColor: '#ffffff'
+            });
+          } catch (error2) {
+            console.error("Both canvas methods failed, trying alternative approach:", error2);
+            // Last resort: try to get canvas with minimal options
+            try {
+              canvas = echartsInstance.getRenderedCanvas();
+            } catch (error3) {
+              console.error("All canvas methods failed:", error3);
+              canvas = null;
+            }
+          }
+        }
+
+        if (!canvas) {
+          console.error("Failed to get canvas from ECharts, using fallback");
+          return fallbackDownload(format, chartContainer, title);
+        }
+
+        // Verify canvas has content
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const hasContent = imageData.data.some((pixel, index) => {
+          // Check for non-transparent pixels that aren't pure white
+          if (index % 4 === 3) { // Alpha channel
+            return pixel > 0; // Has some opacity
+          }
+          return false;
+        });
+
+        if (!hasContent) {
+          console.warn("Canvas appears to be empty, using fallback method");
+          return fallbackDownload(format, chartContainer, title);
+        }
+
+        switch (format) {
+          case "svg": {
+            // Convert canvas to SVG
+            const canvasDataURL = canvas.toDataURL("image/png");
+            const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvas.width}" height="${canvas.height}">
+              <image width="${canvas.width}" height="${canvas.height}" xlink:href="${canvasDataURL}"/>
+            </svg>`;
+            const svgBlob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(svgBlob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${fileName}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            break;
+          }
+
+          case "png": {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${fileName}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              } else {
+                console.error("Failed to create PNG blob");
+                fallbackDownload(format, chartContainer, title);
+              }
+            }, "image/png", 1.0);
+            break;
+          }
+
+          case "jpeg": {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${fileName}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              } else {
+                console.error("Failed to create JPEG blob");
+                fallbackDownload(format, chartContainer, title);
+              }
+            }, "image/jpeg", 0.95);
+            break;
+          }
+
+          case "pdf": {
+            const { jsPDF } = await import("jspdf");
+            const imgData = canvas.toDataURL("image/png");
+            
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+            
+            const orientation = ratio > 1 ? "landscape" : "portrait";
+            const pdf = new jsPDF({
+              orientation,
+              unit: "mm",
+              format: "a4",
+            });
+
+            const a4Width = orientation === "landscape" ? 297 : 210;
+            const a4Height = orientation === "landscape" ? 210 : 297;
+            const margin = 20;
+
+            // Calculate dimensions to fit page
+            const maxWidth = a4Width - margin * 2;
+            const maxHeight = a4Height - margin * 3;
+
+            let imgWidth, imgHeight;
+            if (ratio > maxWidth / maxHeight) {
+              imgWidth = maxWidth;
+              imgHeight = maxWidth / ratio;
+            } else {
+              imgHeight = maxHeight;
+              imgWidth = maxHeight * ratio;
             }
 
-            default:
-              resolve();
+            const x = (a4Width - imgWidth) / 2;
+            const y = margin + 15;
+
+            // Add title
+            pdf.setFontSize(16);
+            pdf.text(title, a4Width / 2, margin, { align: "center" });
+
+            // Add image
+            pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+            pdf.save(`${fileName}.pdf`);
+            break;
           }
-        };
-
-        img.onerror = () => {
-          console.error("Failed to load SVG as image");
-          resolve();
-        };
-
-        // Convert SVG to data URL
-        const svgDataUrl =
-          "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgData);
-        img.src = svgDataUrl;
-      });
+        }
+      } catch (error) {
+        console.error("ECharts download failed:", error);
+        // Fallback to simple download method
+        fallbackDownload(format, chartContainer, title);
+      }
     },
-    []
+    [fallbackDownload, isEnglish]
   );
 
   // ECharts configuration helpers
@@ -1811,7 +1914,15 @@ const Charts = ({ isEnglish }) => {
                     onClick={async (e) => {
                       e.stopPropagation();
                       const container = e.target.closest(".chart-container");
-                      await downloadChart("png", container, title);
+                      setActiveDropdown(null);
+                      setTimeout(async () => {
+                        try {
+                          await downloadChartFromECharts("png", container, title, chartIndex);
+                        } catch (error) {
+                          console.error("Download failed:", error);
+                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                        }
+                      }, 100);
                     }}
                   >
                     <svg
@@ -1847,7 +1958,15 @@ const Charts = ({ isEnglish }) => {
                     onClick={async (e) => {
                       e.stopPropagation();
                       const container = e.target.closest(".chart-container");
-                      await downloadChart("jpeg", container, title);
+                      setActiveDropdown(null);
+                      setTimeout(async () => {
+                        try {
+                          await downloadChartFromECharts("jpeg", container, title, chartIndex);
+                        } catch (error) {
+                          console.error("Download failed:", error);
+                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                        }
+                      }, 100);
                     }}
                   >
                     <svg
@@ -1891,7 +2010,15 @@ const Charts = ({ isEnglish }) => {
                     onClick={async (e) => {
                       e.stopPropagation();
                       const container = e.target.closest(".chart-container");
-                      await downloadChart("pdf", container, title);
+                      setActiveDropdown(null);
+                      setTimeout(async () => {
+                        try {
+                          await downloadChartFromECharts("pdf", container, title, chartIndex);
+                        } catch (error) {
+                          console.error("Download failed:", error);
+                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                        }
+                      }, 100);
                     }}
                   >
                     <svg
@@ -1927,7 +2054,15 @@ const Charts = ({ isEnglish }) => {
                     onClick={async (e) => {
                       e.stopPropagation();
                       const container = e.target.closest(".chart-container");
-                      await downloadChart("svg", container, title);
+                      setActiveDropdown(null);
+                      setTimeout(async () => {
+                        try {
+                          await downloadChartFromECharts("svg", container, title, chartIndex);
+                        } catch (error) {
+                          console.error("Download failed:", error);
+                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                        }
+                      }, 100);
                     }}
                   >
                     <svg
@@ -2228,6 +2363,9 @@ const Charts = ({ isEnglish }) => {
                       </div>
                     ) : (
                       <ReactECharts
+                        ref={(ref) => {
+                          if (ref) chartRefs.current[0] = ref;
+                        }}
                         option={getBarChartOption(organizationsByYear)}
                         style={{ width: "100%", height: "300px" }}
                         onEvents={{
@@ -2251,6 +2389,9 @@ const Charts = ({ isEnglish }) => {
                   >
                     <div style={{ position: "relative" }}>
                       <ReactECharts
+                        ref={(ref) => {
+                          if (ref) chartRefs.current[1] = ref;
+                        }}
                         option={getStackedLineChartOption(
                           getCurrentActivityData(),
                           legendPage,
@@ -2356,6 +2497,9 @@ const Charts = ({ isEnglish }) => {
                     chartIndex={2}
                   >
                     <ReactECharts
+                      ref={(ref) => {
+                        if (ref) chartRefs.current[2] = ref;
+                      }}
                       option={getStackedBarChartOption(
                         getCurrentRegionalData()
                       )}
@@ -2376,6 +2520,9 @@ const Charts = ({ isEnglish }) => {
                     chartIndex={3}
                   >
                     <ReactECharts
+                      ref={(ref) => {
+                        if (ref) chartRefs.current[3] = ref;
+                      }}
                       option={getNormalizedStackedBarChartOption(
                         getCurrentSectorData()
                       )}
@@ -2433,6 +2580,9 @@ const Charts = ({ isEnglish }) => {
                       <ReactECharts
                         option={getGroupedBarChartOption(survivalData)}
                         style={{ width: "100%", height: "300px" }}
+                        ref={(ref) => {
+                          if (ref) chartRefs.current[4] = ref;
+                        }}
                       />
                     )}
                   </ChartContainer>
@@ -2452,6 +2602,9 @@ const Charts = ({ isEnglish }) => {
                     <ReactECharts
                       option={getPieChartOption(getCurrentDistributionData())}
                       style={{ width: "100%", height: "300px" }}
+                      ref={(ref) => {
+                        if (ref) chartRefs.current[5] = ref;
+                      }}
                     />
                   </ChartContainer>
                 </div>
