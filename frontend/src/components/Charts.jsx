@@ -457,6 +457,7 @@ const Charts = ({ isEnglish }) => {
               bbox = svgElement.getBBox();
             } catch (error) {
               // Fallback if getBBox fails
+              console.warn("getBBox failed:", error);
               const rect = svgElement.getBoundingClientRect();
               bbox = { width: rect.width || 800, height: rect.height || 600 };
             }
@@ -777,10 +778,62 @@ const Charts = ({ isEnglish }) => {
 
           case "pdf": {
             const { jsPDF } = await import("jspdf");
-            const imgData = canvas.toDataURL("image/png");
             
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
+            // Create a canvas that includes both title and chart
+            const titleCanvas = document.createElement('canvas');
+            const titleCtx = titleCanvas.getContext('2d');
+            
+            // Set up canvas dimensions with space for title
+            const titleHeight = 60; // Space for title
+            const totalWidth = canvas.width;
+            const totalHeight = canvas.height + titleHeight;
+            
+            titleCanvas.width = totalWidth;
+            titleCanvas.height = totalHeight;
+            
+            // White background
+            titleCtx.fillStyle = 'white';
+            titleCtx.fillRect(0, 0, totalWidth, totalHeight);
+            
+            // Draw title with proper Georgian font support
+            titleCtx.fillStyle = '#000000';
+            titleCtx.textAlign = 'center';
+            titleCtx.textBaseline = 'middle';
+            
+            // Use a Georgian-compatible font stack
+            const fontSize = Math.min(totalWidth * 0.03, 24);
+            titleCtx.font = `bold ${fontSize}px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", Arial, sans-serif`;
+            
+            // Draw title with word wrapping if needed
+            const words = title.split(' ');
+            const titleMaxWidth = totalWidth * 0.8;
+            let line = '';
+            let titleY = titleHeight / 2;
+            const lineHeight = fontSize * 1.2;
+            
+            for (let n = 0; n < words.length; n++) {
+              const testLine = line + words[n] + ' ';
+              const metrics = titleCtx.measureText(testLine);
+              const testWidth = metrics.width;
+              
+              if (testWidth > titleMaxWidth && n > 0) {
+                titleCtx.fillText(line, totalWidth / 2, titleY);
+                line = words[n] + ' ';
+                titleY += lineHeight;
+              } else {
+                line = testLine;
+              }
+            }
+            titleCtx.fillText(line, totalWidth / 2, titleY);
+            
+            // Draw the chart below the title
+            titleCtx.drawImage(canvas, 0, titleHeight);
+            
+            // Convert to image data
+            const imgData = titleCanvas.toDataURL("image/png");
+            
+            const canvasWidth = titleCanvas.width;
+            const canvasHeight = titleCanvas.height;
             const ratio = canvasWidth / canvasHeight;
             
             const orientation = ratio > 1 ? "landscape" : "portrait";
@@ -792,30 +845,26 @@ const Charts = ({ isEnglish }) => {
 
             const a4Width = orientation === "landscape" ? 297 : 210;
             const a4Height = orientation === "landscape" ? 210 : 297;
-            const margin = 20;
+            const margin = 10;
 
             // Calculate dimensions to fit page
-            const maxWidth = a4Width - margin * 2;
-            const maxHeight = a4Height - margin * 3;
+            const pdfMaxWidth = a4Width - margin * 2;
+            const pdfMaxHeight = a4Height - margin * 2;
 
             let imgWidth, imgHeight;
-            if (ratio > maxWidth / maxHeight) {
-              imgWidth = maxWidth;
-              imgHeight = maxWidth / ratio;
+            if (ratio > pdfMaxWidth / pdfMaxHeight) {
+              imgWidth = pdfMaxWidth;
+              imgHeight = pdfMaxWidth / ratio;
             } else {
-              imgHeight = maxHeight;
-              imgWidth = maxHeight * ratio;
+              imgHeight = pdfMaxHeight;
+              imgWidth = pdfMaxHeight * ratio;
             }
 
-            const x = (a4Width - imgWidth) / 2;
-            const y = margin + 15;
+            const pdfX = (a4Width - imgWidth) / 2;
+            const pdfY = (a4Height - imgHeight) / 2;
 
-            // Add title
-            pdf.setFontSize(16);
-            pdf.text(title, a4Width / 2, margin, { align: "center" });
-
-            // Add image
-            pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+            // Add the complete image (title + chart)
+            pdf.addImage(imgData, "PNG", pdfX, pdfY, imgWidth, imgHeight);
             pdf.save(`${fileName}.pdf`);
             break;
           }
