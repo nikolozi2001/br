@@ -41,12 +41,18 @@ const Charts = ({ isEnglish }) => {
   const [survivalData, setSurvivalData] = useState([]);
   const [distributionData, setDistributionData] = useState([]);
   const [distributionDataDeath, setDistributionDataDeath] = useState([]);
-  const [isDeathData, setIsDeathData] = useState(false); // Toggle between birth and death data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [legendPage, setLegendPage] = useState(0);
   const [legendItemsPerPage] = useState(12);
+
+  const [chartToggleStates, setChartToggleStates] = useState({
+    activityChart: false,
+    regionalChart: false,
+    sectorChart: false,
+    distributionChart: false,
+  });
 
   // Initialize hiddenDataKeys from localStorage or empty Set
   const [hiddenDataKeys, setHiddenDataKeys] = useState(() => {
@@ -60,6 +66,42 @@ const Charts = ({ isEnglish }) => {
     }
     return new Set();
   });
+
+  const toggleActivityChart = () => {
+    setChartToggleStates((prev) => ({
+      ...prev,
+      activityChart: !prev.activityChart,
+    }));
+    setLegendPage(0);
+    setHiddenDataKeys(new Set());
+  };
+
+  const toggleRegionalChart = () => {
+    setChartToggleStates((prev) => ({
+      ...prev,
+      regionalChart: !prev.regionalChart,
+    }));
+    setLegendPage(0);
+    setHiddenDataKeys(new Set());
+  };
+
+  const toggleSectorChart = () => {
+    setChartToggleStates((prev) => ({
+      ...prev,
+      sectorChart: !prev.sectorChart,
+    }));
+    setLegendPage(0);
+    setHiddenDataKeys(new Set());
+  };
+
+  const toggleDistributionChart = () => {
+    setChartToggleStates((prev) => ({
+      ...prev,
+      distributionChart: !prev.distributionChart,
+    }));
+    setLegendPage(0);
+    setHiddenDataKeys(new Set());
+  };
 
   // Add cache for API responses
   const [dataCache, setDataCache] = useState(new Map());
@@ -87,7 +129,7 @@ const Charts = ({ isEnglish }) => {
         setError(null);
 
         const cacheKey = `${isEnglish ? "en" : "ge"}-${retryCount}`;
-        
+
         // Check cache first
         if (dataCache.has(cacheKey)) {
           const cachedData = dataCache.get(cacheKey);
@@ -143,8 +185,8 @@ const Charts = ({ isEnglish }) => {
           birthDistributionData,
           deathDistributionData,
         };
-        
-        setDataCache(prev => {
+
+        setDataCache((prev) => {
           const newCache = new Map(prev);
           newCache.set(cacheKey, cacheData);
           // Keep only last 4 cache entries to prevent memory leaks
@@ -217,7 +259,7 @@ const Charts = ({ isEnglish }) => {
     setActiveDropdown(activeDropdown === chartIndex ? null : chartIndex);
   };
 
-  const dataType = isDeathData
+  const activityChart = chartToggleStates.activityChart
     ? isEnglish
       ? " Deaths"
       : " გარდაცვალება"
@@ -225,7 +267,23 @@ const Charts = ({ isEnglish }) => {
     ? " Births"
     : " დაბადება";
 
-  const dataTypeOwnership = isDeathData
+  const regionalChart = chartToggleStates.regionalChart
+    ? isEnglish
+      ? " Deaths"
+      : " გარდაცვალება"
+    : isEnglish
+    ? " Births"
+    : " დაბადება";
+
+  const sectorChart = chartToggleStates.sectorChart
+    ? isEnglish
+      ? " Deaths"
+      : " გარდაცვალება"
+    : isEnglish
+    ? " Births"
+    : " დაბადება";
+
+  const distributionChart = chartToggleStates.distributionChart
     ? isEnglish
       ? " Deaths"
       : " გადრაცვლილ"
@@ -238,10 +296,10 @@ const Charts = ({ isEnglish }) => {
       title: "სტატისტიკური ანგარიშგება",
       organizationsByYear:
         "საწარმოთა დაბადება და გარდაცვალება 2014-2023 წლებში",
-      regionalDistribution: `საწარმოთა ${dataType} რეგიონების მიხედვით`,
-      activitySectors: `საწარმოთა ${dataType} ეკონომიკური საქმიანობის სახეების მიხედვით`,
-      ownershipTypes: `2023 წელს ${dataTypeOwnership} საწარმოთა განაწილება რეგიონების მიხედვით`,
-      enterpriceSectors: `საწარმოთა ${dataType} დარგების მიხედვით`,
+      regionalDistribution: `საწარმოთა ${regionalChart} რეგიონების მიხედვით`,
+      activitySectors: `საწარმოთა ${activityChart} ეკონომიკური საქმიანობის სახეების მიხედვით`,
+      ownershipTypes: `2023 წელს ${distributionChart} საწარმოთა განაწილება რეგიონების მიხედვით`,
+      enterpriceSectors: `საწარმოთა ${sectorChart} დარგების მიხედვით`,
       organizationSurvival: "საწარმოთა გადარჩენა წლების მიხედვით (%)",
       birth: "დაბადება",
       death: "გარდაცვალება",
@@ -249,10 +307,10 @@ const Charts = ({ isEnglish }) => {
     english: {
       title: "Statistical Reports",
       organizationsByYear: "Organizations Birth and Death 2014-2023",
-      regionalDistribution: `Organizations ${dataType} by Regions`,
-      activitySectors: `Organizations ${dataType} by Economic Activity Sectors`,
-      ownershipTypes: `Distribution of enterprises ${dataTypeOwnership} by region in 2023`,
-      enterpriceSectors: `Organizations ${dataType} by Sectors`,
+      regionalDistribution: `Organizations ${regionalChart} by Regions`,
+      activitySectors: `Organizations ${activityChart} by Economic Activity Sectors`,
+      ownershipTypes: `Distribution of enterprises ${distributionChart} by region in 2023`,
+      enterpriceSectors: `Organizations ${sectorChart} by Sectors`,
       organizationSurvival: "Organization Survival by Year (%)",
       birth: "Birth",
       death: "Death",
@@ -291,36 +349,27 @@ const Charts = ({ isEnglish }) => {
     });
   }, []);
 
-  const handleListRestart = React.useCallback(() => {
-    // Toggle between birth and death data
-    setIsDeathData((prev) => !prev);
-
-    // Reset legend page to 0 (first page)
-    setLegendPage(0);
-
-    // Clear any hidden data keys (show all legend items)
-    setHiddenDataKeys(new Set());
-  }, []);
-
-  // Get current activity data based on toggle state
   const getCurrentActivityData = React.useCallback(() => {
-    return isDeathData ? activityDataDeath : activityData;
-  }, [isDeathData, activityData, activityDataDeath]);
+    return chartToggleStates.activityChart ? activityDataDeath : activityData;
+  }, [chartToggleStates.activityChart, activityData, activityDataDeath]);
 
-  // Get current regional data based on toggle state
   const getCurrentRegionalData = React.useCallback(() => {
-    return isDeathData ? regionalDataDeath : regionalData;
-  }, [isDeathData, regionalData, regionalDataDeath]);
+    return chartToggleStates.regionalChart ? regionalDataDeath : regionalData;
+  }, [chartToggleStates.regionalChart, regionalData, regionalDataDeath]);
 
-  // Get current sector data based on toggle state
   const getCurrentSectorData = React.useCallback(() => {
-    return isDeathData ? sectorDataDeath : sectorData;
-  }, [isDeathData, sectorData, sectorDataDeath]);
+    return chartToggleStates.sectorChart ? sectorDataDeath : sectorData;
+  }, [chartToggleStates.sectorChart, sectorData, sectorDataDeath]);
 
-  // Get current distribution data based on toggle state
   const getCurrentDistributionData = React.useCallback(() => {
-    return isDeathData ? distributionDataDeath : distributionData;
-  }, [isDeathData, distributionData, distributionDataDeath]);
+    return chartToggleStates.distributionChart
+      ? distributionDataDeath
+      : distributionData;
+  }, [
+    chartToggleStates.distributionChart,
+    distributionData,
+    distributionDataDeath,
+  ]);
 
   const onEChartsLegendSelectChanged = React.useCallback(
     (params) => {
@@ -429,11 +478,12 @@ const Charts = ({ isEnglish }) => {
   const fallbackDownload = React.useCallback(
     (format, chartContainer, title) => {
       try {
-        const svgElement = chartContainer.querySelector('.chart-content svg');
+        const svgElement = chartContainer.querySelector(".chart-content svg");
         if (!svgElement) {
-          alert(isEnglish ? 
-            "Unable to download chart. SVG not found." : 
-            "გრაფიკის ჩამოტვირთვა შეუძლებელია. SVG ვერ მოიძებნა."
+          alert(
+            isEnglish
+              ? "Unable to download chart. SVG not found."
+              : "გრაფიკის ჩამოტვირთვა შეუძლებელია. SVG ვერ მოიძებნა."
           );
           return;
         }
@@ -442,11 +492,15 @@ const Charts = ({ isEnglish }) => {
         setTimeout(() => {
           try {
             // Check if SVG has content by looking for actual chart elements
-            const hasChartElements = svgElement.querySelector('g[clip-path], path, rect, circle, line, text') !== null;
+            const hasChartElements =
+              svgElement.querySelector(
+                "g[clip-path], path, rect, circle, line, text"
+              ) !== null;
             if (!hasChartElements) {
-              alert(isEnglish ? 
-                "Chart appears to be empty. Please wait for data to load completely." : 
-                "გრაფიკი ცარიელია. გთხოვთ, დაელოდოთ მონაცემების სრულ ჩატვირთვას."
+              alert(
+                isEnglish
+                  ? "Chart appears to be empty. Please wait for data to load completely."
+                  : "გრაფიკი ცარიელია. გთხოვთ, დაელოდოთ მონაცემების სრულ ჩატვირთვას."
               );
               return;
             }
@@ -463,31 +517,41 @@ const Charts = ({ isEnglish }) => {
             }
 
             if (bbox.width === 0 || bbox.height === 0) {
-              alert(isEnglish ? 
-                "Chart appears to be empty. Please wait for data to load." : 
-                "გრაფიკი ცარიელია. გთხოვთ, დაელოდოთ მონაცემების ჩატვირთვას."
+              alert(
+                isEnglish
+                  ? "Chart appears to be empty. Please wait for data to load."
+                  : "გრაფიკი ცარიელია. გთხოვთ, დაელოდოთ მონაცემების ჩატვირთვას."
               );
               return;
             }
 
             // Clone and prepare SVG for export
             const svgClone = svgElement.cloneNode(true);
-            
+
             // Ensure SVG has proper dimensions
-            svgClone.setAttribute('width', bbox.width || 800);
-            svgClone.setAttribute('height', bbox.height || 600);
-            svgClone.setAttribute('viewBox', `0 0 ${bbox.width || 800} ${bbox.height || 600}`);
-            
+            svgClone.setAttribute("width", bbox.width || 800);
+            svgClone.setAttribute("height", bbox.height || 600);
+            svgClone.setAttribute(
+              "viewBox",
+              `0 0 ${bbox.width || 800} ${bbox.height || 600}`
+            );
+
             const svgData = new XMLSerializer().serializeToString(svgClone);
-            
+
             // Create filename
-            const fileName = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').toLowerCase() || 'chart';
-            
-            if (format === 'svg') {
+            const fileName =
+              title
+                .replace(/[^\w\s-]/g, "")
+                .replace(/\s+/g, "_")
+                .toLowerCase() || "chart";
+
+            if (format === "svg") {
               // Direct SVG download
-              const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+              const svgBlob = new Blob([svgData], {
+                type: "image/svg+xml;charset=utf-8",
+              });
               const url = URL.createObjectURL(svgBlob);
-              const a = document.createElement('a');
+              const a = document.createElement("a");
               a.href = url;
               a.download = `${fileName}.svg`;
               document.body.appendChild(a);
@@ -498,75 +562,86 @@ const Charts = ({ isEnglish }) => {
             }
 
             // For raster formats, convert SVG to canvas with higher quality
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
             const img = new Image();
 
             // Use higher resolution for better quality
             const scale = Math.max(window.devicePixelRatio || 1, 2);
             canvas.width = (bbox.width || 800) * scale;
             canvas.height = (bbox.height || 600) * scale;
-            canvas.style.width = (bbox.width || 800) + 'px';
-            canvas.style.height = (bbox.height || 600) + 'px';
+            canvas.style.width = (bbox.width || 800) + "px";
+            canvas.style.height = (bbox.height || 600) + "px";
             ctx.scale(scale, scale);
 
-            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const svgBlob = new Blob([svgData], {
+              type: "image/svg+xml;charset=utf-8",
+            });
             const url = URL.createObjectURL(svgBlob);
 
             img.onload = () => {
               // White background
-              ctx.fillStyle = 'white';
+              ctx.fillStyle = "white";
               ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
-              
+
               // Draw image
               ctx.drawImage(img, 0, 0);
-              
-              if (format === 'png' || format === 'jpeg') {
-                canvas.toBlob((blob) => {
-                  if (blob) {
-                    const downloadUrl = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = downloadUrl;
-                    a.download = `${fileName}.${format === 'jpeg' ? 'jpg' : format}`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(downloadUrl);
-                  } else {
-                    alert(isEnglish ? 
-                      "Failed to create image file." : 
-                      "გამოსახულების ფაილის შექმნა ვერ მოხერხდა."
-                    );
-                  }
-                }, format === 'jpeg' ? 'image/jpeg' : 'image/png', format === 'jpeg' ? 0.95 : 1.0);
+
+              if (format === "png" || format === "jpeg") {
+                canvas.toBlob(
+                  (blob) => {
+                    if (blob) {
+                      const downloadUrl = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = downloadUrl;
+                      a.download = `${fileName}.${
+                        format === "jpeg" ? "jpg" : format
+                      }`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(downloadUrl);
+                    } else {
+                      alert(
+                        isEnglish
+                          ? "Failed to create image file."
+                          : "გამოსახულების ფაილის შექმნა ვერ მოხერხდა."
+                      );
+                    }
+                  },
+                  format === "jpeg" ? "image/jpeg" : "image/png",
+                  format === "jpeg" ? 0.95 : 1.0
+                );
               }
-              
+
               URL.revokeObjectURL(url);
             };
 
             img.onerror = () => {
               URL.revokeObjectURL(url);
-              alert(isEnglish ? 
-                "Failed to process chart image." : 
-                "გრაფიკის გამოსახულების დამუშავება ვერ მოხერხდა."
+              alert(
+                isEnglish
+                  ? "Failed to process chart image."
+                  : "გრაფიკის გამოსახულების დამუშავება ვერ მოხერხდა."
               );
             };
 
             img.src = url;
           } catch (innerError) {
-            console.error('Inner fallback download failed:', innerError);
-            alert(isEnglish ? 
-              "Download failed. Please try again later." : 
-              "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, მოგვიანებით სცადოთ."
+            console.error("Inner fallback download failed:", innerError);
+            alert(
+              isEnglish
+                ? "Download failed. Please try again later."
+                : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, მოგვიანებით სცადოთ."
             );
           }
         }, 100); // Wait 100ms for SVG to fully render
-
       } catch (error) {
-        console.error('Fallback download failed:', error);
-        alert(isEnglish ? 
-          "Download failed. Please try again later." : 
-          "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, მოგვიანებით სცადოთ."
+        console.error("Fallback download failed:", error);
+        alert(
+          isEnglish
+            ? "Download failed. Please try again later."
+            : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, მოგვიანებით სცადოთ."
         );
       }
     },
@@ -581,7 +656,7 @@ const Charts = ({ isEnglish }) => {
     async (format, chartContainer, title, chartIndex) => {
       try {
         setActiveDropdown(null);
-        
+
         // Wait longer for chart to fully render and for data to be processed
         await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -595,40 +670,50 @@ const Charts = ({ isEnglish }) => {
 
         // Fallback: try to find instance through DOM
         if (!echartsInstance) {
-          const chartDiv = chartContainer.querySelector('.chart-content > div');
+          const chartDiv = chartContainer.querySelector(".chart-content > div");
           if (chartDiv) {
             // Check multiple possible ways to get the instance
-            echartsInstance = chartDiv._echarts_instance_ || 
-                             echarts?.getInstanceByDom(chartDiv) ||
-                             (window.echarts && window.echarts.getInstanceByDom(chartDiv));
+            echartsInstance =
+              chartDiv._echarts_instance_ ||
+              echarts?.getInstanceByDom(chartDiv) ||
+              (window.echarts && window.echarts.getInstanceByDom(chartDiv));
           }
         }
-        
+
         if (!echartsInstance) {
-          console.error("ECharts instance not accessible, falling back to SVG method");
+          console.error(
+            "ECharts instance not accessible, falling back to SVG method"
+          );
           return fallbackDownload(format, chartContainer, title);
         }
 
         // Verify that the chart has data and is rendered
         const option = echartsInstance.getOption();
         if (!option || !option.series || option.series.length === 0) {
-          alert(isEnglish ? 
-            "Chart has no data to export. Please wait for data to load." : 
-            "გრაფიკს ექსპორტისთვის მონაცემები არ აქვს. გთხოვთ, დაელოდოთ მონაცემების ჩატვირთვას."
+          alert(
+            isEnglish
+              ? "Chart has no data to export. Please wait for data to load."
+              : "გრაფიკს ექსპორტისთვის მონაცემები არ აქვს. გთხოვთ, დაელოდოთ მონაცემების ჩატვირთვას."
           );
           return;
         }
 
         // Check if any series has actual data
-        const hasData = option.series.some(series => 
-          series.data && series.data.length > 0 && 
-          series.data.some(dataItem => dataItem !== null && dataItem !== undefined && dataItem !== 0)
+        const hasData = option.series.some(
+          (series) =>
+            series.data &&
+            series.data.length > 0 &&
+            series.data.some(
+              (dataItem) =>
+                dataItem !== null && dataItem !== undefined && dataItem !== 0
+            )
         );
 
         if (!hasData) {
-          alert(isEnglish ? 
-            "Chart appears to have no data. Please wait for data to load completely." : 
-            "გრაფიკში მონაცემები არ არის. გთხოვთ, დაელოდოთ მონაცემების სრულ ჩატვირთვას."
+          alert(
+            isEnglish
+              ? "Chart appears to have no data. Please wait for data to load completely."
+              : "გრაფიკში მონაცემები არ არის. გთხოვთ, დაელოდოთ მონაცემების სრულ ჩატვირთვას."
           );
           return;
         }
@@ -642,7 +727,7 @@ const Charts = ({ isEnglish }) => {
           .replace(/[^\w\s-_.]/g, "")
           .replace(/\s+/g, "_")
           .toLowerCase();
-        
+
         if (!cleanFileName || cleanFileName.length < 3) {
           cleanFileName = `chart_${Date.now()}`;
         }
@@ -652,12 +737,14 @@ const Charts = ({ isEnglish }) => {
         if (format === "svg") {
           // Check if ECharts is using SVG renderer before attempting direct SVG export
           const rendererType = echartsInstance.getZr().painter.getType();
-          
-          if (rendererType === 'svg') {
+
+          if (rendererType === "svg") {
             // Try SVG export only if using SVG renderer
             try {
               const svgStr = echartsInstance.renderToSVGString();
-              const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+              const svgBlob = new Blob([svgStr], {
+                type: "image/svg+xml;charset=utf-8",
+              });
               const url = URL.createObjectURL(svgBlob);
               const a = document.createElement("a");
               a.href = url;
@@ -668,12 +755,17 @@ const Charts = ({ isEnglish }) => {
               URL.revokeObjectURL(url);
               return;
             } catch (error) {
-              console.warn("SVG direct export failed despite SVG renderer:", error);
+              console.warn(
+                "SVG direct export failed despite SVG renderer:",
+                error
+              );
               // Continue to canvas method below
             }
           } else {
             // Skip direct SVG export for canvas renderer, go straight to canvas conversion
-            console.log("Using canvas renderer, converting canvas to SVG format");
+            console.log(
+              "Using canvas renderer, converting canvas to SVG format"
+            );
           }
         }
 
@@ -683,19 +775,25 @@ const Charts = ({ isEnglish }) => {
           // Try the new method first with higher quality settings
           canvas = echartsInstance.renderToCanvas({
             pixelRatio: Math.max(window.devicePixelRatio || 1, 3), // Higher quality
-            backgroundColor: '#ffffff',
-            excludeComponents: ['toolbox'] // Exclude toolbox if present
+            backgroundColor: "#ffffff",
+            excludeComponents: ["toolbox"], // Exclude toolbox if present
           });
         } catch (error) {
-          console.warn("renderToCanvas failed, trying deprecated getRenderedCanvas:", error);
+          console.warn(
+            "renderToCanvas failed, trying deprecated getRenderedCanvas:",
+            error
+          );
           try {
             // Fallback to deprecated method with higher quality
             canvas = echartsInstance.getRenderedCanvas({
               pixelRatio: Math.max(window.devicePixelRatio || 1, 3), // Higher quality
-              backgroundColor: '#ffffff'
+              backgroundColor: "#ffffff",
             });
           } catch (error2) {
-            console.error("Both canvas methods failed, trying alternative approach:", error2);
+            console.error(
+              "Both canvas methods failed, trying alternative approach:",
+              error2
+            );
             // Last resort: try to get canvas with minimal options
             try {
               canvas = echartsInstance.getRenderedCanvas();
@@ -712,11 +810,12 @@ const Charts = ({ isEnglish }) => {
         }
 
         // Verify canvas has content
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const hasContent = imageData.data.some((pixel, index) => {
           // Check for non-transparent pixels that aren't pure white
-          if (index % 4 === 3) { // Alpha channel
+          if (index % 4 === 3) {
+            // Alpha channel
             return pixel > 0; // Has some opacity
           }
           return false;
@@ -734,7 +833,9 @@ const Charts = ({ isEnglish }) => {
             const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvas.width}" height="${canvas.height}">
               <image width="${canvas.width}" height="${canvas.height}" xlink:href="${canvasDataURL}"/>
             </svg>`;
-            const svgBlob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+            const svgBlob = new Blob([svgContent], {
+              type: "image/svg+xml;charset=utf-8",
+            });
             const url = URL.createObjectURL(svgBlob);
             const a = document.createElement("a");
             a.href = url;
@@ -747,103 +848,111 @@ const Charts = ({ isEnglish }) => {
           }
 
           case "png": {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${fileName}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              } else {
-                console.error("Failed to create PNG blob");
-                fallbackDownload(format, chartContainer, title);
-              }
-            }, "image/png", 1.0);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${fileName}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                } else {
+                  console.error("Failed to create PNG blob");
+                  fallbackDownload(format, chartContainer, title);
+                }
+              },
+              "image/png",
+              1.0
+            );
             break;
           }
 
           case "jpeg": {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${fileName}.jpg`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              } else {
-                console.error("Failed to create JPEG blob");
-                fallbackDownload(format, chartContainer, title);
-              }
-            }, "image/jpeg", 0.95);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${fileName}.jpg`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                } else {
+                  console.error("Failed to create JPEG blob");
+                  fallbackDownload(format, chartContainer, title);
+                }
+              },
+              "image/jpeg",
+              0.95
+            );
             break;
           }
 
           case "pdf": {
             const { jsPDF } = await import("jspdf");
-            
+
             // Create a canvas that includes both title and chart
-            const titleCanvas = document.createElement('canvas');
-            const titleCtx = titleCanvas.getContext('2d');
-            
+            const titleCanvas = document.createElement("canvas");
+            const titleCtx = titleCanvas.getContext("2d");
+
             // Set up canvas dimensions with space for title
             const titleHeight = 60; // Space for title
             const totalWidth = canvas.width;
             const totalHeight = canvas.height + titleHeight;
-            
+
             titleCanvas.width = totalWidth;
             titleCanvas.height = totalHeight;
-            
+
             // White background
-            titleCtx.fillStyle = 'white';
+            titleCtx.fillStyle = "white";
             titleCtx.fillRect(0, 0, totalWidth, totalHeight);
-            
+
             // Draw title with proper Georgian font support
-            titleCtx.fillStyle = '#000000';
-            titleCtx.textAlign = 'center';
-            titleCtx.textBaseline = 'middle';
-            
+            titleCtx.fillStyle = "#000000";
+            titleCtx.textAlign = "center";
+            titleCtx.textBaseline = "middle";
+
             // Use a Georgian-compatible font stack
             const fontSize = Math.min(totalWidth * 0.03, 24);
             titleCtx.font = `bold ${fontSize}px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", Arial, sans-serif`;
-            
+
             // Draw title with word wrapping if needed
-            const words = title.split(' ');
+            const words = title.split(" ");
             const titleMaxWidth = totalWidth * 0.8;
-            let line = '';
+            let line = "";
             let titleY = titleHeight / 2;
             const lineHeight = fontSize * 1.2;
-            
+
             for (let n = 0; n < words.length; n++) {
-              const testLine = line + words[n] + ' ';
+              const testLine = line + words[n] + " ";
               const metrics = titleCtx.measureText(testLine);
               const testWidth = metrics.width;
-              
+
               if (testWidth > titleMaxWidth && n > 0) {
                 titleCtx.fillText(line, totalWidth / 2, titleY);
-                line = words[n] + ' ';
+                line = words[n] + " ";
                 titleY += lineHeight;
               } else {
                 line = testLine;
               }
             }
             titleCtx.fillText(line, totalWidth / 2, titleY);
-            
+
             // Draw the chart below the title
             titleCtx.drawImage(canvas, 0, titleHeight);
-            
+
             // Convert to image data
             const imgData = titleCanvas.toDataURL("image/png");
-            
+
             const canvasWidth = titleCanvas.width;
             const canvasHeight = titleCanvas.height;
             const ratio = canvasWidth / canvasHeight;
-            
+
             const orientation = ratio > 1 ? "landscape" : "portrait";
             const pdf = new jsPDF({
               orientation,
@@ -1893,7 +2002,13 @@ const Charts = ({ isEnglish }) => {
     };
   };
 
-  const ChartContainer = ({ title, children, onMaximize, chartIndex }) => {
+  const ChartContainer = ({
+    title,
+    children,
+    onMaximize,
+    chartIndex,
+    onToggle,
+  }) => {
     // Show ListRestart button only for charts 2, 3, 4, and 6 (using 1-based indexing)
     const showListRestart = [1, 2, 3, 5].includes(chartIndex);
 
@@ -1907,15 +2022,19 @@ const Charts = ({ isEnglish }) => {
         <div className="chart-header">
           <h3 className="chart-title">{title}</h3>
           <div className="chart-actions">
-            {showListRestart && (
+            {showListRestart && onToggle && (
               <button
                 className="chart-list-restart"
-                onClick={handleListRestart}
+                onClick={onToggle}
                 title={
                   isEnglish
-                    ? `Toggle to ${isDeathData ? "birth" : "death"} data`
+                    ? `Toggle to ${
+                        chartToggleStates[chartIndex] ? "birth" : "death"
+                      } data`
                     : `გადართვა ${
-                        isDeathData ? "დაბადების" : "გარდაცვალების"
+                        chartToggleStates[chartIndex]
+                          ? "დაბადების"
+                          : "გარდაცვალების"
                       } მონაცემებზე`
                 }
               >
@@ -1974,10 +2093,19 @@ const Charts = ({ isEnglish }) => {
                       setActiveDropdown(null);
                       setTimeout(async () => {
                         try {
-                          await downloadChartFromECharts("png", container, title, chartIndex);
+                          await downloadChartFromECharts(
+                            "png",
+                            container,
+                            title,
+                            chartIndex
+                          );
                         } catch (error) {
                           console.error("Download failed:", error);
-                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                          alert(
+                            isEnglish
+                              ? "Download failed. Please try again."
+                              : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან."
+                          );
                         }
                       }, 100);
                     }}
@@ -2018,10 +2146,19 @@ const Charts = ({ isEnglish }) => {
                       setActiveDropdown(null);
                       setTimeout(async () => {
                         try {
-                          await downloadChartFromECharts("jpeg", container, title, chartIndex);
+                          await downloadChartFromECharts(
+                            "jpeg",
+                            container,
+                            title,
+                            chartIndex
+                          );
                         } catch (error) {
                           console.error("Download failed:", error);
-                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                          alert(
+                            isEnglish
+                              ? "Download failed. Please try again."
+                              : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან."
+                          );
                         }
                       }, 100);
                     }}
@@ -2070,10 +2207,19 @@ const Charts = ({ isEnglish }) => {
                       setActiveDropdown(null);
                       setTimeout(async () => {
                         try {
-                          await downloadChartFromECharts("pdf", container, title, chartIndex);
+                          await downloadChartFromECharts(
+                            "pdf",
+                            container,
+                            title,
+                            chartIndex
+                          );
                         } catch (error) {
                           console.error("Download failed:", error);
-                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                          alert(
+                            isEnglish
+                              ? "Download failed. Please try again."
+                              : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან."
+                          );
                         }
                       }, 100);
                     }}
@@ -2114,10 +2260,19 @@ const Charts = ({ isEnglish }) => {
                       setActiveDropdown(null);
                       setTimeout(async () => {
                         try {
-                          await downloadChartFromECharts("svg", container, title, chartIndex);
+                          await downloadChartFromECharts(
+                            "svg",
+                            container,
+                            title,
+                            chartIndex
+                          );
                         } catch (error) {
                           console.error("Download failed:", error);
-                          alert(isEnglish ? "Download failed. Please try again." : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან.");
+                          alert(
+                            isEnglish
+                              ? "Download failed. Please try again."
+                              : "ჩამოტვირთვა ვერ მოხერხდა. გთხოვთ, სცადოთ თავიდან."
+                          );
                         }
                       }, 100);
                     }}
@@ -2443,6 +2598,7 @@ const Charts = ({ isEnglish }) => {
                       )
                     }
                     chartIndex={1}
+                    onToggle={toggleActivityChart}
                   >
                     <div style={{ position: "relative" }}>
                       <ReactECharts
@@ -2552,6 +2708,7 @@ const Charts = ({ isEnglish }) => {
                       )
                     }
                     chartIndex={2}
+                    onToggle={toggleRegionalChart}
                   >
                     <ReactECharts
                       ref={(ref) => {
@@ -2575,6 +2732,7 @@ const Charts = ({ isEnglish }) => {
                       )
                     }
                     chartIndex={3}
+                    onToggle={toggleSectorChart}
                   >
                     <ReactECharts
                       ref={(ref) => {
@@ -2655,6 +2813,7 @@ const Charts = ({ isEnglish }) => {
                       )
                     }
                     chartIndex={5}
+                    onToggle={toggleDistributionChart}
                   >
                     <ReactECharts
                       option={getPieChartOption(getCurrentDistributionData())}
