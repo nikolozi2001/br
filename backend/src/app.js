@@ -40,6 +40,7 @@ const enterpriseDeathDistributionRouter = require('./routes/enterprice_death_dis
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
+app.use('/api/legal-forms/gis/:gis', legalFormsRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/activities', activitiesRouter);
 app.use('/api/ownership-types', ownershipTypesRouter);

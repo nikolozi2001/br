@@ -55,8 +55,14 @@ function SearchForm({ isEnglish }) {
       { label: "organizationalLegalForm", path: "legalForm" },
       { label: "organizationName", path: "name" },
       { label: "legalRegion", path: "legalAddress.region" },
+      { label: "municipalityCity", path: "City_name" },
+      { label: "communityName", path: "Community_name" },
+      { label: "villageName", path: "Village_name" },
       { label: "legalAddress", path: "legalAddress.address" },
       { label: "factualRegion", path: "factualAddress.region" },
+      { label: "municipalityCity", path: "City_name2" },
+      { label: "communityName", path: "Community_name2" },
+      { label: "villageName", path: "Village_name2" },
       { label: "factualAddress", path: "factualAddress.address" },
       { label: "activityCode", path: "activities[0].code" },
       { label: "activityDescription", path: "activities[0].name" },
@@ -121,6 +127,9 @@ function SearchForm({ isEnglish }) {
     link.click();
     document.body.removeChild(link);
   };
+
+  console.log("Search Results:", searchResults);
+  
 
   const generateTableContent = (searchResults, t) => {
     return `

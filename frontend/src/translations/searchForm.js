@@ -11,6 +11,8 @@ export const translations = {
     factualAddress: "ფაქტობრივი მისამართი",
     region: "რეგიონი",
     municipalityCity: "მუნიციპალიტეტი/ქალაქი",
+    communityName: "დაბის/თემის/სოფლის საკრებულო",
+    villageName: "დაბა/სოფელი",
     address: "მისამართი",
     economicActivity: "ეკონომიკური საქმიანობა (NACE Rev.2)",
     activityCode: "ეკონომიკური საქმიანობის კოდი",

@@ -287,10 +287,16 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
       abbreviation: item.Abbreviation,
       legalAddress: {
         region: item.Region_name,
+        city: item.City_Name,
+        communityName: item.Community_Name,
+        villageName: item.Village_name,
         address: item.Address,
       },
       factualAddress: {
         region: item.Region_name2,
+        city: item.City_Name2,
+        communityName: item.Community_Name2,
+        villageName: item.Village_name2,
         address: item.Address2,
       },
       activities: [
