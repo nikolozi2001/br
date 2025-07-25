@@ -109,6 +109,7 @@ function SearchForm({ isEnglish }) {
                 // Handle direct properties
                 value = row[path];
               }
+              if (value === "უცნობი") value = "";
               if (path === "isActive") value = value ? "✓" : "✗";
               return `"${value || ""}"`;
             })
