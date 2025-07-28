@@ -19,7 +19,6 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 
 // Fix for default markers in react-leaflet
@@ -48,7 +47,7 @@ function SearchHistory({ isEnglish }) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setRepresentatives([]);
+        setRepresentatives([]); // clear before loading
         const searchParams = {
           identificationNumber: identificationNumber,
         };
@@ -62,7 +61,15 @@ function SearchHistory({ isEnglish }) {
         if (response && response.length > 0) {
           const data = response[0];
           setDocumentData(data);
-          setRepresentatives(data.Stat_ID || []);
+
+          // Now fetch representatives
+          if (data?.Stat_ID) {
+            const reps = await fetchRepresentatives(
+              data.Stat_ID,
+              isEnglish ? "en" : "ge"
+            );
+            setRepresentatives(reps || []);
+          }
 
           // Fetch coordinates separately
           const coordsData = await fetchCoordinates(identificationNumber);
@@ -411,6 +418,63 @@ function SearchHistory({ isEnglish }) {
               </div>
             </div>
           )}
+
+          {/* Representatives Section */}
+          <div className="w-full mt-8">
+            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+              {t.personsRelatedToCompany ||
+                (isEnglish
+                  ? "Persons Related to Company"
+                  : "კომპანიასთან დაკავშირებული პირები")}
+            </h1>
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <div className="flex justify-center items-center">
+                  <img
+                    src={loaderIcon}
+                    alt="Loading..."
+                    className="w-12 h-12"
+                  />
+                  <span className="ml-3 text-gray-600 font-bpg-nino">
+                    {isEnglish ? "Loading..." : "იტვირთება..."}
+                  </span>
+                </div>
+              </div>
+            ) : representatives.length > 0 ? (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {representatives.map((rep, index) => (
+                  <div
+                    key={index}
+                    className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group ${
+                      index === representatives.length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    <div className="w-2/5 font-bold font-bpg-nino">
+                      {rep.Name || "-"}
+                    </div>
+                    <div className="w-2/5 font-bpg-nino">
+                      {rep.Position || "-"}
+                    </div>
+                    <div className="w-1/5 font-bpg-nino">
+                      {rep.Date
+                        ? new Date(rep.Date).toLocaleDateString(
+                            isEnglish ? "en-US" : "ka-GE"
+                          )
+                        : "-"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-center text-gray-600 font-bpg-nino">
+                  {isEnglish
+                    ? "No representatives found"
+                    : "წარმომადგენლები ვერ მოიძებნა"}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
