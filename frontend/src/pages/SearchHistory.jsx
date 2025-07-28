@@ -442,6 +442,16 @@ function SearchHistory({ isEnglish }) {
               </div>
             ) : representatives.length > 0 ? (
               <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {/* Table Header */}
+                <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base">
+                  <div className="w-2/5">{isEnglish ? "Person" : "პირი"}</div>
+                  <div className="w-2/5">
+                    {isEnglish ? "Position" : "მონაწილეობა"}
+                  </div>
+                  <div className="w-1/5">{isEnglish ? "Date" : "თარიღი"}</div>
+                </div>
+
+                {/* Table Rows */}
                 {representatives.map((rep, index) => (
                   <div
                     key={index}
@@ -449,16 +459,15 @@ function SearchHistory({ isEnglish }) {
                       index === representatives.length - 1 ? "border-b-0" : ""
                     }`}
                   >
-                    <div className="w-2/5 font-bold font-bpg-nino">
-                      {rep.Name || "-"}
-                    </div>
+                    <div className="w-2/5 font-bpg-nino">{rep.Name || "-"}</div>
                     <div className="w-2/5 font-bpg-nino">
                       {rep.Position || "-"}
                     </div>
                     <div className="w-1/5 font-bpg-nino">
                       {rep.Date
                         ? new Date(rep.Date).toLocaleDateString(
-                            isEnglish ? "en-US" : "ka-GE"
+                            isEnglish ? "en-US" : "ka-GE",
+                            { year: "numeric", month: "2-digit" }
                           )
                         : "-"}
                     </div>
