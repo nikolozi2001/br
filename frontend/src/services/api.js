@@ -4,14 +4,16 @@ const API_BASE_URL = "http://192.168.1.27:5000/api";
 const handleReportApiResponse = async (response) => {
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText || 'Network response was not ok'}`);
+    throw new Error(
+      `HTTP ${response.status}: ${errorText || "Network response was not ok"}`
+    );
   }
-  
+
   try {
     const data = await response.json();
     return data.recordset || data;
   } catch {
-    throw new Error('Failed to parse response as JSON');
+    throw new Error("Failed to parse response as JSON");
   }
 };
 
@@ -19,7 +21,7 @@ const createReportApiCall = (reportNumber) => {
   return async (lang = "ge") => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/report${reportNumber}?lang=${lang}`,
@@ -29,7 +31,7 @@ const createReportApiCall = (reportNumber) => {
       return await handleReportApiResponse(response);
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
+      if (error.name === "AbortError") {
         throw new Error(`Request timeout for report ${reportNumber}`);
       }
       console.error(`Error fetching report ${reportNumber} data:`, error);
@@ -44,11 +46,12 @@ const REPORT_ENDPOINTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 // Generate all report functions dynamically
 const createReportFunctions = () => {
   const reportFunctions = {};
-  
-  REPORT_ENDPOINTS.forEach(reportNum => {
-    reportFunctions[`fetchReport${reportNum}Data`] = createReportApiCall(reportNum);
+
+  REPORT_ENDPOINTS.forEach((reportNum) => {
+    reportFunctions[`fetchReport${reportNum}Data`] =
+      createReportApiCall(reportNum);
   });
-  
+
   return reportFunctions;
 };
 
@@ -321,29 +324,73 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
   }
 };
 
+// Coordinates API
+export const fetchCoordinates = async (taxId, lang = "ge") => {
+  try {
+    if (!taxId) {
+      throw new Error("Tax ID is required");
+    }
+
+    // Note: Your backend uses /api/coordinates, not /locations/coordinates
+    const response = await fetch(
+      `${API_BASE_URL}/coordinates?taxId=${taxId}&lang=${lang}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch coordinates");
+    }
+
+    const data = await response.json();
+
+    // Handle the response - could be an array or empty
+    if (Array.isArray(data) && data.length > 0) {
+      const coords = data[0]; // Take the first result if multiple
+      return {
+        statId: coords.Stat_ID,
+        taxId: coords.TAXID,
+        x: parseFloat(coords.X),
+        y: parseFloat(coords.Y),
+        region: coords.Region,
+        id: coords.id,
+        inactive: coords.Inactive === 1 || coords.Inactive === true,
+        // Convert X,Y to lat,lng for map (assuming X is longitude and Y is latitude)
+        lat: parseFloat(coords.X),
+        lng: parseFloat(coords.Y),
+      };
+    }
+
+    return null; // Return null if no coordinates found
+  } catch (error) {
+    console.error("Error fetching coordinates:", error);
+    return null;
+  }
+};
+
 // Enterprise Birth-Death API
 export const fetchEnterpriseBirthDeath = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-birth-death?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-birth-death?lang=${lang}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
 
     // Transform the API response to the format needed by the chart
-    const birthData = data.find(item => item.hints === "birth");
-    const deathData = data.find(item => item.hints === "death");
+    const birthData = data.find((item) => item.hints === "birth");
+    const deathData = data.find((item) => item.hints === "death");
 
     if (!birthData || !deathData) {
       throw new Error("Invalid API response format");
     }
 
     // Convert to chart format
-    const years = Object.keys(birthData).filter(key => key !== "hints");
-    return years.map(year => ({
+    const years = Object.keys(birthData).filter((key) => key !== "hints");
+    return years.map((year) => ({
       year,
       birth: birthData[year],
-      death: deathData[year]
+      death: deathData[year],
     }));
   } catch (error) {
     console.error("Error fetching enterprise birth-death data:", error);
@@ -354,7 +401,9 @@ export const fetchEnterpriseBirthDeath = async (lang = "ge") => {
 // Enterprise NACE API
 export const fetchEnterpriseNace = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-nace?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-nace?lang=${lang}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
@@ -364,19 +413,51 @@ export const fetchEnterpriseNace = async (lang = "ge") => {
     const filteredData = data;
 
     // Define the exact order from Highcharts legend, including unknown activities
-    const sectionOrder = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'unknown'];
-    
+    const sectionOrder = [
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "unknown",
+    ];
+
     // Transform the API response to the format needed by the chart
-    const years = ["2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
-    
-    return years.map(year => {
+    const years = [
+      "2012",
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+    ];
+
+    return years.map((year) => {
       const yearData = { year };
-      
+
       // Process sections in the exact order from legend
-      sectionOrder.forEach(sectionCode => {
-        const item = filteredData.find(dataItem => 
-          sectionCode === 'unknown' 
-            ? dataItem.section_division === null 
+      sectionOrder.forEach((sectionCode) => {
+        const item = filteredData.find((dataItem) =>
+          sectionCode === "unknown"
+            ? dataItem.section_division === null
             : dataItem.section_division === sectionCode
         );
         if (item) {
@@ -384,7 +465,7 @@ export const fetchEnterpriseNace = async (lang = "ge") => {
           yearData[activityName] = item[year] || 0;
         }
       });
-      
+
       return yearData;
     });
   } catch (error) {
@@ -396,7 +477,9 @@ export const fetchEnterpriseNace = async (lang = "ge") => {
 // Enterprise Death NACE API
 export const fetchEnterpriseDeathNace = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-death-nace?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-death-nace?lang=${lang}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
@@ -406,19 +489,49 @@ export const fetchEnterpriseDeathNace = async (lang = "ge") => {
     const filteredData = data;
 
     // Define the exact order from Highcharts legend, including unknown activities
-    const sectionOrder = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'unknown'];
-    
+    const sectionOrder = [
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "unknown",
+    ];
+
     // Transform the API response to the format needed by the chart
-    const years = ["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
-    
-    return years.map(year => {
+    const years = [
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+    ];
+
+    return years.map((year) => {
       const yearData = { year };
-      
+
       // Process sections in the exact order from legend
-      sectionOrder.forEach(sectionCode => {
-        const item = filteredData.find(dataItem => 
-          sectionCode === 'unknown' 
-            ? dataItem.section_division === null 
+      sectionOrder.forEach((sectionCode) => {
+        const item = filteredData.find((dataItem) =>
+          sectionCode === "unknown"
+            ? dataItem.section_division === null
             : dataItem.section_division === sectionCode
         );
         if (item) {
@@ -426,7 +539,7 @@ export const fetchEnterpriseDeathNace = async (lang = "ge") => {
           yearData[activityName] = item[year] || 0;
         }
       });
-      
+
       return yearData;
     });
   } catch (error) {
@@ -440,86 +553,88 @@ export const fetchEnterpriseDeathNace = async (lang = "ge") => {
 const getSectionName = (sectionCode, lang = "ge") => {
   const sectionNames = {
     ge: {
-      'B': 'სამთომომპოვებელი მრე...',
-      'C': 'დამამუშავებელი მრეწვე...',
-      'D': 'ელექტროენერგია მიწო...',
-      'E': 'წყალმომარაგება ნარჩე...',
-      'F': 'მშენებლობა',
-      'G': 'ვაჭრობა რემონტი',
-      'H': 'ტრანსპორტირება დასა...',
-      'I': 'განთავსება საკვები',
-      'J': 'ინფორმაცია კომუნიკ...',
-      'K': 'ფინანსური საქმიანო...',
-      'L': 'უძრავი ქონება',
-      'M': 'პროფესიული საქმია...',
-      'N': 'ადმინისტრაციული მომ...',
-      'P': 'განათლება',
-      'Q': 'ჯანდაცვა სოციალუ...',
-      'R': 'ხელოვნება გართობა',
-      'S': 'სხვა მომსახურება',
-      'unknown': 'უცნობი საქმიანობა'
+      B: "სამთომომპოვებელი მრე...",
+      C: "დამამუშავებელი მრეწვე...",
+      D: "ელექტროენერგია მიწო...",
+      E: "წყალმომარაგება ნარჩე...",
+      F: "მშენებლობა",
+      G: "ვაჭრობა რემონტი",
+      H: "ტრანსპორტირება დასა...",
+      I: "განთავსება საკვები",
+      J: "ინფორმაცია კომუნიკ...",
+      K: "ფინანსური საქმიანო...",
+      L: "უძრავი ქონება",
+      M: "პროფესიული საქმია...",
+      N: "ადმინისტრაციული მომ...",
+      P: "განათლება",
+      Q: "ჯანდაცვა სოციალუ...",
+      R: "ხელოვნება გართობა",
+      S: "სხვა მომსახურება",
+      unknown: "უცნობი საქმიანობა",
     },
     en: {
-      'B': 'Mining and Quarrying',
-      'C': 'Manufacturing',
-      'D': 'Electricity Supply',
-      'E': 'Water Supply Waste...',
-      'F': 'Construction',
-      'G': 'Trade Repair',
-      'H': 'Transportation Stor...',
-      'I': 'Accommodation Food...',
-      'J': 'Information Comm...',
-      'K': 'Financial Activities',
-      'L': 'Real Estate Activities',
-      'M': 'Professional Activ...',
-      'N': 'Administrative Sup...',
-      'P': 'Education',
-      'Q': 'Health Social Work',
-      'R': 'Arts Entertainment',
-      'S': 'Other Services',
-      'unknown': 'Unknown Activity'
-    }
+      B: "Mining and Quarrying",
+      C: "Manufacturing",
+      D: "Electricity Supply",
+      E: "Water Supply Waste...",
+      F: "Construction",
+      G: "Trade Repair",
+      H: "Transportation Stor...",
+      I: "Accommodation Food...",
+      J: "Information Comm...",
+      K: "Financial Activities",
+      L: "Real Estate Activities",
+      M: "Professional Activ...",
+      N: "Administrative Sup...",
+      P: "Education",
+      Q: "Health Social Work",
+      R: "Arts Entertainment",
+      S: "Other Services",
+      unknown: "Unknown Activity",
+    },
   };
 
-  return sectionNames[lang][sectionCode] || sectionNames[lang]['unknown'];
+  return sectionNames[lang][sectionCode] || sectionNames[lang]["unknown"];
 };
 
 // Color mapping to match exact Highcharts legend order
 export const getSectionColorMapping = () => {
   return [
-    { section: 'B', color: '#0080BE' },
-    { section: 'C', color: '#EA1E30' },
-    { section: 'D', color: '#19C219' },
-    { section: 'E', color: '#F2741F' },
-    { section: 'F', color: '#5B21A4' },
-    { section: 'G', color: '#F2CF1F' },
-    { section: 'H', color: '#149983' },
-    { section: 'I', color: '#C21979' },
-    { section: 'J', color: '#1B6D9A' },
-    { section: 'K', color: '#8FDE1D' },
-    { section: 'L', color: '#F2F21F' },
-    { section: 'M', color: '#477054' },
-    { section: 'N', color: '#b4b299' },
-    { section: 'P', color: '#07f187' },
-    { section: 'Q', color: '#af4fff' },
-    { section: 'R', color: '#e4748b' },
-    { section: 'S', color: '#61b562' },
-    { section: 'unknown', color: '#000000' }
+    { section: "B", color: "#0080BE" },
+    { section: "C", color: "#EA1E30" },
+    { section: "D", color: "#19C219" },
+    { section: "E", color: "#F2741F" },
+    { section: "F", color: "#5B21A4" },
+    { section: "G", color: "#F2CF1F" },
+    { section: "H", color: "#149983" },
+    { section: "I", color: "#C21979" },
+    { section: "J", color: "#1B6D9A" },
+    { section: "K", color: "#8FDE1D" },
+    { section: "L", color: "#F2F21F" },
+    { section: "M", color: "#477054" },
+    { section: "N", color: "#b4b299" },
+    { section: "P", color: "#07f187" },
+    { section: "Q", color: "#af4fff" },
+    { section: "R", color: "#e4748b" },
+    { section: "S", color: "#61b562" },
+    { section: "unknown", color: "#000000" },
   ];
 };
 
 // Fetch Enterprise Birth by Regions
-export const fetchEnterpriseBirthRegion = async (lang = 'ge') => {
+export const fetchEnterpriseBirthRegion = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-birth-region?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-birth-region?lang=${lang}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
     const rawData = data.recordset || data;
-    
+
     // Filter out "Unknown" region data
-    return rawData.map(item => {
+    return rawData.map((item) => {
       const filteredItem = { ...item };
       delete filteredItem.Unknown;
       return filteredItem;
@@ -531,17 +646,19 @@ export const fetchEnterpriseBirthRegion = async (lang = 'ge') => {
 };
 
 // Fetch Enterprise Death by Regions
-export const fetchEnterpriseDeathRegion = async (lang = 'ge') => {
+export const fetchEnterpriseDeathRegion = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-death-region?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-death-region?lang=${lang}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
     const rawData = data.recordset || data;
-    
+
     // Filter out "Unknown" region data
-    return rawData.map(item => {
+    return rawData.map((item) => {
       const filteredItem = { ...item };
       delete filteredItem.Unknown;
       return filteredItem;
@@ -553,30 +670,43 @@ export const fetchEnterpriseDeathRegion = async (lang = 'ge') => {
 };
 
 // Fetch Enterprise Birth by Sectors
-export const fetchEnterpriseBirthSector = async (lang = 'ge') => {
+export const fetchEnterpriseBirthSector = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-birth-sector?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-birth-sector?lang=${lang}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
     const rawData = data.recordset || data;
-    
+
     // Filter out the "სულ" (Total) row
-    const filteredData = rawData.filter(item => item.legend_title !== "სულ");
-    
+    const filteredData = rawData.filter((item) => item.legend_title !== "სულ");
+
     // Transform the API response to the format needed by the chart
-    const years = ["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
-    
-    return years.map(year => {
+    const years = [
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+    ];
+
+    return years.map((year) => {
       const yearData = { year };
-      
+
       // Process each sector
-      filteredData.forEach(item => {
+      filteredData.forEach((item) => {
         const sectorName = item.legend_title;
         yearData[sectorName] = item[year] || 0;
       });
-      
+
       return yearData;
     });
   } catch (error) {
@@ -586,30 +716,43 @@ export const fetchEnterpriseBirthSector = async (lang = 'ge') => {
 };
 
 // Fetch Enterprise Death by Sectors
-export const fetchEnterpriseDeathSector = async (lang = 'ge') => {
+export const fetchEnterpriseDeathSector = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-death-sector?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-death-sector?lang=${lang}`
+    );
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
     const rawData = data.recordset || data;
-    
+
     // Filter out the "სულ" (Total) row
-    const filteredData = rawData.filter(item => item.legend_title !== "სულ");
-    
+    const filteredData = rawData.filter((item) => item.legend_title !== "სულ");
+
     // Transform the API response to the format needed by the chart
-    const years = ["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"];
-    
-    return years.map(year => {
+    const years = [
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+    ];
+
+    return years.map((year) => {
       const yearData = { year };
-      
+
       // Process each sector
-      filteredData.forEach(item => {
+      filteredData.forEach((item) => {
         const sectorName = item.legend_title;
         yearData[sectorName] = item[year] || 0;
       });
-      
+
       return yearData;
     });
   } catch (error) {
@@ -619,44 +762,48 @@ export const fetchEnterpriseDeathSector = async (lang = 'ge') => {
 };
 
 // Enterprise Survival Year API
-export const fetchEnterpriseSurvivalYear = async (lang = 'ge') => {
+export const fetchEnterpriseSurvivalYear = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-survival-year?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-survival-year?lang=${lang}`
+    );
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    
+
     // Check if data is in recordset format
     const results = data.recordset || data;
-    
+
     if (!results || results.length === 0) {
       return [];
     }
-    
+
     // Transform the data structure from "Born_in_YYYY" to "survival_X" format
-    return results.map(item => {
-      const transformedItem = { year: item.year };
-      
-      // Get all Born_in_YYYY keys and transform them
-      Object.keys(item).forEach(key => {
-        if (key.startsWith('Born_in_')) {
-          const birthYear = parseInt(key.split('_')[2]);
-          const currentYear = item.year;
-          const survivalYears = currentYear - birthYear;
-          
-          // Only include non-zero values and positive survival years
-          if (item[key] > 0 && survivalYears > 0) {
-            transformedItem[`Born_in_${birthYear}`] = item[key];
+    return results
+      .map((item) => {
+        const transformedItem = { year: item.year };
+
+        // Get all Born_in_YYYY keys and transform them
+        Object.keys(item).forEach((key) => {
+          if (key.startsWith("Born_in_")) {
+            const birthYear = parseInt(key.split("_")[2]);
+            const currentYear = item.year;
+            const survivalYears = currentYear - birthYear;
+
+            // Only include non-zero values and positive survival years
+            if (item[key] > 0 && survivalYears > 0) {
+              transformedItem[`Born_in_${birthYear}`] = item[key];
+            }
           }
-        }
+        });
+
+        return transformedItem;
+      })
+      .filter((item) => {
+        // Filter out items that have no survival data (only year property)
+        return Object.keys(item).length > 1;
       });
-      
-      return transformedItem;
-    }).filter(item => {
-      // Filter out items that have no survival data (only year property)
-      return Object.keys(item).length > 1;
-    });
   } catch (error) {
     console.error("Error fetching enterprise survival year data:", error);
     return [];
@@ -664,47 +811,51 @@ export const fetchEnterpriseSurvivalYear = async (lang = 'ge') => {
 };
 
 // Enterprise Birth Distribution API
-export const fetchEnterpriseBirthDistribution = async (lang = 'ge') => {
+export const fetchEnterpriseBirthDistribution = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-birth-distribution?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-birth-distribution?lang=${lang}`
+    );
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    
+
     // Check if data is in recordset format
     const results = data.recordset || data;
-    
+
     if (!results || results.length === 0) {
       return [];
     }
-    
+
     return results;
   } catch (error) {
-    console.error('Error fetching enterprise birth distribution data:', error);
+    console.error("Error fetching enterprise birth distribution data:", error);
     return [];
   }
 };
 
 // Enterprise Death Distribution API
-export const fetchEnterpriseDeathDistribution = async (lang = 'ge') => {
+export const fetchEnterpriseDeathDistribution = async (lang = "ge") => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enterprise-death-distribution?lang=${lang}`);
+    const response = await fetch(
+      `${API_BASE_URL}/enterprise-death-distribution?lang=${lang}`
+    );
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      throw new Error("Network response was not ok");
     }
     const data = await response.json();
-    
+
     // Check if data is in recordset format
     const results = data.recordset || data;
-    
+
     if (!results || results.length === 0) {
       return [];
     }
-    
+
     return results;
   } catch (error) {
-    console.error('Error fetching enterprise death distribution data:', error);
+    console.error("Error fetching enterprise death distribution data:", error);
     return [];
   }
 };

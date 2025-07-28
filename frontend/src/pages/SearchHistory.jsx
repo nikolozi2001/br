@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/scrollbar.css";
 import "../styles/searchHistory.scss";
-import { API, fetchDocuments } from "../services/api";
+import { API, fetchDocuments, fetchCoordinates } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
@@ -48,6 +48,7 @@ function SearchHistory({ isEnglish }) {
           identificationNumber: identificationNumber,
         };
 
+        // Fetch document data
         const response = await fetchDocuments(
           searchParams,
           isEnglish ? "en" : "ge"
@@ -57,22 +58,14 @@ function SearchHistory({ isEnglish }) {
           const data = response[0];
           setDocumentData(data);
 
-          // Check if coordinates are available in the response
-          // Adjust these field names based on your actual API response
-          if (data.X && data.Y) {
+          // Fetch coordinates separately
+          const coordsData = await fetchCoordinates(identificationNumber);
+          if (coordsData && coordsData.lat && coordsData.lng) {
             setCoordinates({
-              lat: parseFloat(data.Y),
-              lng: parseFloat(data.X),
-            });
-          } else if (data.coordinates) {
-            setCoordinates({
-              lat: parseFloat(data.coordinates.latitude),
-              lng: parseFloat(data.coordinates.longitude),
-            });
-          } else if (data.lat && data.lng) {
-            setCoordinates({
-              lat: parseFloat(data.lat),
-              lng: parseFloat(data.lng),
+              lat: coordsData.lat,
+              lng: coordsData.lng,
+              region: coordsData.region,
+              inactive: coordsData.inactive,
             });
           }
         } else {
@@ -330,8 +323,23 @@ function SearchHistory({ isEnglish }) {
                     </Marker>
                   </MapContainer>
                   <div className="mt-2 text-sm text-gray-600 font-bpg-nino text-center">
-                    {isEnglish ? "Coordinates: " : "კოორდინატები: "}
-                    {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                    <div>
+                      {isEnglish ? "Coordinates: " : "კოორდინატები: "}
+                      {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                    </div>
+                    {coordinates.region && (
+                      <div className="mt-1">
+                        {isEnglish ? "Region: " : "რეგიონი: "}
+                        {coordinates.region}
+                      </div>
+                    )}
+                    {coordinates.inactive && (
+                      <div className="mt-1 text-red-600">
+                        {isEnglish
+                          ? "Note: Location marked as inactive"
+                          : "შენიშვნა: მდებარეობა მონიშნულია არააქტიურად"}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

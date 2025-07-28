@@ -37,6 +37,7 @@ const enterpriseDeathSectorRouter = require('./routes/enterprice_death_sector');
 const enterpriseSurvivalYearRouter = require('./routes/enterprice_survival_year');
 const enterpriseBirthDistributionRouter = require('./routes/enterprice_birth_distribution');
 const enterpriseDeathDistributionRouter = require('./routes/enterprice_death_distribution');
+const coordinatesRouter = require('./routes/coordinates');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -66,6 +67,7 @@ app.use('/api/enterprise-death-sector', enterpriseDeathSectorRouter);
 app.use('/api/enterprise-survival-year', enterpriseSurvivalYearRouter);
 app.use('/api/enterprise-birth-distribution', enterpriseBirthDistributionRouter);
 app.use('/api/enterprise-death-distribution', enterpriseDeathDistributionRouter);
+app.use('/api/coordinates', coordinatesRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
