@@ -8,6 +8,7 @@ import {
 import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
+import SearchHistory from "./pages/SearchHistory";
 import Reports from "./components/Reports";
 import ReportsResults from "./components/ReportsResults";
 import Charts from "./components/Charts";
@@ -33,6 +34,10 @@ function App() {
           <Routes>
             <Route path="/" element={<SearchForm isEnglish={isEnglish} />} />
             <Route
+              path="/search-history"
+              element={<SearchHistory isEnglish={isEnglish} />}
+            />
+            <Route
               path="/reports"
               element={<Reports isEnglish={isEnglish} />}
             />
@@ -40,10 +45,7 @@ function App() {
               path="/reports/:reportId"
               element={<ReportsResults isEnglish={isEnglish} />}
             />
-            <Route
-              path="/charts"
-              element={<Charts isEnglish={isEnglish} />}
-            />
+            <Route path="/charts" element={<Charts isEnglish={isEnglish} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

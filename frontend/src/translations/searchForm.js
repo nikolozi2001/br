@@ -47,7 +47,11 @@ export const translations = {
     first: "პირველი გვერდი",
     last: "ბოლო გვერდი",
     print: "ბეჭდვა",
-    total: "სულ"
+    total: "სულ",
+
+    // SearchHistoryPage
+
+    historyTitle: "კომპანიის შესახებ",
   },
   en: {
     title: "Economic Entity Search",
@@ -95,6 +99,9 @@ export const translations = {
     first: "First page",
     last: "Last page",
     print: "Print",
-    total: "Total"
+    total: "Total",
+
+    // SearchHistoryPage
+    historyTitle: "About Company",
   }
 };
