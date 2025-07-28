@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/scrollbar.css";
 import "../styles/searchHistory.scss";
-import { API } from "../services/api";
+import { API, fetchDocuments } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
@@ -13,45 +13,123 @@ import loaderIcon from "../assets/images/equalizer.svg";
 
 function SearchHistory({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
-  const [searchHistory, setSearchHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [documentData, setDocumentData] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const data = [
-    {
-      label: "საიდენტიფიკაციო ნომერი:",
-      value: "209456104",
-    },
-    {
-      label: "ორგანიზაციის დასახელება:",
-      value: "მ3ს კარიბჭე",
-    },
-    {
-      label: "ორგანიზაციულ-სამართლებრივი ფორმა:",
-      value: "მ3ს",
-    },
-    {
-      label: "საკუთრების ფორმა:",
-      value: "კერძო აღვილობრივი საკუთრება",
-    },
-    {
-      label: "რეგიონი:",
-      value: "ქ. თბილისი,გლდანის რაიონი",
-    },
-    {
-      label: "იურიდიული მისამართი:",
-      value:
-        "საქართველო, ქ. თბილისი, გლდანის რაიონი, მუხიანი IV ბ მ/რ., კორპ. №26, ბ. 13",
-    },
-    {
-      label: "ეკონომიკური საქმიანობა (NACE Rev.2):",
-      value:
-        "68.20.2 - საკუთარი ან იჯარით აღებული არასაცხოვრებელი შენობების გაქირავება და მართვა",
-    },
-    {
-      label: "აქტიური ეკონომიკური სეხმეტე:",
-      value: "აქტიური",
-    },
-  ];
+  // Get identification number from URL params or location state
+  const searchParams = new URLSearchParams(location.search);
+  const identificationNumber =
+    searchParams.get("id") ||
+    location.state?.identificationNumber ||
+    "209456104";
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const searchParams = {
+          identificationNumber: identificationNumber,
+        };
+
+        const response = await fetchDocuments(
+          searchParams,
+          isEnglish ? "en" : "ge"
+        );
+
+        if (response && response.length > 0) {
+          setDocumentData(response[0]);
+        } else {
+          toast.error(isEnglish ? "No data found" : "მონაცემები ვერ მოიძებნა");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error(
+          isEnglish ? "Error loading data" : "შეცდომა მონაცემების ჩატვირთვისას"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (identificationNumber) {
+      fetchData();
+    }
+  }, [identificationNumber, isEnglish]);
+
+  // Prepare data for display
+  const data = useMemo(() => {
+    if (!documentData) return [];
+
+    return [
+      {
+        label: isEnglish ? "Identification Number:" : "საიდენტიფიკაციო ნომერი:",
+        value: documentData.identificationNumber || "-",
+      },
+      {
+        label: isEnglish ? "Organization Name:" : "ორგანიზაციის დასახელება:",
+        value: documentData.name || "-",
+      },
+      {
+        label: isEnglish
+          ? "Organizational Legal Form:"
+          : "ორგანიზაციულ-სამართლებრივი ფორმა:",
+        value: documentData.abbreviation || "-",
+      },
+      {
+        label: isEnglish ? "Ownership Form:" : "საკუთრების ფორმა:",
+        value: documentData.ownershipType || "-",
+      },
+      {
+        label: isEnglish ? "Region:" : "რეგიონი:",
+        value: documentData.legalAddress?.region
+          ? `${documentData.legalAddress.region}${
+              documentData.legalAddress.city
+                ? ", " + documentData.legalAddress.city
+                : ""
+            }`
+          : "-",
+      },
+      {
+        label: isEnglish ? "Legal Address:" : "იურიდიული მისამართი:",
+        value: documentData.legalAddress?.address || "-",
+      },
+      {
+        label: isEnglish
+          ? "Economic Activity (NACE Rev.2):"
+          : "ეკონომიკური საქმიანობა (NACE Rev.2):",
+        value:
+          documentData.activities && documentData.activities.length > 0
+            ? `${documentData.activities[0].code} - ${documentData.activities[0].name}`
+            : "-",
+      },
+      {
+        label: isEnglish
+          ? "Active Economic Status:"
+          : "აქტიური ეკონომიკური სტატუსი:",
+        value: documentData.isActive
+          ? isEnglish
+            ? "Active"
+            : "აქტიური"
+          : isEnglish
+          ? "Inactive"
+          : "არააქტიური",
+      },
+      {
+        label: isEnglish ? "Head/Director:" : "ხელმძღვანელი:",
+        value: documentData.head || "-",
+      },
+      {
+        label: isEnglish ? "Phone:" : "ტელეფონი:",
+        value: documentData.phone || "-",
+      },
+      {
+        label: isEnglish ? "Email:" : "ელ-ფოსტა:",
+        value: documentData.email || "-",
+      },
+    ].filter((item) => item.value !== "-"); // Optionally filter out empty fields
+  }, [documentData, isEnglish]);
 
   const exportToExcel = async () => {
     try {
@@ -86,7 +164,7 @@ function SearchHistory({ isEnglish }) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "company_info.xlsx";
+      a.download = `company_info_${identificationNumber}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
 
@@ -117,7 +195,8 @@ function SearchHistory({ isEnglish }) {
             </button>
             <button
               onClick={exportToExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-bpg-nino flex items-center cursor-pointer"
+              disabled={loading || !documentData}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-bpg-nino flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="w-4 h-4 mr-2"
@@ -144,21 +223,44 @@ function SearchHistory({ isEnglish }) {
 
           {/* Georgian Info Table */}
           <div className="w-full">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              {data.map((item, index) => (
-                <div
-                  key={index}
-                  className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group ${
-                    index === data.length - 1 ? "border-b-0" : ""
-                  }`}
-                >
-                  <div className="w-2/5 font-bold font-bpg-nino">
-                    {item.label}
-                  </div>
-                  <div className="w-3/5 font-bpg-nino">{item.value}</div>
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <div className="flex justify-center items-center">
+                  <img
+                    src={loaderIcon}
+                    alt="Loading..."
+                    className="w-12 h-12"
+                  />
+                  <span className="ml-3 text-gray-600 font-bpg-nino">
+                    {isEnglish ? "Loading..." : "იტვირთება..."}
+                  </span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : documentData ? (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {data.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group ${
+                      index === data.length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    <div className="w-2/5 font-bold font-bpg-nino">
+                      {item.label}
+                    </div>
+                    <div className="w-3/5 font-bpg-nino">{item.value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-center text-gray-600 font-bpg-nino">
+                  {isEnglish
+                    ? "No data available"
+                    : "მონაცემები არ არის ხელმისაწვდომი"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
