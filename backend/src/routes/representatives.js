@@ -25,6 +25,7 @@ router.get("/", async (req, res) => {
         ,[Date]
         FROM [register].[dbo].[Hst_Representatives]
         WHERE [Stat_ID] = @statId 
+        ORDER BY [Date] DESC
       `);
 
     res.json(result.recordset);
