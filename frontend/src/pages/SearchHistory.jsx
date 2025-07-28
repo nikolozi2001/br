@@ -14,7 +14,6 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 
 // Fix for default markers in react-leaflet
@@ -36,9 +35,7 @@ function SearchHistory({ isEnglish }) {
   // Get identification number from URL params or location state
   const searchParams = new URLSearchParams(location.search);
   const identificationNumber =
-    searchParams.get("id") ||
-    location.state?.identificationNumber ||
-    "209456104";
+    searchParams.get("id") || location.state?.identificationNumber;
 
   useEffect(() => {
     const fetchData = async () => {
