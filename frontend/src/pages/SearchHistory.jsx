@@ -83,6 +83,14 @@ function SearchHistory({ isEnglish }) {
     }
   }, [identificationNumber, isEnglish]);
 
+  //   console.log("Legal_Code", identificationNumber);
+
+  //   sessionStorage.setItem("Stat_ID", documentData?.Stat_ID || "");
+
+  //   const Stat_ID = sessionStorage.getItem("Stat_ID");
+
+  const Stat_ID = documentData?.Stat_ID || "";
+
   // Prepare data for display
   const data = useMemo(() => {
     if (!documentData) return [];
@@ -361,6 +369,12 @@ function SearchHistory({ isEnglish }) {
               </div>
             </div>
           )}
+
+          <div className="mb-6">
+            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+              {t.personsRelatedToCompany}
+            </h1>
+          </div>
         </div>
       </div>
     </div>

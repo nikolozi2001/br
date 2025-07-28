@@ -366,6 +366,26 @@ export const fetchCoordinates = async (taxId, lang = "ge") => {
   }
 };
 
+// Representatives API
+export const fetchRepresentatives = async (statId, lang = "ge") => {
+  try {
+    if (!statId) {
+      throw new Error("Stat ID is required");
+    }
+    const response = await fetch(
+      `${API_BASE_URL}/representatives?statId=${statId}&lang=${lang}`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch representatives");
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching representatives:", error);
+    return [];
+  }
+};
+
 // Enterprise Birth-Death API
 export const fetchEnterpriseBirthDeath = async (lang = "ge") => {
   try {
