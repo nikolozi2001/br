@@ -2,7 +2,12 @@ import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/scrollbar.css";
 import "../styles/searchHistory.scss";
-import { API, fetchDocuments, fetchCoordinates } from "../services/api";
+import {
+  API,
+  fetchDocuments,
+  fetchCoordinates,
+  fetchRepresentatives,
+} from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
@@ -14,6 +19,7 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 
 // Fix for default markers in react-leaflet
@@ -29,6 +35,7 @@ function SearchHistory({ isEnglish }) {
   const [loading, setLoading] = useState(true);
   const [documentData, setDocumentData] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
+  const [representatives, setRepresentatives] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,6 +48,7 @@ function SearchHistory({ isEnglish }) {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setRepresentatives([]);
         const searchParams = {
           identificationNumber: identificationNumber,
         };
@@ -54,6 +62,7 @@ function SearchHistory({ isEnglish }) {
         if (response && response.length > 0) {
           const data = response[0];
           setDocumentData(data);
+          setRepresentatives(data.Stat_ID || []);
 
           // Fetch coordinates separately
           const coordsData = await fetchCoordinates(identificationNumber);
@@ -82,14 +91,6 @@ function SearchHistory({ isEnglish }) {
       fetchData();
     }
   }, [identificationNumber, isEnglish]);
-
-  //   console.log("Legal_Code", identificationNumber);
-
-  //   sessionStorage.setItem("Stat_ID", documentData?.Stat_ID || "");
-
-  //   const Stat_ID = sessionStorage.getItem("Stat_ID");
-
-  const Stat_ID = documentData?.Stat_ID || "";
 
   // Prepare data for display
   const data = useMemo(() => {
@@ -167,6 +168,8 @@ function SearchHistory({ isEnglish }) {
   const exportToExcel = async () => {
     try {
       const workbook = new ExcelJS.Workbook();
+
+      // First worksheet for company info
       const worksheet = workbook.addWorksheet("Company Info");
 
       // Add headers
@@ -188,6 +191,45 @@ function SearchHistory({ isEnglish }) {
         fgColor: { argb: "FF0080BE" },
       };
       worksheet.getRow(1).font = { color: { argb: "FFFFFFFF" }, bold: true };
+
+      // Second worksheet for representatives
+      if (representatives.length > 0) {
+        const repsWorksheet = workbook.addWorksheet("Representatives");
+
+        repsWorksheet.columns = [
+          { header: isEnglish ? "Person" : "პირი", key: "name", width: 40 },
+          {
+            header: isEnglish ? "Position" : "მონაწილეობა",
+            key: "position",
+            width: 40,
+          },
+          { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
+        ];
+
+        representatives.forEach((rep) => {
+          repsWorksheet.addRow({
+            name: rep.Name || "-",
+            position: rep.Position || "-",
+            date: rep.Date
+              ? new Date(rep.Date).toLocaleDateString(
+                  isEnglish ? "en-US" : "ka-GE"
+                )
+              : "-",
+          });
+        });
+
+        // Style the header row
+        repsWorksheet.getRow(1).font = { bold: true };
+        repsWorksheet.getRow(1).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0080BE" },
+        };
+        repsWorksheet.getRow(1).font = {
+          color: { argb: "FFFFFFFF" },
+          bold: true,
+        };
+      }
 
       // Generate Excel file
       const buffer = await workbook.xlsx.writeBuffer();
@@ -369,12 +411,6 @@ function SearchHistory({ isEnglish }) {
               </div>
             </div>
           )}
-
-          <div className="mb-6">
-            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
-              {t.personsRelatedToCompany}
-            </h1>
-          </div>
         </div>
       </div>
     </div>
