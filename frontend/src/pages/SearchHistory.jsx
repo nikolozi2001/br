@@ -7,14 +7,29 @@ import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
 import { translations } from "../translations/searchForm";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
 import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
+
+// Fix for default markers in react-leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 function SearchHistory({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const [loading, setLoading] = useState(true);
   const [documentData, setDocumentData] = useState(null);
+  const [coordinates, setCoordinates] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,7 +54,27 @@ function SearchHistory({ isEnglish }) {
         );
 
         if (response && response.length > 0) {
-          setDocumentData(response[0]);
+          const data = response[0];
+          setDocumentData(data);
+
+          // Check if coordinates are available in the response
+          // Adjust these field names based on your actual API response
+          if (data.X && data.Y) {
+            setCoordinates({
+              lat: parseFloat(data.Y),
+              lng: parseFloat(data.X),
+            });
+          } else if (data.coordinates) {
+            setCoordinates({
+              lat: parseFloat(data.coordinates.latitude),
+              lng: parseFloat(data.coordinates.longitude),
+            });
+          } else if (data.lat && data.lng) {
+            setCoordinates({
+              lat: parseFloat(data.lat),
+              lng: parseFloat(data.lng),
+            });
+          }
         } else {
           toast.error(isEnglish ? "No data found" : "მონაცემები ვერ მოიძებნა");
         }
@@ -222,7 +257,7 @@ function SearchHistory({ isEnglish }) {
           </div>
 
           {/* Georgian Info Table */}
-          <div className="w-full">
+          <div className="w-full mb-8">
             {loading ? (
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <div className="flex justify-center items-center">
@@ -262,6 +297,65 @@ function SearchHistory({ isEnglish }) {
               </div>
             )}
           </div>
+
+          {/* Map Section */}
+          {!loading && coordinates && (
+            <>
+              <div className="mb-6">
+                <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+                  {t.map ||
+                    (isEnglish ? "Location Map" : "ადგილმდებარეობის რუკა")}
+                </h1>
+              </div>
+              <div className="w-full">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden p-4">
+                  <MapContainer
+                    center={[coordinates.lat, coordinates.lng]}
+                    zoom={15}
+                    style={{ height: "400px", width: "100%" }}
+                    className="rounded-lg"
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    <Marker position={[coordinates.lat, coordinates.lng]}>
+                      <Popup>
+                        <div className="font-bpg-nino">
+                          <strong>{documentData.name}</strong>
+                          <br />
+                          {documentData.legalAddress?.address}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                  <div className="mt-2 text-sm text-gray-600 font-bpg-nino text-center">
+                    {isEnglish ? "Coordinates: " : "კოორდინატები: "}
+                    {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Show message if no coordinates available */}
+          {!loading && !coordinates && documentData && (
+            <div className="w-full">
+              <div className="mb-6">
+                <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+                  {t.map ||
+                    (isEnglish ? "Location Map" : "ადგილმდებარეობის რუკა")}
+                </h1>
+              </div>
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-center text-gray-600 font-bpg-nino">
+                  {isEnglish
+                    ? "Location coordinates not available"
+                    : "ადგილმდებარეობის კოორდინატები არ არის ხელმისაწვდომი"}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

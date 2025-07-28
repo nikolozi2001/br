@@ -52,6 +52,7 @@ export const translations = {
     // SearchHistoryPage
 
     historyTitle: "კომპანიის შესახებ",
+    map: "რუკა",
   },
   en: {
     title: "Economic Entity Search",
@@ -103,5 +104,6 @@ export const translations = {
 
     // SearchHistoryPage
     historyTitle: "About Company",
+    map: "Map",
   }
 };
