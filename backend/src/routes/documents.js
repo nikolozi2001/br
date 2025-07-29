@@ -47,6 +47,8 @@ router.get("/", async (req, res) => {
       partner,
       ownershipType,
       isActive,
+      x,
+      y,
       size,
     } = req.query;
     const pool = await poolPromise;
@@ -115,7 +117,11 @@ router.get("/", async (req, res) => {
     // Handle legal address region
     if (req.query.legalAddressRegion) {
       query += " AND Region_Code = @regionCode";
-      request.input("regionCode", sql.NVarChar(50), req.query.legalAddressRegion);
+      request.input(
+        "regionCode",
+        sql.NVarChar(50),
+        req.query.legalAddressRegion
+      );
     }
 
     // Handle legal address city/municipality
@@ -133,13 +139,21 @@ router.get("/", async (req, res) => {
     // Handle factual address region
     if (req.query.factualAddressRegion) {
       query += " AND Region_Code2 = @regionCode2";
-      request.input("regionCode2", sql.NVarChar(50), req.query.factualAddressRegion);
+      request.input(
+        "regionCode2",
+        sql.NVarChar(50),
+        req.query.factualAddressRegion
+      );
     }
 
     // Handle factual address city/municipality
     if (req.query.factualAddressCity) {
       query += " AND City_Code2 = @cityCode2";
-      request.input("cityCode2", sql.NVarChar(50), req.query.factualAddressCity);
+      request.input(
+        "cityCode2",
+        sql.NVarChar(50),
+        req.query.factualAddressCity
+      );
     }
 
     // Handle factual address
@@ -159,17 +173,17 @@ router.get("/", async (req, res) => {
       // Map size ID to Georgian text value
       let sizeText;
       switch (size) {
-        case '1':
-          sizeText = 'მცირე';
+        case "1":
+          sizeText = "მცირე";
           break;
-        case '2':
-          sizeText = 'საშუალო';
+        case "2":
+          sizeText = "საშუალო";
           break;
-        case '3':
-          sizeText = 'მსხვილი';
+        case "3":
+          sizeText = "მსხვილი";
           break;
         default:
-          console.warn('Unknown size value:', size);
+          console.warn("Unknown size value:", size);
           break;
       }
       if (sizeText) {
@@ -181,6 +195,14 @@ router.get("/", async (req, res) => {
     if (isActive) {
       query += " AND ISActive = @isActive";
       request.input("isActive", sql.Int, isActive ? 1 : null);
+    }
+
+    if (x === "true") {
+      query += " AND X IS NOT NULL";
+    }
+
+    if (y === "true") {
+      query += " AND Y IS NOT NULL";
     }
 
     const result = await request.query(query);

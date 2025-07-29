@@ -5,14 +5,14 @@ const { poolPromise } = require("../config/database");
 router.get("/", async (req, res) => {
   try {
     const lang = req.query.lang || "ge";
-    const statId = req.query.statId; // Get statId from query params
+    const statId = req.query.statId;
 
     if (!statId) {
       return res.status(400).json({ error: "Stat ID is required" });
     }
 
     const pool = await poolPromise;
-    const result = await pool.request().input("statId", statId) // Use parameterized query for security
+    const result = await pool.request().input("statId", statId)
       .query(`
         SELECT 
          [Stat_ID]

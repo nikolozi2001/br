@@ -269,6 +269,13 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
       );
     }
 
+    // Handle coordinates
+    // Only include if the frontend user has selected to filter for entries with valid coordinates
+    if (searchParams.filterWithCoordinates) {
+      queryParams.append("x", "true");
+      queryParams.append("y", "true");
+    }
+
     // Log the final URL and parameters
     const finalUrl = `${API_BASE_URL}/documents?${queryParams}`;
     // console.log("Final request URL:", finalUrl);
@@ -314,6 +321,8 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
       email: item.Email,
       ownershipType: item.Ownership_Type,
       isActive: item.ISActive === 1,
+      x: parseFloat(item.X),
+      y: parseFloat(item.Y),
       businessForm: item.Zoma
         ? [{ value: item.Zoma.toString(), label: item.Zoma }]
         : [],
