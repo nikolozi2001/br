@@ -144,10 +144,12 @@ function SearchHistory({ isEnglish }) {
 
   // Chart options generator
   const getChartOption = (dateGroup) => {
-    const chartData = dateGroup.data.map((item) => ({
-      value: item.Share,
-      name: `${item.Name}: ${item.Share}%`,
-    }));
+    const chartData = dateGroup.data
+      .map((item) => ({
+        value: item.Share,
+        name: `${item.Name}: ${item.Share}%`,
+      }))
+      .sort((a, b) => b.value - a.value);
 
     // Color palette - matching your existing style
     const colorPalette = [
@@ -188,11 +190,11 @@ function SearchHistory({ isEnglish }) {
         {
           name: "Share",
           type: "pie",
-          radius: ["35%", "65%"],
+          radius: "70%",
           center: ["50%", "55%"],
           avoidLabelOverlap: true,
           itemStyle: {
-            borderRadius: 10,
+            borderRadius: 4,
             borderColor: "#fff",
             borderWidth: 2,
           },
