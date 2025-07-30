@@ -54,6 +54,7 @@ export const translations = {
     historyTitle: "კომპანიის შესახებ",
     map: "რუკა",
     personsRelatedToCompany: "კომპანიასთან დაკავშირებული პირები",
+    partners: "კომპანიის პარტნიორები",
   },
   en: {
     title: "Economic Entity Search",
@@ -107,5 +108,6 @@ export const translations = {
     historyTitle: "About Company",
     map: "Map",
     personsRelatedToCompany: "Persons Related to Company",
+    partners: "Company Partners",
   }
 };

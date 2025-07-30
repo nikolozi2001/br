@@ -7,9 +7,11 @@ import {
   fetchDocuments,
   fetchCoordinates,
   fetchRepresentatives,
+  fetchPartners,
 } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
+import ReactECharts from "echarts-for-react";
 import toast, { Toaster } from "react-hot-toast";
 import { translations } from "../translations/searchForm";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -35,6 +37,7 @@ function SearchHistory({ isEnglish }) {
   const [documentData, setDocumentData] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
   const [representatives, setRepresentatives] = useState([]);
+  const [partners, setPartners] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -98,6 +101,131 @@ function SearchHistory({ isEnglish }) {
       fetchData();
     }
   }, [identificationNumber, isEnglish]);
+
+  useEffect(() => {
+    const fetchPartnersData = async () => {
+      try {
+        const partners = await fetchPartners(documentData?.Stat_ID);
+        setPartners(partners || []);
+      } catch (error) {
+        console.error("Error fetching partners data:", error);
+      }
+    };
+
+    if (identificationNumber && documentData?.Stat_ID) {
+      fetchPartnersData();
+    }
+  }, [identificationNumber, documentData?.Stat_ID]);
+
+  // Process data to group by date
+  const processedData = useMemo(() => {
+    if (!partners || partners.length === 0) return [];
+
+    const groupedByDate = partners.reduce((acc, item) => {
+      if (!acc[item.Date]) {
+        acc[item.Date] = [];
+      }
+      acc[item.Date].push(item);
+      return acc;
+    }, {});
+
+    // Sort dates in descending order
+    const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+      const dateA = new Date(a);
+      const dateB = new Date(b);
+      return dateB - dateA;
+    });
+
+    return sortedDates.map((date) => ({
+      date,
+      data: groupedByDate[date],
+    }));
+  }, [partners]);
+
+  // Chart options generator
+  const getChartOption = (dateGroup) => {
+    const chartData = dateGroup.data.map((item) => ({
+      value: item.Share,
+      name: `${item.Name}: ${item.Share}%`,
+    }));
+
+    // Color palette - matching your existing style
+    const colorPalette = [
+      "#5470c6", // Blue
+      "#3a3a3a", // Dark gray
+      "#91cc75", // Green
+      "#fac858", // Yellow
+      "#ee6666", // Red
+      "#73c0de", // Light blue
+      "#3ba272", // Dark green
+      "#fc8452", // Orange
+      "#9a60b4", // Purple
+      "#ea7ccc", // Pink
+      "#ff9f7f", // Light orange
+      "#fb7293", // Pink-red
+      "#e7bcf3", // Light purple
+      "#8378ea", // Purple-blue
+    ];
+
+    return {
+      title: {
+        text: `პარტნიორთა წილები, ${dateGroup.date}`,
+        left: "center",
+        top: 10,
+        textStyle: {
+          fontSize: 14,
+          fontWeight: "normal",
+        },
+      },
+      tooltip: {
+        trigger: "item",
+        formatter: "{b}",
+      },
+      legend: {
+        show: false, // Hide legend to save space
+      },
+      series: [
+        {
+          name: "Share",
+          type: "pie",
+          radius: ["35%", "65%"],
+          center: ["50%", "55%"],
+          avoidLabelOverlap: true,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: "#fff",
+            borderWidth: 2,
+          },
+          label: {
+            show: true,
+            position: "outside",
+            fontSize: 10,
+            formatter: (params) => {
+              const name = params.name.split(":")[0];
+              if (name.length > 15) {
+                return name.substring(0, 15) + "...";
+              }
+              return name;
+            },
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 12,
+              fontWeight: "bold",
+            },
+          },
+          labelLine: {
+            show: true,
+            length: 10,
+            length2: 15,
+          },
+          data: chartData,
+          color: colorPalette,
+        },
+      ],
+    };
+  };
 
   // Prepare data for display
   const data = useMemo(() => {
@@ -480,6 +608,48 @@ function SearchHistory({ isEnglish }) {
                   {isEnglish
                     ? "No representatives found"
                     : "წარმომადგენლები ვერ მოიძებნა"}
+                </p>
+              </div>
+            )}
+          </div>
+          {/* Partnerts Section */}
+          <div className="w-full mt-8">
+            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+              {t.partners}
+            </h1>
+            {/* Pie Chart - Partners */}
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <div className="flex justify-center items-center">
+                  <img
+                    src={loaderIcon}
+                    alt="Loading..."
+                    className="w-12 h-12"
+                  />
+                  <span className="ml-3 text-gray-600 font-bpg-nino">
+                    {isEnglish ? "Loading..." : "იტვირთება..."}
+                  </span>
+                </div>
+              </div>
+            ) : partners.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {processedData.map((dateGroup, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-lg shadow-lg p-4"
+                  >
+                    <ReactECharts
+                      option={getChartOption(dateGroup)}
+                      style={{ height: "350px", width: "100%" }}
+                      opts={{ renderer: "svg" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-center text-gray-600 font-bpg-nino">
+                  {isEnglish ? "No partners found" : "პარტნიორები ვერ მოიძებნა"}
                 </p>
               </div>
             )}

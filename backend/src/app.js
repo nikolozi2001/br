@@ -39,6 +39,7 @@ const enterpriseBirthDistributionRouter = require('./routes/enterprice_birth_dis
 const enterpriseDeathDistributionRouter = require('./routes/enterprice_death_distribution');
 const coordinatesRouter = require('./routes/coordinates');
 const representativesRouter = require('./routes/representatives');
+const partnersRouter = require('./routes/partners');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -70,6 +71,7 @@ app.use('/api/enterprise-birth-distribution', enterpriseBirthDistributionRouter)
 app.use('/api/enterprise-death-distribution', enterpriseDeathDistributionRouter);
 app.use('/api/coordinates', coordinatesRouter);
 app.use('/api/representatives', representativesRouter);
+app.use('/api/partners', partnersRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

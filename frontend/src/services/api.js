@@ -889,6 +889,26 @@ export const fetchEnterpriseDeathDistribution = async (lang = "ge") => {
   }
 };
 
+// Partners API
+export const fetchPartners = async (statId, lang = "ge") => {
+  try {
+    if (!statId) {
+      throw new Error("Stat ID is required");
+    }
+    const response = await fetch(
+      `${API_BASE_URL}/partners?statId=${statId}&lang=${lang}`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch partners");
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching partners:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -916,6 +936,7 @@ export const API = {
   fetchEnterpriseSurvivalYear,
   fetchEnterpriseBirthDistribution,
   fetchEnterpriseDeathDistribution,
+  fetchPartners,
 };
 
 export default API;
