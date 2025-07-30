@@ -11,6 +11,7 @@ import {
 } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
+import { Download } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 import toast, { Toaster } from "react-hot-toast";
 import { translations } from "../translations/searchForm";
@@ -170,15 +171,6 @@ function SearchHistory({ isEnglish }) {
     ];
 
     return {
-      title: {
-        text: `პარტნიორთა წილები, ${dateGroup.date}`,
-        left: "center",
-        top: 10,
-        textStyle: {
-          fontSize: 14,
-          fontWeight: "normal",
-        },
-      },
       tooltip: {
         trigger: "item",
         formatter: "{b}",
@@ -191,7 +183,7 @@ function SearchHistory({ isEnglish }) {
           name: "Share",
           type: "pie",
           radius: "70%",
-          center: ["50%", "55%"],
+          center: ["50%", "50%"],
           avoidLabelOverlap: true,
           itemStyle: {
             borderRadius: 4,
@@ -638,13 +630,28 @@ function SearchHistory({ isEnglish }) {
                 {processedData.map((dateGroup, index) => (
                   <div
                     key={index}
-                    className="bg-white rounded-lg shadow-lg p-4"
+                    className="rounded-xl shadow-lg overflow-hidden bg-white"
                   >
-                    <ReactECharts
-                      option={getChartOption(dateGroup)}
-                      style={{ height: "350px", width: "100%" }}
-                      opts={{ renderer: "svg" }}
-                    />
+                    {/* Header */}
+                    <div className="bg-[#005c9d] px-4 py-2 flex items-center justify-between">
+                      <h2 className="text-white text-sm md:text-base font-semibold leading-tight">
+                        პარტნიორთა წილები, {dateGroup.date}
+                      </h2>
+                      <div className="flex items-center gap-2 cursor-pointer">
+                        <Download
+                          size={18}
+                          className="text-white hover:text-gray-200"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Chart */}
+                    <div className="p-2 sm:p-4">
+                      <ReactECharts
+                        option={getChartOption(dateGroup)}
+                        style={{ height: 400 }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
