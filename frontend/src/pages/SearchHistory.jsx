@@ -8,6 +8,7 @@ import {
   fetchCoordinates,
   fetchRepresentatives,
   fetchPartners,
+  fetchPartnersVw,
 } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
@@ -39,6 +40,7 @@ function SearchHistory({ isEnglish }) {
   const [coordinates, setCoordinates] = useState(null);
   const [representatives, setRepresentatives] = useState([]);
   const [partners, setPartners] = useState([]);
+  const [partnersVw, setPartnersVw] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -118,6 +120,21 @@ function SearchHistory({ isEnglish }) {
     }
   }, [identificationNumber, documentData?.Stat_ID]);
 
+  useEffect(() => {
+    const fetchPartnersVwData = async () => {
+      try {
+        const partners = await fetchPartnersVw(documentData?.Stat_ID);
+        setPartnersVw(partners || []);
+      } catch (error) {
+        console.error("Error fetching partners VW data:", error);
+      }
+    };
+
+    if (identificationNumber && documentData?.Stat_ID) {
+      fetchPartnersVwData();
+    }
+  }, [identificationNumber, documentData?.Stat_ID]);
+
   // Process data to group by date
   const processedData = useMemo(() => {
     if (!partners || partners.length === 0) return [];
@@ -142,6 +159,35 @@ function SearchHistory({ isEnglish }) {
       data: groupedByDate[date],
     }));
   }, [partners]);
+
+  console.log(partnersVw, "Partners VW Data");
+
+  // Processed data for partners_vw
+  const processedDataVw = useMemo(() => {
+    if (!partnersVw || partnersVw.length === 0) return [];
+
+    const groupedByDate = partnersVw.reduce((acc, item) => {
+      if (!acc[item.Date]) {
+        acc[item.Date] = [];
+      }
+      acc[item.Date].push(item);
+      return acc;
+    }, {});
+
+    // Sort dates in descending order
+    const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+      const dateA = new Date(a);
+      const dateB = new Date(b);
+      return dateB - dateA;
+    });
+
+    return sortedDates.map((date) => ({
+      date,
+      data: groupedByDate[date],
+    }));
+  }, [partnersVw]);
+
+  console.log(processedDataVw, "Processed Partners VW Data");
 
   // Chart options generator
   const getChartOption = (dateGroup) => {
@@ -652,6 +698,66 @@ function SearchHistory({ isEnglish }) {
                         style={{ height: 400 }}
                       />
                     </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-center text-gray-600 font-bpg-nino">
+                  {isEnglish ? "No partners found" : "პარტნიორები ვერ მოიძებნა"}
+                </p>
+              </div>
+            )}
+          </div>
+          {/* Partners-view Section */}
+          <div className="w-full mt-8">
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <div className="flex justify-center items-center">
+                  <img
+                    src={loaderIcon}
+                    alt="Loading..."
+                    className="w-12 h-12"
+                  />
+                  <span className="ml-3 text-gray-600 font-bpg-nino">
+                    {isEnglish ? "Loading..." : "იტვირთება..."}
+                  </span>
+                </div>
+              </div>
+            ) : processedDataVw.length > 0 ? (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {/* Table Header */}
+                <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base">
+                  <div className="w-2/5">{isEnglish ? "Person" : "პირი"}</div>
+                  <div className="w-2/5">{isEnglish ? "Share" : "წილი"}</div>
+                  <div className="w-1/5">{isEnglish ? "Date" : "თარიღი"}</div>
+                </div>
+
+                {/* Table Rows */}
+                {processedDataVw.map((group, groupIndex) => (
+                  <div key={groupIndex}>
+                    {/* Rows under this date */}
+                    {group.data.map((item, itemIndex) => (
+                      <div
+                        key={itemIndex}
+                        className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group`}
+                      >
+                        <div className="w-2/5 font-bpg-nino">
+                          {item.Name || "-"}
+                        </div>
+                        <div className="w-2/5 font-bpg-nino">
+                          {item.Share || "-"}
+                        </div>
+                        <div className="w-1/5 font-bpg-nino">
+                          {group.date
+                            ? new Date(group.date).toLocaleDateString(
+                                isEnglish ? "en-US" : "ka-GE",
+                                { year: "numeric", month: "2-digit" }
+                              )
+                            : "-"}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>

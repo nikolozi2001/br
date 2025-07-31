@@ -40,6 +40,7 @@ const enterpriseDeathDistributionRouter = require('./routes/enterprice_death_dis
 const coordinatesRouter = require('./routes/coordinates');
 const representativesRouter = require('./routes/representatives');
 const partnersRouter = require('./routes/partners');
+const partnersVwRouter = require('./routes/partners_vw');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -72,6 +73,7 @@ app.use('/api/enterprise-death-distribution', enterpriseDeathDistributionRouter)
 app.use('/api/coordinates', coordinatesRouter);
 app.use('/api/representatives', representativesRouter);
 app.use('/api/partners', partnersRouter);
+app.use('/api/partners-vw', partnersVwRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
