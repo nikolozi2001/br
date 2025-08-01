@@ -41,6 +41,7 @@ const coordinatesRouter = require('./routes/coordinates');
 const representativesRouter = require('./routes/representatives');
 const partnersRouter = require('./routes/partners');
 const partnersVwRouter = require('./routes/partners_vw');
+const addressWebRouter = require('./routes/address_web');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -74,6 +75,7 @@ app.use('/api/coordinates', coordinatesRouter);
 app.use('/api/representatives', representativesRouter);
 app.use('/api/partners', partnersRouter);
 app.use('/api/partners-vw', partnersVwRouter);
+app.use('/api/address-web', addressWebRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

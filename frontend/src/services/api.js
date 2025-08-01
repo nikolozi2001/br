@@ -931,6 +931,28 @@ export const fetchPartnersVw = async (statId) => {
   }
 };
 
+export const fetchAddressWeb = async (statId) => {
+  try {
+    if (!statId) {
+      throw new Error("Stat ID is required");
+    }
+    
+    const url = `${API_BASE_URL}/address-web?statId=${statId}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch address web: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("fetchAddressWeb: Error occurred:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -960,6 +982,7 @@ export const API = {
   fetchEnterpriseDeathDistribution,
   fetchPartners,
   fetchPartnersVw,
+  fetchAddressWeb,
 };
 
 export default API;

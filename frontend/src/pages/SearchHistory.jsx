@@ -10,6 +10,7 @@ import {
   fetchRepresentatives,
   fetchPartners,
   fetchPartnersVw,
+  fetchAddressWeb,
 } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
@@ -36,7 +37,7 @@ L.Icon.Default.mergeOptions({
 
 function SearchHistory({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
-  
+
   // Loading component
   const LoadingSpinner = ({ message }) => (
     <div className="bg-white rounded-lg shadow-lg p-8">
@@ -62,6 +63,7 @@ function SearchHistory({ isEnglish }) {
   const [representatives, setRepresentatives] = useState([]);
   const [partners, setPartners] = useState([]);
   const [partnersVw, setPartnersVw] = useState([]);
+  const [addressWeb, setAddressWeb] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -111,13 +113,17 @@ function SearchHistory({ isEnglish }) {
             });
           }
         } else {
-          const errorMsg = isEnglish ? "No data found" : "მონაცემები ვერ მოიძებნა";
+          const errorMsg = isEnglish
+            ? "No data found"
+            : "მონაცემები ვერ მოიძებნა";
           setError(errorMsg);
           toast.error(errorMsg);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        const errorMsg = isEnglish ? "Error loading data" : "შეცდომა მონაცემების ჩატვირთვისას";
+        const errorMsg = isEnglish
+          ? "Error loading data"
+          : "შეცდომა მონაცემების ჩატვირთვისას";
         setError(errorMsg);
         toast.error(errorMsg);
       } finally {
@@ -133,19 +139,24 @@ function SearchHistory({ isEnglish }) {
   useEffect(() => {
     const fetchPartnersData = async () => {
       if (!documentData?.Stat_ID) return;
-      
+
       try {
         setPartnersLoading(true);
         setPartnersVwLoading(true);
-        
-        // Fetch both partners data simultaneously
-        const [partnersData, partnersVwData] = await Promise.all([
-          fetchPartners(documentData.Stat_ID, isEnglish ? "en" : "ge"),
-          fetchPartnersVw(documentData.Stat_ID)
-        ]);
-        
+
+        // Fetch partners, partnersVw, and addressWeb data simultaneously
+        const [partnersData, partnersVwData, addressWebData] =
+          await Promise.all([
+            fetchPartners(documentData.Stat_ID, isEnglish ? "en" : "ge"),
+            fetchPartnersVw(documentData.Stat_ID),
+            fetchAddressWeb(documentData.Stat_ID),
+          ]);
+
+        console.log(addressWebData, "addressWebData");
+
         setPartners(partnersData || []);
         setPartnersVw(partnersVwData || []);
+        setAddressWeb(addressWebData || []);
       } catch (error) {
         console.error("Error fetching partners data:", error);
       } finally {
@@ -158,6 +169,8 @@ function SearchHistory({ isEnglish }) {
       fetchPartnersData();
     }
   }, [identificationNumber, documentData?.Stat_ID, isEnglish]);
+
+  console.log(addressWeb, "addressWeb");
 
   // Process data to group by date
   const processedData = useMemo(() => {
@@ -460,7 +473,9 @@ function SearchHistory({ isEnglish }) {
             <button
               onClick={() => navigate("/reports")}
               className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label={isEnglish ? "Go back to reports" : "უკან დაბრუნება რეპორტებზე"}
+              aria-label={
+                isEnglish ? "Go back to reports" : "უკან დაბრუნება რეპორტებზე"
+              }
             >
               ← {isEnglish ? "Back to Reports" : "უკან დაბრუნება"}
             </button>
@@ -468,7 +483,11 @@ function SearchHistory({ isEnglish }) {
               onClick={exportToExcel}
               disabled={loading || !documentData}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-bpg-nino flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
-              aria-label={isEnglish ? "Export data to Excel file" : "მონაცემების Excel-ში ექსპორტი"}
+              aria-label={
+                isEnglish
+                  ? "Export data to Excel file"
+                  : "მონაცემების Excel-ში ექსპორტი"
+              }
             >
               <svg
                 className="w-4 h-4 mr-2"
@@ -496,7 +515,9 @@ function SearchHistory({ isEnglish }) {
           {/* Georgian Info Table */}
           <div className="w-full mb-8">
             {loading ? (
-              <LoadingSpinner message={isEnglish ? "Loading..." : "იტვირთება..."} />
+              <LoadingSpinner
+                message={isEnglish ? "Loading..." : "იტვირთება..."}
+              />
             ) : error ? (
               <EmptyState message={error} />
             ) : documentData ? (
@@ -516,8 +537,12 @@ function SearchHistory({ isEnglish }) {
                 ))}
               </div>
             ) : (
-              <EmptyState 
-                message={isEnglish ? "No data available" : "მონაცემები არ არის ხელმისაწვდომი"} 
+              <EmptyState
+                message={
+                  isEnglish
+                    ? "No data available"
+                    : "მონაცემები არ არის ხელმისაწვდომი"
+                }
               />
             )}
           </div>
@@ -676,7 +701,9 @@ function SearchHistory({ isEnglish }) {
                     className="w-12 h-12"
                   />
                   <span className="ml-3 text-gray-600 font-bpg-nino">
-                    {isEnglish ? "Loading partners..." : "პარტნიორები იტვირთება..."}
+                    {isEnglish
+                      ? "Loading partners..."
+                      : "პარტნიორები იტვირთება..."}
                   </span>
                 </div>
               </div>
@@ -732,7 +759,9 @@ function SearchHistory({ isEnglish }) {
                     className="w-12 h-12"
                   />
                   <span className="ml-3 text-gray-600 font-bpg-nino">
-                    {isEnglish ? "Loading partners details..." : "პარტნიორების დეტალები იტვირთება..."}
+                    {isEnglish
+                      ? "Loading partners details..."
+                      : "პარტნიორების დეტალები იტვირთება..."}
                   </span>
                 </div>
               </div>
@@ -779,6 +808,78 @@ function SearchHistory({ isEnglish }) {
                   {isEnglish ? "No partners found" : "პარტნიორები ვერ მოიძებნა"}
                 </p>
               </div>
+            ) : null}
+          </div>
+
+          {/* Address Web Section */}
+          <div className="w-full mt-8">
+            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+              {isEnglish
+                ? "Company Legal Address"
+                : "კომპანიის იურიდიული მისამართი"}
+            </h1>
+            {partnersVwLoading ? (
+              <LoadingSpinner
+                message={
+                  isEnglish
+                    ? "Loading company legal address..."
+                    : "კომპანიის იურიდიული მისამართი იტვირთება..."
+                }
+              />
+            ) : addressWeb.length > 0 ? (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {/* Table Header */}
+                <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base">
+                  <div className="w-1/3">
+                    {isEnglish ? "Region" : "რეგიონი"}
+                  </div>
+
+                  <div className="w-1/2">
+                    {isEnglish ? "Legal Address" : "იურიდიული მისამართი"}
+                  </div>
+
+                  <div className="w-1/6 text-right">{isEnglish ? "Date" : "თარიღი"}</div>
+                </div>
+
+                {/* Table Rows */}
+                {addressWeb.map((address, index) => (
+                  <div
+                    key={index}
+                    className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group ${
+                      index === addressWeb.length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    <div className="w-1/3 font-bpg-nino">
+                      {address.Region_name + "; " + address.City_name || "-"}
+                    </div>
+
+                    <div className="w-1/2 font-bpg-nino">
+                      {address.Address || "-"}
+                    </div>
+
+                    <div className="w-1/6 text-right font-bpg-nino">
+                      {address.Date
+                        ? new Date(address.Date).toLocaleDateString(
+                            isEnglish ? "en-US" : "ka-GE",
+                            {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                            }
+                          )
+                        : "-"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !partnersVwLoading && documentData?.Stat_ID ? (
+              <EmptyState
+                message={
+                  isEnglish
+                    ? "No address history found"
+                    : "მისამართების ისტორია ვერ მოიძებნა"
+                }
+              />
             ) : null}
           </div>
         </div>
