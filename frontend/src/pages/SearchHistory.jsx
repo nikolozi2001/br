@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import PropTypes from "prop-types";
 import "../styles/scrollbar.css";
 import "../styles/searchHistory.scss";
 import {
@@ -35,6 +36,24 @@ L.Icon.Default.mergeOptions({
 
 function SearchHistory({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
+  
+  // Loading component
+  const LoadingSpinner = ({ message }) => (
+    <div className="bg-white rounded-lg shadow-lg p-8">
+      <div className="flex justify-center items-center">
+        <img src={loaderIcon} alt="Loading..." className="w-12 h-12" />
+        <span className="ml-3 text-gray-600 font-bpg-nino">{message}</span>
+      </div>
+    </div>
+  );
+
+  // Empty state component
+  const EmptyState = ({ message }) => (
+    <div className="bg-white rounded-lg shadow-lg p-8">
+      <p className="text-center text-gray-600 font-bpg-nino">{message}</p>
+    </div>
+  );
+
   const [loading, setLoading] = useState(true);
   const [partnersLoading, setPartnersLoading] = useState(false);
   const [partnersVwLoading, setPartnersVwLoading] = useState(false);
@@ -43,6 +62,7 @@ function SearchHistory({ isEnglish }) {
   const [representatives, setRepresentatives] = useState([]);
   const [partners, setPartners] = useState([]);
   const [partnersVw, setPartnersVw] = useState([]);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,6 +75,7 @@ function SearchHistory({ isEnglish }) {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
         setRepresentatives([]); // clear before loading
         const searchParams = {
           identificationNumber: identificationNumber,
@@ -90,13 +111,15 @@ function SearchHistory({ isEnglish }) {
             });
           }
         } else {
-          toast.error(isEnglish ? "No data found" : "მონაცემები ვერ მოიძებნა");
+          const errorMsg = isEnglish ? "No data found" : "მონაცემები ვერ მოიძებნა";
+          setError(errorMsg);
+          toast.error(errorMsg);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        toast.error(
-          isEnglish ? "Error loading data" : "შეცდომა მონაცემების ჩატვირთვისას"
-        );
+        const errorMsg = isEnglish ? "Error loading data" : "შეცდომა მონაცემების ჩატვირთვისას";
+        setError(errorMsg);
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -109,14 +132,25 @@ function SearchHistory({ isEnglish }) {
 
   useEffect(() => {
     const fetchPartnersData = async () => {
+      if (!documentData?.Stat_ID) return;
+      
       try {
         setPartnersLoading(true);
-        const partners = await fetchPartners(documentData?.Stat_ID, isEnglish ? "en" : "ge");
-        setPartners(partners || []);
+        setPartnersVwLoading(true);
+        
+        // Fetch both partners data simultaneously
+        const [partnersData, partnersVwData] = await Promise.all([
+          fetchPartners(documentData.Stat_ID, isEnglish ? "en" : "ge"),
+          fetchPartnersVw(documentData.Stat_ID)
+        ]);
+        
+        setPartners(partnersData || []);
+        setPartnersVw(partnersVwData || []);
       } catch (error) {
         console.error("Error fetching partners data:", error);
       } finally {
         setPartnersLoading(false);
+        setPartnersVwLoading(false);
       }
     };
 
@@ -124,24 +158,6 @@ function SearchHistory({ isEnglish }) {
       fetchPartnersData();
     }
   }, [identificationNumber, documentData?.Stat_ID, isEnglish]);
-
-  useEffect(() => {
-    const fetchPartnersVwData = async () => {
-      try {
-        setPartnersVwLoading(true);
-        const partners = await fetchPartnersVw(documentData?.Stat_ID);
-        setPartnersVw(partners || []);
-      } catch (error) {
-        console.error("Error fetching partners VW data:", error);
-      } finally {
-        setPartnersVwLoading(false);
-      }
-    };
-
-    if (identificationNumber && documentData?.Stat_ID) {
-      fetchPartnersVwData();
-    }
-  }, [identificationNumber, documentData?.Stat_ID]);
 
   // Process data to group by date
   const processedData = useMemo(() => {
@@ -344,7 +360,7 @@ function SearchHistory({ isEnglish }) {
     ].filter((item) => item.value !== "-"); // Optionally filter out empty fields
   }, [documentData, isEnglish]);
 
-  const exportToExcel = async () => {
+  const exportToExcel = useCallback(async () => {
     try {
       const workbook = new ExcelJS.Workbook();
 
@@ -433,7 +449,7 @@ function SearchHistory({ isEnglish }) {
       );
       console.error("Export error:", error);
     }
-  };
+  }, [data, representatives, identificationNumber, isEnglish]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -443,14 +459,16 @@ function SearchHistory({ isEnglish }) {
           <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
             <button
               onClick={() => navigate("/reports")}
-              className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer"
+              className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label={isEnglish ? "Go back to reports" : "უკან დაბრუნება რეპორტებზე"}
             >
               ← {isEnglish ? "Back to Reports" : "უკან დაბრუნება"}
             </button>
             <button
               onClick={exportToExcel}
               disabled={loading || !documentData}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-bpg-nino flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-bpg-nino flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
+              aria-label={isEnglish ? "Export data to Excel file" : "მონაცემების Excel-ში ექსპორტი"}
             >
               <svg
                 className="w-4 h-4 mr-2"
@@ -478,18 +496,9 @@ function SearchHistory({ isEnglish }) {
           {/* Georgian Info Table */}
           <div className="w-full mb-8">
             {loading ? (
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <div className="flex justify-center items-center">
-                  <img
-                    src={loaderIcon}
-                    alt="Loading..."
-                    className="w-12 h-12"
-                  />
-                  <span className="ml-3 text-gray-600 font-bpg-nino">
-                    {isEnglish ? "Loading..." : "იტვირთება..."}
-                  </span>
-                </div>
-              </div>
+              <LoadingSpinner message={isEnglish ? "Loading..." : "იტვირთება..."} />
+            ) : error ? (
+              <EmptyState message={error} />
             ) : documentData ? (
               <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                 {data.map((item, index) => (
@@ -507,13 +516,9 @@ function SearchHistory({ isEnglish }) {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow-lg p-8">
-                <p className="text-center text-gray-600 font-bpg-nino">
-                  {isEnglish
-                    ? "No data available"
-                    : "მონაცემები არ არის ხელმისაწვდომი"}
-                </p>
-              </div>
+              <EmptyState 
+                message={isEnglish ? "No data available" : "მონაცემები არ არის ხელმისაწვდომი"} 
+              />
             )}
           </div>
 
@@ -781,5 +786,9 @@ function SearchHistory({ isEnglish }) {
     </div>
   );
 }
+
+SearchHistory.propTypes = {
+  isEnglish: PropTypes.bool.isRequired,
+};
 
 export default SearchHistory;
