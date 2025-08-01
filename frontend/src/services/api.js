@@ -953,6 +953,28 @@ export const fetchAddressWeb = async (statId) => {
   }
 };
 
+export const fetchFullNameWeb = async (statId) => {
+  try {
+    if (!statId) {
+      throw new Error("Stat ID is required");
+    }
+    
+    const url = `${API_BASE_URL}/full-name-web?statId=${statId}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch full name web: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("fetchFullNameWeb: Error occurred:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,

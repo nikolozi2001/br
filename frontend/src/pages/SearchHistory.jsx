@@ -11,6 +11,7 @@ import {
   fetchPartners,
   fetchPartnersVw,
   fetchAddressWeb,
+  fetchFullNameWeb,
 } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
@@ -64,6 +65,7 @@ function SearchHistory({ isEnglish }) {
   const [partners, setPartners] = useState([]);
   const [partnersVw, setPartnersVw] = useState([]);
   const [addressWeb, setAddressWeb] = useState([]);
+  const [fullNameWeb, setFullNameWeb] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -144,19 +146,19 @@ function SearchHistory({ isEnglish }) {
         setPartnersLoading(true);
         setPartnersVwLoading(true);
 
-        // Fetch partners, partnersVw, and addressWeb data simultaneously
-        const [partnersData, partnersVwData, addressWebData] =
+        // Fetch partners, partnersVw, addressWeb, and fullNameWeb data simultaneously
+        const [partnersData, partnersVwData, addressWebData, fullNameWebData] =
           await Promise.all([
             fetchPartners(documentData.Stat_ID, isEnglish ? "en" : "ge"),
             fetchPartnersVw(documentData.Stat_ID),
             fetchAddressWeb(documentData.Stat_ID),
+            fetchFullNameWeb(documentData.Stat_ID),
           ]);
-
-        console.log(addressWebData, "addressWebData");
 
         setPartners(partnersData || []);
         setPartnersVw(partnersVwData || []);
         setAddressWeb(addressWebData || []);
+        setFullNameWeb(fullNameWebData || []);
       } catch (error) {
         console.error("Error fetching partners data:", error);
       } finally {
@@ -169,8 +171,6 @@ function SearchHistory({ isEnglish }) {
       fetchPartnersData();
     }
   }, [identificationNumber, documentData?.Stat_ID, isEnglish]);
-
-  console.log(addressWeb, "addressWeb");
 
   // Process data to group by date
   const processedData = useMemo(() => {
@@ -838,7 +838,9 @@ function SearchHistory({ isEnglish }) {
                     {isEnglish ? "Legal Address" : "იურიდიული მისამართი"}
                   </div>
 
-                  <div className="w-1/6 text-right">{isEnglish ? "Date" : "თარიღი"}</div>
+                  <div className="w-1/6 text-right">
+                    {isEnglish ? "Date" : "თარიღი"}
+                  </div>
                 </div>
 
                 {/* Table Rows */}
@@ -878,6 +880,88 @@ function SearchHistory({ isEnglish }) {
                   isEnglish
                     ? "No address history found"
                     : "მისამართების ისტორია ვერ მოიძებნა"
+                }
+              />
+            ) : null}
+          </div>
+
+          {/* Full Name Web Section */}
+          <div className="w-full mt-8">
+            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+              {isEnglish
+                ? "Company Name, Legal and Ownership Forms"
+                : "კომპანიის დასახელება, სამართლებრივი და საკუთრების ფორმები"}
+            </h1>
+            {partnersVwLoading ? (
+              <LoadingSpinner
+                message={
+                  isEnglish
+                    ? "Loading company name history..."
+                    : "კომპანიის დასახელების ისტორია იტვირთება..."
+                }
+              />
+            ) : fullNameWeb.length > 0 ? (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {/* Table Header */}
+                <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base">
+                  <div className="w-1/3">
+                    {isEnglish ? "Company Name" : "დასახელება"}
+                  </div>
+
+                  <div className="w-1/4">
+                    {isEnglish ? "Legal Form" : "სამართლებრივი ფორმა"}
+                  </div>
+
+                  <div className="w-1/4">
+                    {isEnglish ? "Ownership Form" : "საკუთრების ფორმა"}
+                  </div>
+
+                  <div className="w-1/6 text-right">
+                    {isEnglish ? "Date" : "თარიღი"}
+                  </div>
+                </div>
+
+                {/* Table Rows */}
+                {fullNameWeb.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group ${
+                      index === fullNameWeb.length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    <div className="w-1/3 font-bpg-nino">
+                      {item.Full_Name || "-"}
+                    </div>
+
+                    <div className="w-1/4 font-bpg-nino">
+                      {item.Abbreviation || "-"}
+                    </div>
+
+                    <div className="w-1/4 font-bpg-nino">
+                      {item.Ownership_Type || "-"}
+                    </div>
+
+                    <div className="w-1/6 text-right font-bpg-nino">
+                      {item.Date
+                        ? new Date(item.Date).toLocaleDateString(
+                            isEnglish ? "en-US" : "ka-GE",
+                            {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                            }
+                          )
+                        : "-"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !partnersVwLoading && documentData?.Stat_ID ? (
+              <EmptyState
+                message={
+                  isEnglish
+                    ? "No company name history found"
+                    : "კომპანიის დასახელების ისტორია ვერ მოიძებნა"
                 }
               />
             ) : null}
