@@ -4,7 +4,6 @@ const { poolPromise } = require("../config/database");
 
 router.get("/", async (req, res) => {
   try {
-    const lang = req.query.lang || "ge";
     const statId = req.query.statId;
 
     if (!statId) {

@@ -909,21 +909,24 @@ export const fetchPartners = async (statId, lang = "ge") => {
   }
 };
 
-export const fetchPartnersVw = async (statId, lang = "ge") => {
+export const fetchPartnersVw = async (statId) => {
   try {
     if (!statId) {
       throw new Error("Stat ID is required");
     }
-    const response = await fetch(
-      `${API_BASE_URL}/partners-vw?statId=${statId}&lang=${lang}`
-    );
+    
+    const url = `${API_BASE_URL}/partners-vw?statId=${statId}`;
+    const response = await fetch(url);
+    
     if (!response.ok) {
-      throw new Error("Failed to fetch partners");
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch partners VW: ${response.status} - ${errorText}`);
     }
+    
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error fetching partners:", error);
+    console.error("fetchPartnersVw: Error occurred:", error);
     return [];
   }
 };

@@ -36,6 +36,8 @@ L.Icon.Default.mergeOptions({
 function SearchHistory({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const [loading, setLoading] = useState(true);
+  const [partnersLoading, setPartnersLoading] = useState(false);
+  const [partnersVwLoading, setPartnersVwLoading] = useState(false);
   const [documentData, setDocumentData] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
   const [representatives, setRepresentatives] = useState([]);
@@ -108,25 +110,31 @@ function SearchHistory({ isEnglish }) {
   useEffect(() => {
     const fetchPartnersData = async () => {
       try {
-        const partners = await fetchPartners(documentData?.Stat_ID);
+        setPartnersLoading(true);
+        const partners = await fetchPartners(documentData?.Stat_ID, isEnglish ? "en" : "ge");
         setPartners(partners || []);
       } catch (error) {
         console.error("Error fetching partners data:", error);
+      } finally {
+        setPartnersLoading(false);
       }
     };
 
     if (identificationNumber && documentData?.Stat_ID) {
       fetchPartnersData();
     }
-  }, [identificationNumber, documentData?.Stat_ID]);
+  }, [identificationNumber, documentData?.Stat_ID, isEnglish]);
 
   useEffect(() => {
     const fetchPartnersVwData = async () => {
       try {
+        setPartnersVwLoading(true);
         const partners = await fetchPartnersVw(documentData?.Stat_ID);
         setPartnersVw(partners || []);
       } catch (error) {
         console.error("Error fetching partners VW data:", error);
+      } finally {
+        setPartnersVwLoading(false);
       }
     };
 
@@ -160,8 +168,6 @@ function SearchHistory({ isEnglish }) {
     }));
   }, [partners]);
 
-  console.log(partnersVw, "Partners VW Data");
-
   // Processed data for partners_vw
   const processedDataVw = useMemo(() => {
     if (!partnersVw || partnersVw.length === 0) return [];
@@ -186,8 +192,6 @@ function SearchHistory({ isEnglish }) {
       data: groupedByDate[date],
     }));
   }, [partnersVw]);
-
-  console.log(processedDataVw, "Processed Partners VW Data");
 
   // Chart options generator
   const getChartOption = (dateGroup) => {
@@ -658,7 +662,7 @@ function SearchHistory({ isEnglish }) {
               {t.partners}
             </h1>
             {/* Pie Chart - Partners */}
-            {loading ? (
+            {partnersLoading ? (
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <div className="flex justify-center items-center">
                   <img
@@ -667,7 +671,7 @@ function SearchHistory({ isEnglish }) {
                     className="w-12 h-12"
                   />
                   <span className="ml-3 text-gray-600 font-bpg-nino">
-                    {isEnglish ? "Loading..." : "იტვირთება..."}
+                    {isEnglish ? "Loading partners..." : "პარტნიორები იტვირთება..."}
                   </span>
                 </div>
               </div>
@@ -701,17 +705,20 @@ function SearchHistory({ isEnglish }) {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : !partnersLoading && documentData?.Stat_ID ? (
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <p className="text-center text-gray-600 font-bpg-nino">
                   {isEnglish ? "No partners found" : "პარტნიორები ვერ მოიძებნა"}
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
           {/* Partners-view Section */}
           <div className="w-full mt-8">
-            {loading ? (
+            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
+              {isEnglish ? "Partners Details" : "პარტნიორების დეტალები"}
+            </h1>
+            {partnersVwLoading ? (
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <div className="flex justify-center items-center">
                   <img
@@ -720,7 +727,7 @@ function SearchHistory({ isEnglish }) {
                     className="w-12 h-12"
                   />
                   <span className="ml-3 text-gray-600 font-bpg-nino">
-                    {isEnglish ? "Loading..." : "იტვირთება..."}
+                    {isEnglish ? "Loading partners details..." : "პარტნიორების დეტალები იტვირთება..."}
                   </span>
                 </div>
               </div>
@@ -761,13 +768,13 @@ function SearchHistory({ isEnglish }) {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : !partnersVwLoading && documentData?.Stat_ID ? (
               <div className="bg-white rounded-lg shadow-lg p-8">
                 <p className="text-center text-gray-600 font-bpg-nino">
                   {isEnglish ? "No partners found" : "პარტნიორები ვერ მოიძებნა"}
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
