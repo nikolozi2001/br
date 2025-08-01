@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 import "../styles/scrollbar.css";
@@ -15,7 +15,7 @@ import {
 } from "../services/api";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
-import { Download } from "lucide-react";
+import { Download, ChevronDown, Printer, FileImage, FileText } from "lucide-react";
 import ReactECharts from "echarts-for-react";
 import toast, { Toaster } from "react-hot-toast";
 import { translations } from "../translations/searchForm";
@@ -66,7 +66,9 @@ function SearchHistory({ isEnglish }) {
   const [partnersVw, setPartnersVw] = useState([]);
   const [addressWeb, setAddressWeb] = useState([]);
   const [fullNameWeb, setFullNameWeb] = useState([]);
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const [error, setError] = useState(null);
+  const chartRefs = useRef({});
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -464,6 +466,158 @@ function SearchHistory({ isEnglish }) {
     }
   }, [data, representatives, identificationNumber, isEnglish]);
 
+  // Chart download functions
+  const downloadChart = useCallback((chartRef, format, dateGroup) => {
+    if (!chartRef) return;
+
+    const echartInstance = chartRef.getEchartsInstance();
+    const fileName = `partners_chart_${dateGroup.date.replace(/\//g, '_')}`;
+
+    try {
+      switch (format) {
+        case 'png': {
+          const pngUrl = echartInstance.getDataURL({
+            type: 'png',
+            pixelRatio: 2,
+            backgroundColor: '#fff'
+          });
+          const pngLink = document.createElement('a');
+          pngLink.download = `${fileName}.png`;
+          pngLink.href = pngUrl;
+          pngLink.click();
+          break;
+        }
+
+        case 'jpeg': {
+          const jpegUrl = echartInstance.getDataURL({
+            type: 'jpeg',
+            pixelRatio: 2,
+            backgroundColor: '#fff'
+          });
+          const jpegLink = document.createElement('a');
+          jpegLink.download = `${fileName}.jpeg`;
+          jpegLink.href = jpegUrl;
+          jpegLink.click();
+          break;
+        }
+
+        case 'svg': {
+          const svgUrl = echartInstance.getDataURL({
+            type: 'svg',
+            backgroundColor: '#fff'
+          });
+          const svgLink = document.createElement('a');
+          svgLink.download = `${fileName}.svg`;
+          svgLink.href = svgUrl;
+          svgLink.click();
+          break;
+        }
+
+        case 'print': {
+          const printWindow = window.open('', '_blank');
+          const chartDataUrl = echartInstance.getDataURL({
+            type: 'png',
+            pixelRatio: 2,
+            backgroundColor: '#fff'
+          });
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>Partners Chart - ${dateGroup.date}</title>
+                <style>
+                  body { margin: 0; padding: 20px; text-align: center; }
+                  img { max-width: 100%; height: auto; }
+                  h1 { font-family: Arial, sans-serif; color: #0080BE; }
+                </style>
+              </head>
+              <body>
+                <h1>პარტნიორთა წილები - ${dateGroup.date}</h1>
+                <img src="${chartDataUrl}" alt="Partners Chart" />
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+          printWindow.print();
+          break;
+        }
+
+        case 'pdf': {
+          // For PDF, we'll use the browser's print to PDF functionality
+          const pdfWindow = window.open('', '_blank');
+          const pdfChartDataUrl = echartInstance.getDataURL({
+            type: 'png',
+            pixelRatio: 2,
+            backgroundColor: '#fff'
+          });
+          pdfWindow.document.write(`
+            <html>
+              <head>
+                <title>Partners Chart - ${dateGroup.date}</title>
+                <style>
+                  body { margin: 0; padding: 20px; text-align: center; }
+                  img { max-width: 100%; height: auto; }
+                  h1 { font-family: Arial, sans-serif; color: #0080BE; margin-bottom: 20px; }
+                  @media print {
+                    body { margin: 0; }
+                    h1 { page-break-before: avoid; }
+                  }
+                </style>
+              </head>
+              <body>
+                <h1>პარტნიორთა წილები - ${dateGroup.date}</h1>
+                <img src="${pdfChartDataUrl}" alt="Partners Chart" />
+                <script>
+                  window.onload = function() {
+                    window.print();
+                    window.onafterprint = function() {
+                      window.close();
+                    };
+                  };
+                </script>
+              </body>
+            </html>
+          `);
+          pdfWindow.document.close();
+          break;
+        }
+
+        default:
+          break;
+      }
+
+      toast.success(
+        isEnglish
+          ? `Chart ${format.toUpperCase()} downloaded successfully!`
+          : `დიაგრამა ${format.toUpperCase()} ფორმატში წარმატებით ჩამოიტვირთა!`
+      );
+    } catch (error) {
+      console.error('Chart download error:', error);
+      toast.error(
+        isEnglish
+          ? `Error downloading chart as ${format.toUpperCase()}`
+          : `შეცდომა დიაგრამის ${format.toUpperCase()} ფორმატში ჩამოტვირთვისას`
+      );
+    }
+  }, [isEnglish]);
+
+  const toggleDropdown = useCallback((index) => {
+    setActiveDropdown(activeDropdown === index ? null : index);
+  }, [activeDropdown]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (activeDropdown !== null && !event.target.closest('.relative')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeDropdown]);
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <Toaster position="top-right" />
@@ -719,17 +873,87 @@ function SearchHistory({ isEnglish }) {
                       <h2 className="text-white text-sm md:text-base font-semibold leading-tight">
                         პარტნიორთა წილები, {dateGroup.date}
                       </h2>
-                      <div className="flex items-center gap-2 cursor-pointer">
-                        <Download
-                          size={18}
-                          className="text-white hover:text-gray-200"
-                        />
+                      <div className="relative">
+                        <button
+                          onClick={() => toggleDropdown(index)}
+                          className="flex items-center gap-1 text-white hover:text-gray-200 transition-colors"
+                        >
+                          <Download size={18} />
+                          <ChevronDown size={14} />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {activeDropdown === index && (
+                          <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-[200px]">
+                            <div className="py-2">
+                              <button
+                                onClick={() => {
+                                  downloadChart(chartRefs.current[index], 'print', dateGroup);
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                              >
+                                <Printer size={16} />
+                                {isEnglish ? "Print Chart" : "დიაგრამის ბეჭდვა"}
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  downloadChart(chartRefs.current[index], 'png', dateGroup);
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                              >
+                                <FileImage size={16} />
+                                {isEnglish ? "Download PNG Image" : "PNG სურათის ჩამოტვირთვა"}
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  downloadChart(chartRefs.current[index], 'jpeg', dateGroup);
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                              >
+                                <FileImage size={16} />
+                                {isEnglish ? "Download JPEG Image" : "JPEG სურათის ჩამოტვირთვა"}
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  downloadChart(chartRefs.current[index], 'pdf', dateGroup);
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                              >
+                                <FileText size={16} />
+                                {isEnglish ? "Download PDF Document" : "PDF დოკუმენტის ჩამოტვირთვა"}
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  downloadChart(chartRefs.current[index], 'svg', dateGroup);
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                              >
+                                <FileImage size={16} />
+                                {isEnglish ? "Download SVG Vector Image" : "SVG ვექტორული სურათის ჩამოტვირთვა"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Chart */}
                     <div className="p-2 sm:p-4">
                       <ReactECharts
+                        ref={(ref) => {
+                          if (ref) {
+                            chartRefs.current[index] = ref;
+                          }
+                        }}
                         option={getChartOption(dateGroup)}
                         style={{ height: 400 }}
                       />
