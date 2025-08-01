@@ -502,18 +502,89 @@ function SearchHistory({ isEnglish }) {
         }
 
         case 'svg': {
-          const svgUrl = echartInstance.getDataURL({
-            type: 'svg',
-            backgroundColor: '#fff'
-          });
-          const svgLink = document.createElement('a');
-          svgLink.download = `${fileName}.svg`;
-          svgLink.href = svgUrl;
-          svgLink.click();
+          // Convert canvas to SVG following Charts.jsx approach
+          try {
+            // Get chart as canvas data
+            const canvasDataURL = echartInstance.getDataURL({
+              type: 'png',
+              pixelRatio: 2,
+              backgroundColor: '#fff'
+            });
+            
+            // Create an image to get dimensions
+            const img = new Image();
+            img.onload = function() {
+              const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${img.width}" height="${img.height}">
+                <image width="${img.width}" height="${img.height}" xlink:href="${canvasDataURL}"/>
+              </svg>`;
+              
+              const svgBlob = new Blob([svgContent], {
+                type: "image/svg+xml;charset=utf-8",
+              });
+              const url = URL.createObjectURL(svgBlob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${fileName}.svg`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              
+              toast.success(
+                isEnglish
+                  ? 'Chart SVG downloaded successfully!'
+                  : 'დიაგრამა SVG ფორმატში წარმატებით ჩამოიტვირთა!'
+              );
+            };
+            
+            img.onerror = function() {
+              console.error('SVG creation error: Failed to load image');
+              // Fallback to PNG export
+              const pngUrl = echartInstance.getDataURL({
+                type: 'png',
+                pixelRatio: 2,
+                backgroundColor: '#fff'
+              });
+              const pngLink = document.createElement('a');
+              pngLink.download = `${fileName}_fallback.png`;
+              pngLink.href = pngUrl;
+              pngLink.click();
+              
+              toast.warning(
+                isEnglish
+                  ? 'SVG export failed, downloaded PNG instead'
+                  : 'SVG ექსპორტი ვერ მოხერხდა, ჩამოიტვირთა PNG'
+              );
+            };
+            
+            img.src = canvasDataURL;
+            
+            // Early return since we're handling async operation
+            return;
+          } catch (error) {
+            console.error('SVG setup error:', error);
+            // Fallback to PNG export
+            const pngUrl = echartInstance.getDataURL({
+              type: 'png',
+              pixelRatio: 2,
+              backgroundColor: '#fff'
+            });
+            const pngLink = document.createElement('a');
+            pngLink.download = `${fileName}_fallback.png`;
+            pngLink.href = pngUrl;
+            pngLink.click();
+            
+            toast.warning(
+              isEnglish
+                ? 'SVG export failed, downloaded PNG instead'
+                : 'SVG ექსპორტი ვერ მოხერხდა, ჩამოიტვირთა PNG'
+            );
+          }
           break;
         }
 
         case 'print': {
+          // Direct print without PDF save
           const printWindow = window.open('', '_blank');
           const chartDataUrl = echartInstance.getDataURL({
             type: 'png',
@@ -525,71 +596,188 @@ function SearchHistory({ isEnglish }) {
               <head>
                 <title>Partners Chart - ${dateGroup.date}</title>
                 <style>
-                  body { margin: 0; padding: 20px; text-align: center; }
-                  img { max-width: 100%; height: auto; }
-                  h1 { font-family: Arial, sans-serif; color: #0080BE; }
-                </style>
-              </head>
-              <body>
-                <h1>პარტნიორთა წილები - ${dateGroup.date}</h1>
-                <img src="${chartDataUrl}" alt="Partners Chart" />
-              </body>
-            </html>
-          `);
-          printWindow.document.close();
-          printWindow.print();
-          break;
-        }
-
-        case 'pdf': {
-          // For PDF, we'll use the browser's print to PDF functionality
-          const pdfWindow = window.open('', '_blank');
-          const pdfChartDataUrl = echartInstance.getDataURL({
-            type: 'png',
-            pixelRatio: 2,
-            backgroundColor: '#fff'
-          });
-          pdfWindow.document.write(`
-            <html>
-              <head>
-                <title>Partners Chart - ${dateGroup.date}</title>
-                <style>
-                  body { margin: 0; padding: 20px; text-align: center; }
-                  img { max-width: 100%; height: auto; }
-                  h1 { font-family: Arial, sans-serif; color: #0080BE; margin-bottom: 20px; }
+                  body { 
+                    margin: 0; 
+                    padding: 20px; 
+                    text-align: center; 
+                    font-family: Arial, sans-serif;
+                  }
+                  img { 
+                    max-width: 100%; 
+                    height: auto; 
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                  }
+                  h1 { 
+                    color: #0080BE; 
+                    margin-bottom: 20px;
+                    font-size: 24px;
+                  }
+                  .print-info {
+                    margin-top: 20px;
+                    font-size: 12px;
+                    color: #666;
+                  }
                   @media print {
-                    body { margin: 0; }
-                    h1 { page-break-before: avoid; }
+                    body { margin: 0; padding: 10px; }
+                    h1 { page-break-before: avoid; font-size: 20px; }
+                    .print-info { font-size: 10px; }
                   }
                 </style>
               </head>
               <body>
                 <h1>პარტნიორთა წილები - ${dateGroup.date}</h1>
-                <img src="${pdfChartDataUrl}" alt="Partners Chart" />
+                <img src="${chartDataUrl}" alt="Partners Chart" />
+                <div class="print-info">
+                  Generated on: ${new Date().toLocaleDateString()}
+                </div>
                 <script>
                   window.onload = function() {
-                    window.print();
-                    window.onafterprint = function() {
-                      window.close();
-                    };
+                    setTimeout(() => {
+                      window.print();
+                    }, 500);
+                  };
+                  window.onafterprint = function() {
+                    window.close();
                   };
                 </script>
               </body>
             </html>
           `);
-          pdfWindow.document.close();
+          printWindow.document.close();
           break;
+        }
+
+        case 'pdf': {
+          import("jspdf").then(({ jsPDF }) => {
+            // Get chart as canvas
+            const chartCanvas = document.createElement('canvas');
+            const chartCtx = chartCanvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+              // Set up canvas dimensions with space for title
+              const titleHeight = 60;
+              const totalWidth = img.width;
+              const totalHeight = img.height + titleHeight;
+              
+              chartCanvas.width = totalWidth;
+              chartCanvas.height = totalHeight;
+              
+              // White background
+              chartCtx.fillStyle = "white";
+              chartCtx.fillRect(0, 0, totalWidth, totalHeight);
+              
+              // Draw title with proper Georgian font support
+              chartCtx.fillStyle = "#000000";
+              chartCtx.textAlign = "center";
+              chartCtx.textBaseline = "middle";
+              
+              // Use a Georgian-compatible font stack
+              const fontSize = Math.min(totalWidth * 0.03, 24);
+              chartCtx.font = `bold ${fontSize}px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", Arial, sans-serif`;
+              
+              // Draw title with word wrapping if needed
+              const title = `პარტნიორთა წილები - ${dateGroup.date}`;
+              const words = title.split(" ");
+              const titleMaxWidth = totalWidth * 0.8;
+              let line = "";
+              let titleY = titleHeight / 2;
+              const lineHeight = fontSize * 1.2;
+              
+              for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + " ";
+                const metrics = chartCtx.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > titleMaxWidth && n > 0) {
+                  chartCtx.fillText(line, totalWidth / 2, titleY);
+                  line = words[n] + " ";
+                  titleY += lineHeight;
+                } else {
+                  line = testLine;
+                }
+              }
+              chartCtx.fillText(line, totalWidth / 2, titleY);
+              
+              // Draw the chart below the title
+              chartCtx.drawImage(img, 0, titleHeight);
+              
+              // Convert to image data
+              const imgData = chartCanvas.toDataURL("image/png");
+              
+              const canvasWidth = chartCanvas.width;
+              const canvasHeight = chartCanvas.height;
+              const ratio = canvasWidth / canvasHeight;
+              
+              const orientation = ratio > 1 ? "landscape" : "portrait";
+              const pdf = new jsPDF({
+                orientation,
+                unit: "mm",
+                format: "a4",
+              });
+              
+              const a4Width = orientation === "landscape" ? 297 : 210;
+              const a4Height = orientation === "landscape" ? 210 : 297;
+              const margin = 10;
+              
+              // Calculate dimensions to fit page
+              const pdfMaxWidth = a4Width - margin * 2;
+              const pdfMaxHeight = a4Height - margin * 2;
+              
+              let imgWidth, imgHeight;
+              if (ratio > pdfMaxWidth / pdfMaxHeight) {
+                imgWidth = pdfMaxWidth;
+                imgHeight = pdfMaxWidth / ratio;
+              } else {
+                imgHeight = pdfMaxHeight;
+                imgWidth = pdfMaxHeight * ratio;
+              }
+              
+              const pdfX = (a4Width - imgWidth) / 2;
+              const pdfY = (a4Height - imgHeight) / 2;
+              
+              // Add the complete image (title + chart)
+              pdf.addImage(imgData, "PNG", pdfX, pdfY, imgWidth, imgHeight);
+              pdf.save(`${fileName}.pdf`);
+              
+              toast.success(
+                isEnglish
+                  ? 'Chart PDF downloaded successfully!'
+                  : 'დიაგრამა PDF ფორმატში წარმატებით ჩამოიტვირთა!'
+              );
+            };
+            
+            img.src = echartInstance.getDataURL({
+              type: 'png',
+              pixelRatio: 2,
+              backgroundColor: '#fff'
+            });
+          }).catch((error) => {
+            console.error('PDF export error:', error);
+            toast.error(
+              isEnglish
+                ? 'Error creating PDF'
+                : 'შეცდომა PDF ფაილის შექმნისას'
+            );
+          });
+          
+          // Early return since we're handling async operation
+          return;
         }
 
         default:
           break;
       }
 
-      toast.success(
-        isEnglish
-          ? `Chart ${format.toUpperCase()} downloaded successfully!`
-          : `დიაგრამა ${format.toUpperCase()} ფორმატში წარმატებით ჩამოიტვირთა!`
-      );
+      // Show success toast for PNG and JPEG formats only (SVG and PDF handle their own messaging)
+      if (format !== 'svg' && format !== 'pdf') {
+        toast.success(
+          isEnglish
+            ? `Chart ${format.toUpperCase()} downloaded successfully!`
+            : `დიაგრამა ${format.toUpperCase()} ფორმატში წარმატებით ჩამოიტვირთა!`
+        );
+      }
     } catch (error) {
       console.error('Chart download error:', error);
       toast.error(
