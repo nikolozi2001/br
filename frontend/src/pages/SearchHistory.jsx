@@ -447,6 +447,150 @@ function SearchHistory({ isEnglish }) {
         };
       }
 
+      // Third worksheet for partners
+      if (partners.length > 0) {
+        const partnersWorksheet = workbook.addWorksheet("Partners");
+
+        partnersWorksheet.columns = [
+          { header: isEnglish ? "Partner Name" : "პარტნიორის სახელი", key: "name", width: 40 },
+          { header: isEnglish ? "Share %" : "წილი %", key: "share", width: 15 },
+          { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
+        ];
+
+        partners.forEach((partner) => {
+          partnersWorksheet.addRow({
+            name: partner.Name || "-",
+            share: partner.Share || "-",
+            date: partner.Date
+              ? new Date(partner.Date).toLocaleDateString(
+                  isEnglish ? "en-US" : "ka-GE"
+                )
+              : "-",
+          });
+        });
+
+        // Style the header row
+        partnersWorksheet.getRow(1).font = { bold: true };
+        partnersWorksheet.getRow(1).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0080BE" },
+        };
+        partnersWorksheet.getRow(1).font = {
+          color: { argb: "FFFFFFFF" },
+          bold: true,
+        };
+      }
+
+      // Fourth worksheet for partners details (partnersVw)
+      if (partnersVw.length > 0) {
+        const partnersVwWorksheet = workbook.addWorksheet("Partners Details");
+
+        partnersVwWorksheet.columns = [
+          { header: isEnglish ? "Partner Name" : "პარტნიორის სახელი", key: "name", width: 40 },
+          { header: isEnglish ? "Share" : "წილი", key: "share", width: 15 },
+          { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
+        ];
+
+        partnersVw.forEach((partner) => {
+          partnersVwWorksheet.addRow({
+            name: partner.Name || "-",
+            share: partner.Share || "-",
+            date: partner.Date
+              ? new Date(partner.Date).toLocaleDateString(
+                  isEnglish ? "en-US" : "ka-GE"
+                )
+              : "-",
+          });
+        });
+
+        // Style the header row
+        partnersVwWorksheet.getRow(1).font = { bold: true };
+        partnersVwWorksheet.getRow(1).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0080BE" },
+        };
+        partnersVwWorksheet.getRow(1).font = {
+          color: { argb: "FFFFFFFF" },
+          bold: true,
+        };
+      }
+
+      // Fifth worksheet for address history
+      if (addressWeb.length > 0) {
+        const addressWorksheet = workbook.addWorksheet("Address History");
+
+        addressWorksheet.columns = [
+          { header: isEnglish ? "Region" : "რეგიონი", key: "region", width: 25 },
+          { header: isEnglish ? "City" : "ქალაქი", key: "city", width: 25 },
+          { header: isEnglish ? "Legal Address" : "იურიდიული მისამართი", key: "address", width: 50 },
+          { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
+        ];
+
+        addressWeb.forEach((address) => {
+          addressWorksheet.addRow({
+            region: address.Region_name || "-",
+            city: address.City_name || "-",
+            address: address.Address || "-",
+            date: address.Date
+              ? new Date(address.Date).toLocaleDateString(
+                  isEnglish ? "en-US" : "ka-GE"
+                )
+              : "-",
+          });
+        });
+
+        // Style the header row
+        addressWorksheet.getRow(1).font = { bold: true };
+        addressWorksheet.getRow(1).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0080BE" },
+        };
+        addressWorksheet.getRow(1).font = {
+          color: { argb: "FFFFFFFF" },
+          bold: true,
+        };
+      }
+
+      // Sixth worksheet for company name history
+      if (fullNameWeb.length > 0) {
+        const nameHistoryWorksheet = workbook.addWorksheet("Company Name History");
+
+        nameHistoryWorksheet.columns = [
+          { header: isEnglish ? "Company Name" : "დასახელება", key: "fullName", width: 50 },
+          { header: isEnglish ? "Legal Form" : "სამართლებრივი ფორმა", key: "legalForm", width: 30 },
+          { header: isEnglish ? "Ownership Form" : "საკუთრების ფორმა", key: "ownershipType", width: 30 },
+          { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
+        ];
+
+        fullNameWeb.forEach((item) => {
+          nameHistoryWorksheet.addRow({
+            fullName: item.Full_Name || "-",
+            legalForm: item.Abbreviation || "-",
+            ownershipType: item.Ownership_Type || "-",
+            date: item.Date
+              ? new Date(item.Date).toLocaleDateString(
+                  isEnglish ? "en-US" : "ka-GE"
+                )
+              : "-",
+          });
+        });
+
+        // Style the header row
+        nameHistoryWorksheet.getRow(1).font = { bold: true };
+        nameHistoryWorksheet.getRow(1).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0080BE" },
+        };
+        nameHistoryWorksheet.getRow(1).font = {
+          color: { argb: "FFFFFFFF" },
+          bold: true,
+        };
+      }
+
       // Generate Excel file
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
@@ -470,7 +614,7 @@ function SearchHistory({ isEnglish }) {
       );
       console.error("Export error:", error);
     }
-  }, [data, representatives, identificationNumber, isEnglish]);
+  }, [data, representatives, partners, partnersVw, addressWeb, fullNameWeb, identificationNumber, isEnglish]);
 
   // Chart download functions
   const downloadChart = useCallback(
