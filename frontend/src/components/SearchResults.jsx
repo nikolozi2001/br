@@ -1,14 +1,49 @@
 import { translations } from "../translations/searchForm";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import "../styles/scrollbar.css";
 
-function SearchResults({ results, isEnglish }) {
+function SearchResults({ results, isEnglish, formData }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Update URL when only identificationNumber is searched
+  useEffect(() => {
+    if (formData && formData.identificationNumber) {
+      // Check if only identificationNumber is provided (other fields are empty/default)
+      const isOnlyIdentificationNumber = 
+        formData.identificationNumber.trim() !== '' &&
+        !formData.organizationName.trim() &&
+        !formData.head.trim() &&
+        !formData.partner.trim() &&
+        (!formData.organizationalLegalForm || formData.organizationalLegalForm.length === 0) &&
+        (!formData.legalAddress?.region || formData.legalAddress.region.length === 0) &&
+        (!formData.legalAddress?.municipalityCity || formData.legalAddress.municipalityCity.length === 0) &&
+        !formData.legalAddress?.address?.trim() &&
+        (!formData.personalAddress?.region || formData.personalAddress.region.length === 0) &&
+        (!formData.personalAddress?.municipalityCity || formData.personalAddress.municipalityCity.length === 0) &&
+        !formData.personalAddress?.address?.trim() &&
+        (!formData.activities || formData.activities.length === 0 || 
+         (formData.activities.length === 1 && !formData.activities[0].code && !formData.activities[0].name)) &&
+        (!formData.ownershipForm || formData.ownershipForm.length === 0) &&
+        !formData.businessForm?.trim() &&
+        formData.isActive === false; // Include isActive check - should be default (false)
+
+      if (isOnlyIdentificationNumber) {
+        const url = new URL(window.location);
+        url.searchParams.set('identificationNumber', formData.identificationNumber);
+        window.history.replaceState({}, '', url.toString());
+      } else {
+        // Clear URL parameters if it's not an identification-only search
+        const url = new URL(window.location);
+        url.searchParams.delete('identificationNumber');
+        window.history.replaceState({}, '', url.toString());
+      }
+    }
+  }, [formData]);
 
   const sortData = (data, config) => {
     if (!config.key) return data;

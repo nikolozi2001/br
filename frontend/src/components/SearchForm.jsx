@@ -34,13 +34,55 @@ function SearchForm({ isEnglish }) {
     setIsFlipped(true);
   }, []);
 
+  // Check for URL parameters on component mount and auto-search
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const identificationNumber = urlParams.get('identificationNumber');
+    
+    if (identificationNumber) {
+      // Set the form data with the URL parameter
+      setFormData(prev => ({
+        ...prev,
+        identificationNumber: identificationNumber
+      }));
+    }
+  }, [setFormData]);
+
+  // Auto-search when formData is updated from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const identificationNumber = urlParams.get('identificationNumber');
+    
+    if (identificationNumber && formData.identificationNumber === identificationNumber && !showResults) {
+      // Auto-submit the search
+      const autoSearch = async () => {
+        setIsLoading(true);
+        try {
+          const results = await handleSubmit();
+          setSearchResults(results);
+          setShowResults(true);
+        } catch (error) {
+          console.error("Error fetching results from URL:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      autoSearch();
+    }
+  }, [formData.identificationNumber, handleSubmit, showResults]);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    
     try {
       const results = await handleSubmit();
       setSearchResults(results);
       setShowResults(true);
+      
+      // After successful search, update URL if it's only identification number search
+      // This will be handled by the SearchResults component's useEffect
     } catch (error) {
       console.error("Error fetching results:", error);
     } finally {
@@ -295,6 +337,11 @@ function SearchForm({ isEnglish }) {
   const handleBackToSearch = () => {
     setShowResults(false);
     setSearchResults([]);
+    
+    // Clear URL parameters when going back to search
+    const url = new URL(window.location);
+    url.searchParams.delete('identificationNumber');
+    window.history.replaceState({}, '', url.toString());
   };
 
   const handleLegalFormChange = (options) => {
