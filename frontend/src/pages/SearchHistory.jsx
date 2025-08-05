@@ -32,6 +32,9 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+//Components
+import SectionHeader from "../components/searchHistory/SectionHeader";
+
 import loaderIcon from "../assets/images/equalizer.svg";
 
 // Fix for default markers in react-leaflet
@@ -452,7 +455,11 @@ function SearchHistory({ isEnglish }) {
         const partnersWorksheet = workbook.addWorksheet("Partners");
 
         partnersWorksheet.columns = [
-          { header: isEnglish ? "Partner Name" : "პარტნიორის სახელი", key: "name", width: 40 },
+          {
+            header: isEnglish ? "Partner Name" : "პარტნიორის სახელი",
+            key: "name",
+            width: 40,
+          },
           { header: isEnglish ? "Share %" : "წილი %", key: "share", width: 15 },
           { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
         ];
@@ -487,7 +494,11 @@ function SearchHistory({ isEnglish }) {
         const partnersVwWorksheet = workbook.addWorksheet("Partners Details");
 
         partnersVwWorksheet.columns = [
-          { header: isEnglish ? "Partner Name" : "პარტნიორის სახელი", key: "name", width: 40 },
+          {
+            header: isEnglish ? "Partner Name" : "პარტნიორის სახელი",
+            key: "name",
+            width: 40,
+          },
           { header: isEnglish ? "Share" : "წილი", key: "share", width: 15 },
           { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
         ];
@@ -522,9 +533,17 @@ function SearchHistory({ isEnglish }) {
         const addressWorksheet = workbook.addWorksheet("Address History");
 
         addressWorksheet.columns = [
-          { header: isEnglish ? "Region" : "რეგიონი", key: "region", width: 25 },
+          {
+            header: isEnglish ? "Region" : "რეგიონი",
+            key: "region",
+            width: 25,
+          },
           { header: isEnglish ? "City" : "ქალაქი", key: "city", width: 25 },
-          { header: isEnglish ? "Legal Address" : "იურიდიული მისამართი", key: "address", width: 50 },
+          {
+            header: isEnglish ? "Legal Address" : "იურიდიული მისამართი",
+            key: "address",
+            width: 50,
+          },
           { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
         ];
 
@@ -556,12 +575,26 @@ function SearchHistory({ isEnglish }) {
 
       // Sixth worksheet for company name history
       if (fullNameWeb.length > 0) {
-        const nameHistoryWorksheet = workbook.addWorksheet("Company Name History");
+        const nameHistoryWorksheet = workbook.addWorksheet(
+          "Company Name History"
+        );
 
         nameHistoryWorksheet.columns = [
-          { header: isEnglish ? "Company Name" : "დასახელება", key: "fullName", width: 50 },
-          { header: isEnglish ? "Legal Form" : "სამართლებრივი ფორმა", key: "legalForm", width: 30 },
-          { header: isEnglish ? "Ownership Form" : "საკუთრების ფორმა", key: "ownershipType", width: 30 },
+          {
+            header: isEnglish ? "Company Name" : "დასახელება",
+            key: "fullName",
+            width: 50,
+          },
+          {
+            header: isEnglish ? "Legal Form" : "სამართლებრივი ფორმა",
+            key: "legalForm",
+            width: 30,
+          },
+          {
+            header: isEnglish ? "Ownership Form" : "საკუთრების ფორმა",
+            key: "ownershipType",
+            width: 30,
+          },
           { header: isEnglish ? "Date" : "თარიღი", key: "date", width: 20 },
         ];
 
@@ -614,7 +647,16 @@ function SearchHistory({ isEnglish }) {
       );
       console.error("Export error:", error);
     }
-  }, [data, representatives, partners, partnersVw, addressWeb, fullNameWeb, identificationNumber, isEnglish]);
+  }, [
+    data,
+    representatives,
+    partners,
+    partnersVw,
+    addressWeb,
+    fullNameWeb,
+    identificationNumber,
+    isEnglish,
+  ]);
 
   // Chart download functions
   const downloadChart = useCallback(
@@ -1006,11 +1048,8 @@ function SearchHistory({ isEnglish }) {
             </button>
           </div>
 
-          <div className="mb-6">
-            <h1 className="text-xl font-bpg-nino mb-2 text-center text-[#0080BE] font-bold">
-              {t.historyTitle}
-            </h1>
-          </div>
+          {/* Main Title */}
+          <SectionHeader title={t.historyTitle} />
 
           {/* Georgian Info Table */}
           <div className="w-full mb-8">
