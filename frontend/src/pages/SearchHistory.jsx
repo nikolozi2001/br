@@ -1013,13 +1013,13 @@ function SearchHistory({ isEnglish }) {
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
             <button
-              onClick={() => navigate("/reports")}
-              className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label={
-                isEnglish ? "Go back to reports" : "უკან დაბრუნება რეპორტებზე"
+              onClick={() =>
+                navigate(`/?identificationNumber=${identificationNumber}`)
               }
+              className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label={isEnglish ? "Back to Results" : "უკან დაბრუნება"}
             >
-              ← {isEnglish ? "Back to Reports" : "უკან დაბრუნება"}
+              ← {isEnglish ? "Back to Results" : "უკან დაბრუნება"}
             </button>
             <button
               onClick={exportToExcel}
