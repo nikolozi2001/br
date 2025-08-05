@@ -361,12 +361,17 @@ function SearchForm({ isEnglish }) {
             <div className="flipper">
               <div
                 className={`border border-[#0080BE] rounded-[0_5px_5px_5px] ${
-                  isLoading ? "bg-red-500" : "bg-[#fafafa]"
+                  isLoading ? "" : "bg-[#fafafa]"
                 }`}
               >
                 {isLoading ? (
-                  <div className="geostat-loader">
-                    <img src={loaderIcon} alt="Loading..." />
+                  <div className="flex justify-center items-center min-h-[400px] bg-white">
+                    <div className="flex flex-col items-center space-y-4">
+                      <img src={loaderIcon} alt="Loading..." className="w-12 h-12 animate-pulse" />
+                      <p className="text-gray-600 font-bpg-nino text-sm">
+                        {isEnglish ? "Loading..." : "იტვირთება..."}
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="p-3 sm:p-6">
