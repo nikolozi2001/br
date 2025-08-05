@@ -1,10 +1,12 @@
 import { translations } from "../translations/searchForm";
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import "../styles/scrollbar.css";
 
 function SearchResults({ results, isEnglish, formData }) {
   const t = translations[isEnglish ? "en" : "ge"];
+  const navigate = useNavigate();
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState(new Set());
@@ -92,6 +94,10 @@ function SearchResults({ results, isEnglish, formData }) {
     } else {
       setSelectedRows(new Set(sortedResults.map((r) => r.id)));
     }
+  };
+
+  const handleIdentificationNumberClick = (identificationNumber) => {
+    navigate(`/search-history?id=${identificationNumber}`);
   };
 
   const sortedResults = useMemo(
@@ -277,7 +283,15 @@ function SearchResults({ results, isEnglish, formData }) {
                     className="w-4 h-4 rounded border-gray-300 text-[#0080BE] focus:ring-[#0080BE] transition-colors"
                   />
                 </td>
-                <td className={cellClassName}>{result.identificationNumber}</td>
+                <td className={cellClassName}>
+                  <button
+                    onClick={() => handleIdentificationNumberClick(result.identificationNumber)}
+                    className="text-[#0080BE] hover:text-[#006698] hover:underline cursor-pointer font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0080BE]/20 rounded px-1 py-0.5"
+                    title="Click to view detailed history"
+                  >
+                    {result.identificationNumber}
+                  </button>
+                </td>
                 <td className={cellClassName}>{result.personalNumber}</td>
                 <td className={cellClassName}>{result.abbreviation}</td>
                 <td className={cellClassName}>{result.name}</td>

@@ -171,7 +171,7 @@ function SearchForm({ isEnglish }) {
     document.body.removeChild(link);
   };
 
-  console.log("Search Results:", searchResults);
+  // console.log("Search Results:", searchResults);
   
 
   const generateTableContent = (searchResults, t) => {
