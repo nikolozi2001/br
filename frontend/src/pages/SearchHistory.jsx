@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useReducer } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 import "../styles/scrollbar.css";
@@ -39,6 +39,72 @@ import { LoadingSpinner, EmptyState, ChartContainer, SectionHeader } from "../co
 
 import loaderIcon from "../assets/images/equalizer.svg";
 
+// Initial state for data reducer
+const initialState = {
+  loading: true,
+  partnersLoading: false,
+  partnersVwLoading: false,
+  documentData: null,
+  coordinates: null,
+  representatives: [],
+  partners: [],
+  partnersVw: [],
+  addressWeb: [],
+  fullNameWeb: [],
+  error: null,
+};
+
+// Data reducer for managing component state
+const dataReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_PARTNERS_LOADING':
+      return { ...state, partnersLoading: action.payload };
+    case 'SET_PARTNERS_VW_LOADING':
+      return { ...state, partnersVwLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    case 'SET_DOCUMENT_DATA':
+      return { ...state, documentData: action.payload };
+    case 'SET_COORDINATES':
+      return { ...state, coordinates: action.payload };
+    case 'SET_REPRESENTATIVES':
+      return { ...state, representatives: action.payload };
+    case 'SET_PARTNERS':
+      return { ...state, partners: action.payload };
+    case 'SET_PARTNERS_VW':
+      return { ...state, partnersVw: action.payload };
+    case 'SET_ADDRESS_WEB':
+      return { ...state, addressWeb: action.payload };
+    case 'SET_FULL_NAME_WEB':
+      return { ...state, fullNameWeb: action.payload };
+    case 'SET_PARTNERS_DATA':
+      return {
+        ...state,
+        partners: action.payload.partners,
+        partnersVw: action.payload.partnersVw,
+        addressWeb: action.payload.addressWeb,
+        fullNameWeb: action.payload.fullNameWeb,
+        partnersLoading: false,
+        partnersVwLoading: false,
+      };
+    case 'RESET_REPRESENTATIVES':
+      return { ...state, representatives: [] };
+    case 'START_FETCH':
+      return {
+        ...state,
+        loading: true,
+        error: null,
+        representatives: [],
+      };
+    case 'FINISH_LOADING':
+      return { ...state, loading: false };
+    default:
+      return state;
+  }
+};
+
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -53,18 +119,24 @@ function SearchHistory({ isEnglish }) {
   
   const t = translations[isEnglish ? "en" : "ge"];
   
-  const [loading, setLoading] = useState(true);
-  const [partnersLoading, setPartnersLoading] = useState(false);
-  const [partnersVwLoading, setPartnersVwLoading] = useState(false);
-  const [documentData, setDocumentData] = useState(null);
-  const [coordinates, setCoordinates] = useState(null);
-  const [representatives, setRepresentatives] = useState([]);
-  const [partners, setPartners] = useState([]);
-  const [partnersVw, setPartnersVw] = useState([]);
-  const [addressWeb, setAddressWeb] = useState([]);
-  const [fullNameWeb, setFullNameWeb] = useState([]);
+  // Use reducer for state management
+  const [state, dispatch] = useReducer(dataReducer, initialState);
+  const {
+    loading,
+    partnersLoading,
+    partnersVwLoading,
+    documentData,
+    coordinates,
+    representatives,
+    partners,
+    partnersVw,
+    addressWeb,
+    fullNameWeb,
+    error,
+  } = state;
+
+  // Keep these as separate state since they're UI-specific
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -76,9 +148,7 @@ function SearchHistory({ isEnglish }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        setRepresentatives([]); // clear before loading
+        dispatch({ type: 'START_FETCH' });
         const searchParams = {
           identificationNumber: identificationNumber,
         };
@@ -91,7 +161,7 @@ function SearchHistory({ isEnglish }) {
 
         if (response && response.length > 0) {
           const data = response[0];
-          setDocumentData(data);
+          dispatch({ type: 'SET_DOCUMENT_DATA', payload: data });
 
           // Now fetch representatives
           if (data?.Stat_ID) {
@@ -99,24 +169,27 @@ function SearchHistory({ isEnglish }) {
               data.Stat_ID,
               isEnglish ? "en" : "ge"
             );
-            setRepresentatives(reps || []);
+            dispatch({ type: 'SET_REPRESENTATIVES', payload: reps || [] });
           }
 
           // Fetch coordinates separately
           const coordsData = await fetchCoordinates(identificationNumber);
           if (coordsData && coordsData.lat && coordsData.lng) {
-            setCoordinates({
-              lat: coordsData.lat,
-              lng: coordsData.lng,
-              region: coordsData.region,
-              inactive: coordsData.inactive,
+            dispatch({
+              type: 'SET_COORDINATES',
+              payload: {
+                lat: coordsData.lat,
+                lng: coordsData.lng,
+                region: coordsData.region,
+                inactive: coordsData.inactive,
+              },
             });
           }
         } else {
           const errorMsg = isEnglish
             ? "No data found"
             : "მონაცემები ვერ მოიძებნა";
-          setError(errorMsg);
+          dispatch({ type: 'SET_ERROR', payload: errorMsg });
           toast.error(errorMsg);
         }
       } catch (error) {
@@ -124,10 +197,10 @@ function SearchHistory({ isEnglish }) {
         const errorMsg = isEnglish
           ? "Error loading data"
           : "შეცდომა მონაცემების ჩატვირთვისას";
-        setError(errorMsg);
+        dispatch({ type: 'SET_ERROR', payload: errorMsg });
         toast.error(errorMsg);
       } finally {
-        setLoading(false);
+        dispatch({ type: 'FINISH_LOADING' });
       }
     };
 
@@ -141,8 +214,8 @@ function SearchHistory({ isEnglish }) {
       if (!documentData?.Stat_ID) return;
 
       try {
-        setPartnersLoading(true);
-        setPartnersVwLoading(true);
+        dispatch({ type: 'SET_PARTNERS_LOADING', payload: true });
+        dispatch({ type: 'SET_PARTNERS_VW_LOADING', payload: true });
 
         // Fetch partners, partnersVw, addressWeb, and fullNameWeb data simultaneously
         const [partnersData, partnersVwData, addressWebData, fullNameWebData] =
@@ -153,15 +226,20 @@ function SearchHistory({ isEnglish }) {
             fetchFullNameWeb(documentData.Stat_ID),
           ]);
 
-        setPartners(partnersData || []);
-        setPartnersVw(partnersVwData || []);
-        setAddressWeb(addressWebData || []);
-        setFullNameWeb(fullNameWebData || []);
+        // Batch update all partners data
+        dispatch({
+          type: 'SET_PARTNERS_DATA',
+          payload: {
+            partners: partnersData || [],
+            partnersVw: partnersVwData || [],
+            addressWeb: addressWebData || [],
+            fullNameWeb: fullNameWebData || [],
+          },
+        });
       } catch (error) {
         console.error("Error fetching partners data:", error);
-      } finally {
-        setPartnersLoading(false);
-        setPartnersVwLoading(false);
+        dispatch({ type: 'SET_PARTNERS_LOADING', payload: false });
+        dispatch({ type: 'SET_PARTNERS_VW_LOADING', payload: false });
       }
     };
 
