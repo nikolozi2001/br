@@ -25,9 +25,14 @@ import {
   getSectionColorMapping,
 } from "../services/api";
 import ChartSkeleton from "./ChartSkeleton";
+import useDocumentTitle from "../hooks/useDocumentTitle";
+import { getPageTitle } from "../utils/pageTitles";
 import "../styles/Charts.scss";
 
 const Charts = ({ isEnglish }) => {
+  // Set page-specific title
+  useDocumentTitle(isEnglish, getPageTitle('charts', isEnglish));
+  
   const [isFlipped, setIsFlipped] = useState(false);
   const [maximizedChart, setMaximizedChart] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);

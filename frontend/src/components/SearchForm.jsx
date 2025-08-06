@@ -9,10 +9,15 @@ import { EconomicActivitySection } from "./EconomicActivitySection";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { FormActions } from "./FormActions";
 import SearchResults from "./SearchResults";
+import useDocumentTitle from "../hooks/useDocumentTitle";
+import { getPageTitle } from "../utils/pageTitles";
 import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 
 function SearchForm({ isEnglish }) {
+  // Set page-specific title
+  useDocumentTitle(isEnglish, getPageTitle('home', isEnglish));
+  
   const t = translations[isEnglish ? "en" : "ge"];
   const [isFlipped, setIsFlipped] = useState(false);
   const [searchResults, setSearchResults] = useState([]);

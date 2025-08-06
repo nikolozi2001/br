@@ -3,6 +3,7 @@ import "../styles/scrollbar.css";
 import { useParams, useNavigate } from "react-router-dom";
 import loaderIcon from "../assets/images/equalizer.svg";
 import { API } from "../services/api";
+import useDocumentTitle from "../hooks/useDocumentTitle";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
@@ -637,6 +638,9 @@ function ReportsResults({ isEnglish }) {
     if (!reportConfig) return "";
     return `${reportId} - ${reportConfig.title[isEnglish ? 'en' : 'ge']}`;
   }, [reportId, reportConfig, isEnglish]);
+
+  // Set dynamic page title for the specific report
+  useDocumentTitle(isEnglish, `${isEnglish ? 'Report' : 'რეპორტი'} ${reportId}`);
 
   // Memoize totals calculation for better performance
   const totals = useMemo(() => {

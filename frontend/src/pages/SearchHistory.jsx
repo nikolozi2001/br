@@ -25,6 +25,8 @@ import {
 import ReactECharts from "echarts-for-react";
 import toast, { Toaster } from "react-hot-toast";
 import { translations } from "../translations/searchForm";
+import useDocumentTitle from "../hooks/useDocumentTitle";
+import { getPageTitle } from "../utils/pageTitles";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -46,6 +48,9 @@ L.Icon.Default.mergeOptions({
 });
 
 function SearchHistory({ isEnglish }) {
+  // Set page-specific title
+  useDocumentTitle(isEnglish, getPageTitle('searchHistory', isEnglish));
+  
   const t = translations[isEnglish ? "en" : "ge"];
 
   // Loading component

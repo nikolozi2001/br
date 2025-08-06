@@ -1,10 +1,15 @@
 import "../styles/Reports.scss";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import useDocumentTitle from "../hooks/useDocumentTitle";
+import { getPageTitle } from "../utils/pageTitles";
 
 function Reports({ isEnglish }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const navigate = useNavigate();
+
+  // Set page-specific title
+  useDocumentTitle(isEnglish, getPageTitle('reports', isEnglish));
 
   useEffect(() => {
     setIsFlipped(true);

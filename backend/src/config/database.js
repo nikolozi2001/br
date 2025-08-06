@@ -1,5 +1,17 @@
 const sql = require('mssql');
-require('dotenv').config();
+const path = require('path');
+
+require('dotenv').config({ 
+  path: path.join(__dirname, '../../.env')
+});
+
+
+console.log('Environment variables check:', {
+  DB_SERVER: process.env.DB_SERVER || 'NOT SET',
+  DB_DATABASE: process.env.DB_DATABASE || 'NOT SET',
+  DB_USER: process.env.DB_USER || 'NOT SET',
+  DB_PASSWORD: process.env.DB_PASSWORD ? 'SET' : 'NOT SET'
+});
 
 // Enhanced configuration with optimized pool settings
 const config = {

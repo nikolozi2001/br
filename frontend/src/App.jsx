@@ -13,10 +13,14 @@ import Reports from "./components/Reports";
 import ReportsResults from "./components/ReportsResults";
 import Charts from "./components/Charts";
 import Footer from "./components/Footer";
+import useDocumentTitle from "./hooks/useDocumentTitle";
 import "./App.scss";
 
 function App() {
   const [isEnglish, setIsEnglish] = useState(false);
+
+  // Update document title based on language
+  useDocumentTitle(isEnglish);
 
   const handleLanguageChange = (isEnglish) => {
     setIsEnglish(isEnglish);
