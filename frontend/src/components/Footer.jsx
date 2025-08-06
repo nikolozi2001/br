@@ -32,7 +32,9 @@ const Footer = ({ isEnglish }) => {
           <p className="mb-3 md:mb-2">{t.organization}</p>
           <p>
             <a
-              href="#"
+              href="https://www.geostat.ge/ka/page/monacemta-gamoyenebis-pirobebi"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-800 hover:underline inline-block"
             >
               {t.terms}
