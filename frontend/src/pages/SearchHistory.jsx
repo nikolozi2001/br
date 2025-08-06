@@ -117,7 +117,8 @@ function SearchHistory({ isEnglish }) {
   // Set page-specific title
   useDocumentTitle(isEnglish, getPageTitle('searchHistory', isEnglish));
   
-  const t = translations[isEnglish ? "en" : "ge"];
+  // Memoize translations to prevent recalculation
+  const t = useMemo(() => translations[isEnglish ? "en" : "ge"], [isEnglish]);
   
   // Use reducer for state management
   const [state, dispatch] = useReducer(dataReducer, initialState);
@@ -140,10 +141,11 @@ function SearchHistory({ isEnglish }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get identification number from URL params or location state
-  const searchParams = new URLSearchParams(location.search);
-  const identificationNumber =
-    searchParams.get("id") || location.state?.identificationNumber;
+  // Memoize identification number computation to prevent recalculation on every render
+  const identificationNumber = useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get("id") || location.state?.identificationNumber;
+  }, [location.search, location.state?.identificationNumber]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -248,23 +250,22 @@ function SearchHistory({ isEnglish }) {
     }
   }, [identificationNumber, documentData?.Stat_ID, isEnglish]);
 
-  // Process data to group by date
+  // Process data to group by date - optimized with useMemo
   const processedData = useMemo(() => {
     if (!partners || partners.length === 0) return [];
 
     const groupedByDate = partners.reduce((acc, item) => {
-      if (!acc[item.Date]) {
-        acc[item.Date] = [];
+      const date = item.Date;
+      if (!acc[date]) {
+        acc[date] = [];
       }
-      acc[item.Date].push(item);
+      acc[date].push(item);
       return acc;
-    }, {});
+    }, Object.create(null)); // Use Object.create(null) for better performance
 
     // Sort dates in descending order
     const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
-      const dateA = new Date(a);
-      const dateB = new Date(b);
-      return dateB - dateA;
+      return new Date(b) - new Date(a); // Simplified date comparison
     });
 
     return sortedDates.map((date) => ({
@@ -273,23 +274,22 @@ function SearchHistory({ isEnglish }) {
     }));
   }, [partners]);
 
-  // Processed data for partners_vw
+  // Processed data for partners_vw - optimized with useMemo
   const processedDataVw = useMemo(() => {
     if (!partnersVw || partnersVw.length === 0) return [];
 
     const groupedByDate = partnersVw.reduce((acc, item) => {
-      if (!acc[item.Date]) {
-        acc[item.Date] = [];
+      const date = item.Date;
+      if (!acc[date]) {
+        acc[date] = [];
       }
-      acc[item.Date].push(item);
+      acc[date].push(item);
       return acc;
-    }, {});
+    }, Object.create(null)); // Use Object.create(null) for better performance
 
     // Sort dates in descending order
     const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
-      const dateA = new Date(a);
-      const dateB = new Date(b);
-      return dateB - dateA;
+      return new Date(b) - new Date(a); // Simplified date comparison
     });
 
     return sortedDates.map((date) => ({
@@ -298,14 +298,15 @@ function SearchHistory({ isEnglish }) {
     }));
   }, [partnersVw]);
 
-  // Chart options generator
-  const getChartOption = useCallback((dateGroup) => {
-    const colorPalette = [
-      "#5470c6", "#3a3a3a", "#91cc75", "#fac858", "#ee6666", "#73c0de",
-      "#3ba272", "#fc8452", "#9a60b4", "#ea7ccc", "#ff9f7f", "#fb7293",
-      "#e7bcf3", "#8378ea"
-    ];
+  // Memoize color palette to prevent recreation on every render
+  const colorPalette = useMemo(() => [
+    "#5470c6", "#3a3a3a", "#91cc75", "#fac858", "#ee6666", "#73c0de",
+    "#3ba272", "#fc8452", "#9a60b4", "#ea7ccc", "#ff9f7f", "#fb7293",
+    "#e7bcf3", "#8378ea"
+  ], []);
 
+  // Optimized chart options generator with better memoization
+  const getChartOption = useCallback((dateGroup) => {
     const chartData = dateGroup.data
       .map((item) => ({
         value: item.Share,
@@ -362,79 +363,78 @@ function SearchHistory({ isEnglish }) {
         },
       ],
     };
-  }, []);
+  }, [colorPalette]);
 
-  // Prepare data for display
+  // Prepare data for display - optimized with better performance
   const data = useMemo(() => {
     if (!documentData) return [];
 
-    return [
+    // Define field mappings for better performance
+    const fieldMappings = [
       {
-        label: isEnglish ? "Identification Number:" : "საიდენტიფიკაციო ნომერი:",
-        value: documentData.identificationNumber || "-",
+        labelKey: isEnglish ? "Identification Number:" : "საიდენტიფიკაციო ნომერი:",
+        getValue: () => documentData.identificationNumber,
       },
       {
-        label: isEnglish ? "Organization Name:" : "ორგანიზაციის დასახელება:",
-        value: documentData.name || "-",
+        labelKey: isEnglish ? "Organization Name:" : "ორგანიზაციის დასახელება:",
+        getValue: () => documentData.name,
       },
       {
-        label: isEnglish
-          ? "Organizational Legal Form:"
-          : "ორგანიზაციულ-სამართლებრივი ფორმა:",
-        value: documentData.abbreviation || "-",
+        labelKey: isEnglish ? "Organizational Legal Form:" : "ორგანიზაციულ-სამართლებრივი ფორმა:",
+        getValue: () => documentData.abbreviation,
       },
       {
-        label: isEnglish ? "Ownership Form:" : "საკუთრების ფორმა:",
-        value: documentData.ownershipType || "-",
+        labelKey: isEnglish ? "Ownership Form:" : "საკუთრების ფორმა:",
+        getValue: () => documentData.ownershipType,
       },
       {
-        label: isEnglish ? "Region:" : "რეგიონი:",
-        value: documentData.legalAddress?.region
-          ? `${documentData.legalAddress.region}${
-              documentData.legalAddress.city
-                ? ", " + documentData.legalAddress.city
-                : ""
-            }`
-          : "-",
+        labelKey: isEnglish ? "Region:" : "რეგიონი:",
+        getValue: () => {
+          const { legalAddress } = documentData;
+          return legalAddress?.region
+            ? `${legalAddress.region}${legalAddress.city ? ", " + legalAddress.city : ""}`
+            : null;
+        },
       },
       {
-        label: isEnglish ? "Legal Address:" : "იურიდიული მისამართი:",
-        value: documentData.legalAddress?.address || "-",
+        labelKey: isEnglish ? "Legal Address:" : "იურიდიული მისამართი:",
+        getValue: () => documentData.legalAddress?.address,
       },
       {
-        label: isEnglish
-          ? "Economic Activity (NACE Rev.2):"
-          : "ეკონომიკური საქმიანობა (NACE Rev.2):",
-        value:
-          documentData.activities && documentData.activities.length > 0
-            ? `${documentData.activities[0].code} - ${documentData.activities[0].name}`
-            : "-",
+        labelKey: isEnglish ? "Economic Activity (NACE Rev.2):" : "ეკონომიკური საქმიანობა (NACE Rev.2):",
+        getValue: () => {
+          const { activities } = documentData;
+          return activities && activities.length > 0
+            ? `${activities[0].code} - ${activities[0].name}`
+            : null;
+        },
       },
       {
-        label: isEnglish
-          ? "Active Economic Status:"
-          : "აქტიური ეკონომიკური სტატუსი:",
-        value: documentData.isActive
-          ? isEnglish
-            ? "Active"
-            : "აქტიური"
-          : isEnglish
-          ? "Inactive"
-          : "არააქტიური",
+        labelKey: isEnglish ? "Active Economic Status:" : "აქტიური ეკონომიკური სტატუსი:",
+        getValue: () => documentData.isActive
+          ? (isEnglish ? "Active" : "აქტიური")
+          : (isEnglish ? "Inactive" : "არააქტიური"),
       },
       {
-        label: isEnglish ? "Head/Director:" : "ხელმძღვანელი:",
-        value: documentData.head || "-",
+        labelKey: isEnglish ? "Head/Director:" : "ხელმძღვანელი:",
+        getValue: () => documentData.head,
       },
       {
-        label: isEnglish ? "Phone:" : "ტელეფონი:",
-        value: documentData.phone || "-",
+        labelKey: isEnglish ? "Phone:" : "ტელეფონი:",
+        getValue: () => documentData.phone,
       },
       {
-        label: isEnglish ? "Email:" : "ელ-ფოსტა:",
-        value: documentData.email || "-",
+        labelKey: isEnglish ? "Email:" : "ელ-ფოსტა:",
+        getValue: () => documentData.email,
       },
-    ].filter((item) => item.value !== "-"); // Optionally filter out empty fields
+    ];
+
+    return fieldMappings
+      .map(({ labelKey, getValue }) => {
+        const value = getValue();
+        return value ? { label: labelKey, value } : null;
+      })
+      .filter(Boolean); // Remove null entries efficiently
   }, [documentData, isEnglish]);
 
   const exportToExcel = useCallback(async () => {
@@ -718,17 +718,22 @@ function SearchHistory({ isEnglish }) {
     [activeDropdown]
   );
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (activeDropdown !== null && !event.target.closest(".relative")) {
-        setActiveDropdown(null);
-      }
-    };
+  // Memoize navigation function to prevent recreation
+  const handleBackNavigation = useCallback(() => {
+    navigate(`/?identificationNumber=${identificationNumber}`);
+  }, [navigate, identificationNumber]);
 
+  // Close dropdown when clicking outside - memoized for performance
+  const handleClickOutside = useCallback((event) => {
+    if (activeDropdown !== null && !event.target.closest(".relative")) {
+      setActiveDropdown(null);
+    }
+  }, [activeDropdown]);
+
+  useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [activeDropdown]);
+  }, [handleClickOutside]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -737,9 +742,7 @@ function SearchHistory({ isEnglish }) {
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
             <button
-              onClick={() =>
-                navigate(`/?identificationNumber=${identificationNumber}`)
-              }
+              onClick={handleBackNavigation}
               className="px-4 py-2 bg-[#0080BE] text-white rounded hover:bg-[#0070aa] transition-colors font-bpg-nino flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label={isEnglish ? "Back to Results" : "უკან დაბრუნება"}
             >
