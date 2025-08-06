@@ -52,7 +52,7 @@ function SearchHistory({ isEnglish }) {
   useDocumentTitle(isEnglish, getPageTitle('searchHistory', isEnglish));
   
   const t = translations[isEnglish ? "en" : "ge"];
-
+  
   const [loading, setLoading] = useState(true);
   const [partnersLoading, setPartnersLoading] = useState(false);
   const [partnersVwLoading, setPartnersVwLoading] = useState(false);
@@ -221,7 +221,13 @@ function SearchHistory({ isEnglish }) {
   }, [partnersVw]);
 
   // Chart options generator
-  const getChartOption = (dateGroup) => {
+  const getChartOption = useCallback((dateGroup) => {
+    const colorPalette = [
+      "#5470c6", "#3a3a3a", "#91cc75", "#fac858", "#ee6666", "#73c0de",
+      "#3ba272", "#fc8452", "#9a60b4", "#ea7ccc", "#ff9f7f", "#fb7293",
+      "#e7bcf3", "#8378ea"
+    ];
+
     const chartData = dateGroup.data
       .map((item) => ({
         value: item.Share,
@@ -229,31 +235,13 @@ function SearchHistory({ isEnglish }) {
       }))
       .sort((a, b) => b.value - a.value);
 
-    // Color palette - matching your existing style
-    const colorPalette = [
-      "#5470c6", // Blue
-      "#3a3a3a", // Dark gray
-      "#91cc75", // Green
-      "#fac858", // Yellow
-      "#ee6666", // Red
-      "#73c0de", // Light blue
-      "#3ba272", // Dark green
-      "#fc8452", // Orange
-      "#9a60b4", // Purple
-      "#ea7ccc", // Pink
-      "#ff9f7f", // Light orange
-      "#fb7293", // Pink-red
-      "#e7bcf3", // Light purple
-      "#8378ea", // Purple-blue
-    ];
-
     return {
       tooltip: {
         trigger: "item",
         formatter: "{b}",
       },
       legend: {
-        show: false, // Hide legend to save space
+        show: false,
       },
       series: [
         {
@@ -296,7 +284,7 @@ function SearchHistory({ isEnglish }) {
         },
       ],
     };
-  };
+  }, []);
 
   // Prepare data for display
   const data = useMemo(() => {
@@ -661,9 +649,7 @@ function SearchHistory({ isEnglish }) {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activeDropdown]);
 
   return (
