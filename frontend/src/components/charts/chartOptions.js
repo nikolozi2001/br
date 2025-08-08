@@ -1,5 +1,5 @@
 // Chart configuration options for ECharts
-export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish) => ({
+export const getBarChartOption = (data, currentTexts, hiddenDataKeys) => ({
   tooltip: {
     trigger: "axis",
     axisPointer: {

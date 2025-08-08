@@ -11,7 +11,6 @@ import {
   fetchEnterpriseSurvivalYear,
   fetchEnterpriseBirthDistribution,
   fetchEnterpriseDeathDistribution,
-  getSectionColorMapping,
 } from "../services/api";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
@@ -31,8 +30,8 @@ import {
 
 const Charts = ({ isEnglish }) => {
   // Set page-specific title
-  useDocumentTitle(isEnglish, getPageTitle('charts', isEnglish));
-  
+  useDocumentTitle(isEnglish, getPageTitle("charts", isEnglish));
+
   const [isFlipped, setIsFlipped] = useState(false);
   const [maximizedChart, setMaximizedChart] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -212,7 +211,7 @@ const Charts = ({ isEnglish }) => {
         setSurvivalData(survivalYearData);
         setDistributionData(birthDistributionData);
         setDistributionDataDeath(deathDistributionData);
-        
+
         setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error("Error loading data:", error);
@@ -699,11 +698,8 @@ const Charts = ({ isEnglish }) => {
           cleanFileName = `chart_${Date.now()}`;
         }
 
-        const fileName = `${cleanFileName}_chart`;
-
         // Use fallback method for all formats since ECharts export is unreliable
         return fallbackDownload(format, chartContainer, title);
-
       } catch (error) {
         console.error("Download failed:", error);
         return fallbackDownload(format, chartContainer, title);
@@ -836,10 +832,14 @@ const Charts = ({ isEnglish }) => {
         setLegendPage={setLegendPage}
         legendItemsPerPage={legendItemsPerPage}
         hasMoreLegendPages={(legendPage, itemsPerPage) => {
-          const totalItems = maximizedChart?.data ? getAllDataKeys(maximizedChart.data).length : 0;
+          const totalItems = maximizedChart?.data
+            ? getAllDataKeys(maximizedChart.data).length
+            : 0;
           return (legendPage + 1) * itemsPerPage < totalItems;
         }}
-        allDataKeys={maximizedChart?.data ? getAllDataKeys(maximizedChart.data) : []}
+        allDataKeys={
+          maximizedChart?.data ? getAllDataKeys(maximizedChart.data) : []
+        }
         survivalData={survivalData}
         currentTexts={currentTexts}
         isEnglish={isEnglish}
