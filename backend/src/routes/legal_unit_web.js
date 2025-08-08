@@ -5,7 +5,7 @@ const { poolPromise } = require("../config/database");
 router.get("/", async (req, res) => {
   try {
     const lang = req.query.lang || "ge";
-    const personId = req.query.statId;
+    const personId = req.query.personId;
 
     if (!personId) {
       return res.status(400).json({ error: "Person ID is required" });

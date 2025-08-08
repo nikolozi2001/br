@@ -55,6 +55,8 @@ import {
   SectionHeader,
 } from "../components/searchHistory";
 
+import PersonDetailsModal from "../components/PersonDetailsModal";
+
 import loaderIcon from "../assets/images/equalizer.svg";
 
 // Simple in-memory cache
@@ -185,6 +187,11 @@ function SearchHistory({ isEnglish }) {
 
   // Keep these as separate state since they're UI-specific
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [personModalState, setPersonModalState] = useState({
+    isOpen: false,
+    personId: null,
+    personName: null,
+  });
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -928,6 +935,23 @@ function SearchHistory({ isEnglish }) {
     navigate(`/?identificationNumber=${identificationNumber}`);
   }, [navigate, identificationNumber]);
 
+  // Handle person modal functions
+  const handlePersonClick = useCallback((personId, personName) => {
+    setPersonModalState({
+      isOpen: true,
+      personId,
+      personName,
+    });
+  }, []);
+
+  const handleClosePersonModal = useCallback(() => {
+    setPersonModalState({
+      isOpen: false,
+      personId: null,
+      personName: null,
+    });
+  }, []);
+
   // Close dropdown when clicking outside - memoized for performance
   const handleClickOutside = useCallback(
     (event) => {
@@ -1187,11 +1211,23 @@ function SearchHistory({ isEnglish }) {
                 {representatives.map((rep, index) => (
                   <div
                     key={index}
-                    className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group ${
+                    className={`flex px-6 py-4 border-b border-gray-200 hover:bg-gray-50 transition-all duration-200 group ${
                       index === representatives.length - 1 ? "border-b-0" : ""
                     }`}
                   >
-                    <div className="w-2/5 font-bpg-nino">{rep.Name || "-"}</div>
+                    <div className="w-2/5 font-bpg-nino">
+                      {rep.Person_ID && rep.Name ? (
+                        <button
+                          onClick={() => handlePersonClick(rep.Person_ID, rep.Name)}
+                          className="text-[#0080BE] hover:text-[#0070aa] hover:underline font-medium transition-colors cursor-pointer text-left"
+                          title={isEnglish ? "Click to view details" : "დეტალების სანახავად დააწკაპუნეთ"}
+                        >
+                          {rep.Name}
+                        </button>
+                      ) : (
+                        <span>{rep.Name || "-"}</span>
+                      )}
+                    </div>
                     <div className="w-2/5 font-bpg-nino">
                       {rep.Position || "-"}
                     </div>
@@ -1482,6 +1518,15 @@ function SearchHistory({ isEnglish }) {
           </div>
         </div>
       </div>
+
+      {/* Person Details Modal */}
+      <PersonDetailsModal
+        isOpen={personModalState.isOpen}
+        onClose={handleClosePersonModal}
+        personId={personModalState.personId}
+        personName={personModalState.personName}
+        isEnglish={isEnglish}
+      />
     </div>
   );
 }
