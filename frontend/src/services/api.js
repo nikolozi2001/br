@@ -654,20 +654,35 @@ export const getSectionColorMapping = () => {
 export const fetchEnterpriseBirthRegion = async (lang = "ge") => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/enterprise-birth-region?lang=${lang}`
+      `${API_BASE_URL}/enterprise-birth-region?lang=${lang}`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      }
     );
+    
     if (!response.ok) {
-      throw new Error("Network response was not ok");
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+    
     const data = await response.json();
     const rawData = data.recordset || data;
 
+    if (!Array.isArray(rawData)) {
+      console.error("Expected array but got:", typeof rawData, rawData);
+      return [];
+    }
+
     // Filter out "Unknown" region data
-    return rawData.map((item) => {
+    const filteredData = rawData.map((item) => {
       const filteredItem = { ...item };
       delete filteredItem.Unknown;
       return filteredItem;
     });
+    return filteredData;
   } catch (error) {
     console.error("Error fetching enterprise birth region data:", error);
     return [];
@@ -687,11 +702,12 @@ export const fetchEnterpriseDeathRegion = async (lang = "ge") => {
     const rawData = data.recordset || data;
 
     // Filter out "Unknown" region data
-    return rawData.map((item) => {
+    const filteredData = rawData.map((item) => {
       const filteredItem = { ...item };
       delete filteredItem.Unknown;
       return filteredItem;
     });
+    return filteredData;
   } catch (error) {
     console.error("Error fetching enterprise death region data:", error);
     return [];
@@ -716,7 +732,7 @@ export const fetchEnterpriseBirthSector = async (lang = "ge") => {
     // Transform the API response to the format needed by the chart
     const years = [
       "2014",
-      "2015",
+      "2015", 
       "2016",
       "2017",
       "2018",
@@ -727,10 +743,11 @@ export const fetchEnterpriseBirthSector = async (lang = "ge") => {
       "2023",
     ];
 
-    return years.map((year) => {
-      const yearData = { year };
+    // Correct transformation: Each year becomes a row with sector values as columns
+    const result = years.map((year) => {
+      const yearData = { year: parseInt(year) };
 
-      // Process each sector
+      // Process each sector for this year
       filteredData.forEach((item) => {
         const sectorName = item.legend_title;
         yearData[sectorName] = item[year] || 0;
@@ -738,6 +755,8 @@ export const fetchEnterpriseBirthSector = async (lang = "ge") => {
 
       return yearData;
     });
+    
+    return result;
   } catch (error) {
     console.error("Error fetching enterprise birth sector data:", error);
     return [];
