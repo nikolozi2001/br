@@ -12,141 +12,140 @@ export const getAllDataKeys = (data) => {
 
 // Helper function to format large numbers
 export const formatNumber = (value) => {
-  if (value >= 1000000) {
-    return (value / 1000000).toFixed(1) + "M";
+  // Handle null, undefined, or non-numeric values
+  if (value == null || isNaN(value)) return "0";
+  
+  const num = Number(value);
+  
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
   }
-  if (value >= 1000) {
-    return (value / 1000).toFixed(0) + "k";
+  if (num >= 1000) {
+    return (num / 1000).toFixed(0) + "k";
   }
-  return value.toString();
+  return num.toString();
+};
+
+// Helper function to format numbers with locale formatting (for percentages and detailed numbers)
+export const formatNumberWithLocale = (num, options = {}) => {
+  if (num == null || isNaN(num)) return "0.0";
+  
+  const defaultOptions = {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  };
+  
+  return Number(num).toLocaleString("en-US", { ...defaultOptions, ...options });
 };
 
 // Helper function to get color for sections
 export const getColorForSection = (sectionName) => {
-  const colors = {
-    Manufacturing: "#2563eb",
-    Construction: "#dc2626",
-    Retail: "#16a34a",
-    Transport: "#ca8a04",
-    Finance: "#7c3aed",
-    Other: "#db2777",
-    Agriculture: "#f59e0b",
-    Mining: "#84cc16",
-    Utilities: "#06b6d4",
-    Information: "#8b5cf6",
-    Professional: "#f97316",
-    Education: "#ef4444",
-    Health: "#10b981",
-    Arts: "#db2777",
+  // Official section code to color mapping (matches API)
+  const sectionCodeColors = {
+    'A': '#f59e0b', // Agriculture, forestry and fishing (not in API, using fallback)
+    'B': '#0080BE', // Mining and quarrying  
+    'C': '#EA1E30', // Manufacturing
+    'D': '#19C219', // Electricity, gas, steam and air conditioning supply
+    'E': '#F2741F', // Water supply; sewerage, waste management and remediation
+    'F': '#5B21A4', // Construction
+    'G': '#F2CF1F', // Wholesale and retail trade; repair of motor vehicles
+    'H': '#149983', // Transportation and storage
+    'I': '#C21979', // Accommodation and food service activities
+    'J': '#1B6D9A', // Information and communication
+    'K': '#8FDE1D', // Financial and insurance activities
+    'L': '#F2F21F', // Real estate activities
+    'M': '#477054', // Professional, scientific and technical activities
+    'N': '#b4b299', // Administrative and support service activities
+    'O': '#64748b', // Public administration and defence (not in API, using fallback)
+    'P': '#07f187', // Education
+    'Q': '#af4fff', // Human health and social work activities
+    'R': '#e4748b', // Arts, entertainment and recreation
+    'S': '#61b562', // Other service activities
+    'T': '#64748b', // Activities of households as employers (not in API, using fallback)
+    'U': '#64748b', // Activities of extraterritorial organisations (not in API, using fallback)
+    'unknown': '#000000'
   };
-  return colors[sectionName] || "#64748b";
+
+  // Simple English name to section code mapping
+  const simpleNameToCode = {
+    Manufacturing: "C",
+    Construction: "F", 
+    Retail: "G",
+    Transport: "H",
+    Finance: "K",
+    Other: "S",
+    Agriculture: "A",
+    Mining: "B",
+    Utilities: "D",
+    Information: "J",
+    Professional: "M",
+    Education: "P",
+    Health: "Q",
+    Arts: "R",
+  };
+
+  // Georgian/English name to section code mapping
+  const fullNameToCode = {
+    // Georgian names
+    "სამთომომპოვებელი მრე...": "B",
+    "დამამუშავებელი მრეწვე...": "C", 
+    "ელექტროენერგია მიწო...": "D",
+    "წყალმომარაგება ნარჩე...": "E",
+    "მშენებლობა": "F",
+    "ვაჭრობა რემონტი": "G",
+    "ტრანსპორტირება დასა...": "H",
+    "განთავსება საკვები": "I",
+    "ინფორმაცია კომუნიკ...": "J",
+    "ფინანსური საქმიანო...": "K",
+    "უძრავი ქონება": "L",
+    "პროფესიული საქმია...": "M",
+    "ადმინისტრაციული მომ...": "N",
+    "განათლება": "P",
+    "ჯანდაცვა სოციალუ...": "Q",
+    "ხელოვნება გართობა": "R",
+    "სხვა მომსახურება": "S",
+    "უცნობი საქმიანობა": "unknown",
+    
+    // English names
+    "Mining and Quarrying": "B",
+    "Manufacturing": "C",
+    "Electricity Supply": "D",
+    "Water Supply Waste...": "E",
+    "Construction": "F",
+    "Trade Repair": "G",
+    "Transportation Stor...": "H",
+    "Accommodation Food...": "I",
+    "Information Comm...": "J",
+    "Financial Activities": "K",
+    "Real Estate Activities": "L",
+    "Professional Activ...": "M",
+    "Administrative Sup...": "N",
+    "Education": "P",
+    "Health Social Work": "Q",
+    "Arts Entertainment": "R",
+    "Other Services": "S",
+    "Unknown Activity": "unknown",
+  };
+
+  // First check if it's a section code
+  if (sectionCodeColors[sectionName]) {
+    return sectionCodeColors[sectionName];
+  }
+
+  // Then check full name mapping
+  const fullNameCode = fullNameToCode[sectionName];
+  if (fullNameCode && sectionCodeColors[fullNameCode]) {
+    return sectionCodeColors[fullNameCode];
+  }
+
+  // Then check simple name mapping
+  const simpleCode = simpleNameToCode[sectionName];
+  if (simpleCode && sectionCodeColors[simpleCode]) {
+    return sectionCodeColors[simpleCode];
+  }
+
+  // Default color
+  return "#64748b";
 };
 
-// Helper function to generate consistent colors for pie charts
-export const getPieColors = () => [
-  "rgb(0, 128, 190)", // Blue
-  "rgb(25, 194, 25)", // Green
-  "rgb(234, 30, 48)", // Red
-  "rgb(22, 163, 74)", // Dark Green
-  "rgb(242, 116, 31)", // Orange
-  "rgb(91, 33, 164)", // Purple
-  "rgb(242, 207, 31)", // Yellow
-  "rgb(20, 153, 131)", // Teal
-  "rgb(194, 25, 121)", // Pink
-  "rgb(27, 109, 154)", // Dark Blue
-  "rgb(143, 222, 29)", // Light Green
-];
 
-// Helper function to generate consistent colors for grouped bar charts
-export const getGroupedBarColors = () => [
-  "#2f7ed8",
-  "#0d233a",
-  "#8bbc21",
-  "#910000",
-  "#1aadce",
-  "#492970",
-  "#f28f43",
-  "#77a1e5",
-  "#c42525",
-  "#a6c96a",
-  "#f45b5b",
-];
-
-// Helper function to generate sector colors for stacked charts
-export const getSectorColors = () => [
-  "#2563eb",
-  "#dc2626",
-  "#16a34a",
-  "#ca8a04",
-  "#7c3aed",
-  "#f59e0b",
-  "#84cc16",
-  "#06b6d4",
-  "#8b5cf6",
-  "#f97316",
-  "#ef4444",
-  "#10b981",
-  "#db2777",
-  "#8b5cf6",
-  "#06b6d4",
-  "#84cc16",
-  "#f97316",
-];
-
-// Helper function for region translations
-export const getRegionTranslations = (isEnglish) => ({
-  Tbilisi: isEnglish ? "Tbilisi" : "თბილისი",
-  Abkhazia_A_R: isEnglish ? "Abkhazia A.R." : "აფხაზეთის ა.რ.",
-  Adjara: isEnglish ? "Adjara" : "აჭარის ა.რ.",
-  Guria: isEnglish ? "Guria" : "გურია",
-  Imereti: isEnglish ? "Imereti" : "იმერეთი",
-  Kakheti: isEnglish ? "Kakheti" : "კახეთი",
-  Mtskheta_Mtianeti: isEnglish ? "Mtskheta-Mtianeti" : "მცხეთა-მთიანეთი",
-  Racha_Lechkhumi_and_Kvemo_Svaneti: isEnglish
-    ? "Racha-Lechkhumi and Kvemo Svaneti"
-    : "რაჭა-ლეჩხუმი და ქვემო სვანეთი",
-  Samegrelo_Zemo_Svaneti: isEnglish
-    ? "Samegrelo-Zemo Svaneti"
-    : "სამეგრელო-ზემო სვანეთი",
-  Samtskhe_Javakheti: isEnglish ? "Samtskhe-Javakheti" : "სამცხე-ჯავახეთი",
-  Kvemo_Kartli: isEnglish ? "Kvemo Kartli" : "ქვემო ქართლი",
-  Shida_Kartli: isEnglish ? "Shida Kartli" : "შიდა ქართლი",
-  Unknown: isEnglish ? "Unknown" : "უცნობი",
-});
-
-// Helper function for region colors
-export const getRegionColors = () => ({
-  Tbilisi: "#2563eb",
-  Abkhazia_A_R: "#dc2626",
-  Adjara: "#16a34a",
-  Guria: "#ca8a04",
-  Imereti: "#7c3aed",
-  Kakheti: "#db2777",
-  Mtskheta_Mtianeti: "#f59e0b",
-  Racha_Lechkhumi_and_Kvemo_Svaneti: "#84cc16",
-  Samegrelo_Zemo_Svaneti: "#06b6d4",
-  Samtskhe_Javakheti: "#8b5cf6",
-  Kvemo_Kartli: "#f97316",
-  Shida_Kartli: "#ef4444",
-  Unknown: "#64748b",
-});
-
-// Helper function to merge and filter pie chart data
-export const processPieChartData = (data) => {
-  const mergedData = {};
-  data.forEach((item) => {
-    const name = item.name || "Unknown";
-    const share = item.share || item.value || item.count || 0;
-
-    if (mergedData[name]) {
-      mergedData[name] += share;
-    } else {
-      mergedData[name] = share;
-    }
-  });
-
-  // Convert back to array and filter out very small values (less than 0.1%)
-  return Object.entries(mergedData)
-    .filter(([, share]) => share >= 0.1)
-    .map(([name, share]) => ({ name, share }));
-};

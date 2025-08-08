@@ -7,6 +7,7 @@ import useDocumentTitle from "../hooks/useDocumentTitle";
 import * as XLSX from "xlsx";
 import ExcelJS from "exceljs";
 import toast, { Toaster } from "react-hot-toast";
+import { formatNumberWithLocale } from "./charts/chartUtils";
 
 // Constants and configurations
 const REPORT_CONFIGS = {
@@ -252,14 +253,6 @@ const COLUMN_CONFIGS = {
   ]
 };
 
-// Utility functions
-const formatNumber = (num) => {
-  return num.toLocaleString("en-US", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-};
-
 // Memoized getters for better performance
 const getReportConfig = (reportId) => REPORT_CONFIGS[Number(reportId)];
 const getColumnConfig = (reportId) => COLUMN_CONFIGS[`report${reportId}`];
@@ -312,9 +305,9 @@ const createExcelData = (reportId, sortedData, isEnglish) => {
           [isEnglish ? "Activity Code" : "კოდი"]: row.Activity_Code,
           [isEnglish ? "Activity Name" : "საქმიანობის სახე"]: row.Activity_Name,
           [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(row.pct)}%`,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumberWithLocale(row.pct)}%`,
           [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(row.pct_act)}%`,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumberWithLocale(row.pct_act)}%`,
         })),
         totals: {
           registered: sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty), 0),
@@ -330,9 +323,9 @@ const createExcelData = (reportId, sortedData, isEnglish) => {
           [isEnglish ? "Code" : "კოდი"]: row.ID,
           [isEnglish ? "Legal Status" : "ორგანიზაციულ-სამართლებრივი ფორმა"]: row.Legal_Form,
           [isEnglish ? "Registered" : "რეგისტრირებული"]: row.Registered_Qty,
-          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumber(row.Registered_Percent)}%`,
+          [isEnglish ? "Registered %" : "რეგისტრირებული %"]: `${formatNumberWithLocale(row.Registered_Percent)}%`,
           [isEnglish ? "Active" : "აქტიური"]: row.Active_Qty,
-          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumber(row.Active_Percent)}%`,
+          [isEnglish ? "Active %" : "აქტიური %"]: `${formatNumberWithLocale(row.Active_Percent)}%`,
         })),
         totals: {
           registered: sortedData.reduce((sum, row) => sum + Number(row.Registered_Qty), 0),
@@ -406,27 +399,27 @@ const generateStandardReportExcelData = (sortedData, reportNum, isEnglish, total
         rowData[headers[0]] = row.Activity_Code;
         rowData[headers[1]] = row.Activity_Name;
         rowData[headers[2]] = row.Registered_Qty;
-        rowData[headers[3]] = `${formatNumber(row.pct)}%`;
+        rowData[headers[3]] = `${formatNumberWithLocale(row.pct)}%`;
         rowData[headers[4]] = row.Active_Qty;
-        rowData[headers[5]] = `${formatNumber(row.pct_act)}%`;
+        rowData[headers[5]] = `${formatNumberWithLocale(row.pct_act)}%`;
         break;
       case 2:
       case 3:
         rowData[headers[0]] = row.ID;
         rowData[headers[1]] = row.Legal_Form || row.Ownership_Type;
         rowData[headers[2]] = row.Registered_Qty;
-        rowData[headers[3]] = `${formatNumber(row.Registered_Percent)}%`;
+        rowData[headers[3]] = `${formatNumberWithLocale(row.Registered_Percent)}%`;
         rowData[headers[4]] = row.Active_Qty;
-        rowData[headers[5]] = `${formatNumber(row.Active_Percent)}%`;
+        rowData[headers[5]] = `${formatNumberWithLocale(row.Active_Percent)}%`;
         break;
       case 4:
       case 5:
         rowData[headers[0]] = row.Location_Code;
         rowData[headers[1]] = row.Location_Name;
         rowData[headers[2]] = row.Registered_Qty;
-        rowData[headers[3]] = `${formatNumber(row.Registered_Percent)}%`;
+        rowData[headers[3]] = `${formatNumberWithLocale(row.Registered_Percent)}%`;
         rowData[headers[4]] = row.Active_Qty;
-        rowData[headers[5]] = `${formatNumber(row.Active_Percent)}%`;
+        rowData[headers[5]] = `${formatNumberWithLocale(row.Active_Percent)}%`;
         break;
     }
     
@@ -438,9 +431,9 @@ const generateStandardReportExcelData = (sortedData, reportNum, isEnglish, total
   totalRow[headers[0]] = "-";
   totalRow[headers[1]] = isEnglish ? "Total" : "ჯამი";
   totalRow[headers[2]] = totals.registered;
-  totalRow[headers[3]] = `${formatNumber(totals.registeredPercent)}%`;
+  totalRow[headers[3]] = `${formatNumberWithLocale(totals.registeredPercent)}%`;
   totalRow[headers[4]] = totals.active;
-  totalRow[headers[5]] = `${formatNumber(totals.activePercent)}%`;
+  totalRow[headers[5]] = `${formatNumberWithLocale(totals.activePercent)}%`;
   
   excelData.push(totalRow);
   return excelData;
@@ -996,13 +989,13 @@ function ReportsResults({ isEnglish }) {
                                 {row.Registered_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.pct)}
+                                {formatNumberWithLocale(row.pct)}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Active_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.pct_act)}
+                                {formatNumberWithLocale(row.pct_act)}
                               </td>
                             </>
                           ) : Number(reportId) === 2 ? (
@@ -1018,13 +1011,13 @@ function ReportsResults({ isEnglish }) {
                                 {row.Registered_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Registered_Percent)}
+                                {formatNumberWithLocale(row.Registered_Percent)}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Active_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Active_Percent)}
+                                {formatNumberWithLocale(row.Active_Percent)}
                               </td>
                             </>
                           ) : Number(reportId) === 3 ? (
@@ -1040,13 +1033,13 @@ function ReportsResults({ isEnglish }) {
                                 {row.Registered_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Registered_Percent)}
+                                {formatNumberWithLocale(row.Registered_Percent)}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Active_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Active_Percent)}
+                                {formatNumberWithLocale(row.Active_Percent)}
                               </td>
                             </>
                           ) : Number(reportId) === 4 ||
@@ -1063,13 +1056,13 @@ function ReportsResults({ isEnglish }) {
                                 {row.Registered_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Registered_Percent)}
+                                {formatNumberWithLocale(row.Registered_Percent)}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Active_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Active_Percent)}
+                                {formatNumberWithLocale(row.Active_Percent)}
                               </td>
                             </>
                           ) : Number(reportId) === 6 || Number(reportId) === 7 || Number(reportId) === 8 || Number(reportId) === 9 || Number(reportId) === 10 ? (
@@ -1143,13 +1136,13 @@ function ReportsResults({ isEnglish }) {
                                 {row.Registered_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Registered_Percent)}
+                                {formatNumberWithLocale(row.Registered_Percent)}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Active_Qty}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
-                                {formatNumber(row.Active_Percent)}
+                                {formatNumberWithLocale(row.Active_Percent)}
                               </td>
                             </>
                           )}
@@ -1172,7 +1165,7 @@ function ReportsResults({ isEnglish }) {
                             )}
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
-                            {formatNumber(
+                            {formatNumberWithLocale(
                               sortedData.reduce(
                                 (sum, row) =>
                                   sum + Number(row.Registered_Percent),
@@ -1187,7 +1180,7 @@ function ReportsResults({ isEnglish }) {
                             )}
                           </td>
                           <td className="px-4 py-3 font-bpg-nino text-right">
-                            {formatNumber(
+                            {formatNumberWithLocale(
                               sortedData.reduce(
                                 (sum, row) => sum + Number(row.Active_Percent),
                                 0

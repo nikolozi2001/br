@@ -1,4 +1,4 @@
-import { getSectionColorMapping } from '../services/api';
+import { getColorForSection } from '../components/charts/chartUtils';
 
 export const createBaseChartConfig = () => ({
   tooltip: {
@@ -91,52 +91,6 @@ export const createStackedLineChartOption = (
 
   const sampleItem = data[0] || {};
   const allDataKeys = Object.keys(sampleItem).filter((key) => key !== "year");
-  const colorMapping = getSectionColorMapping();
-
-  const getColorForSection = (sectionName) => {
-    const sectionMappings = {
-      "სამთომომპოვებელი მრე...": "B",
-      "დამამუშავებელი მრეწვე...": "C",
-      "ელექტროენერგია მიწო...": "D",
-      "წყალმომარაგება ნარჩე...": "E",
-      მშენებლობა: "F",
-      "ვაჭრობა რემონტი": "G",
-      "ტრანსპორტირება დასა...": "H",
-      "განთავსება საკვები": "I",
-      "ინფორმაცია კომუნიკ...": "J",
-      "ფინანსური საქმიანო...": "K",
-      "უძრავი ქონება": "L",
-      "პროფესიული საქმია...": "M",
-      "ადმინისტრაციული მომ...": "N",
-      განათლება: "P",
-      "ჯანდაცვა სოციალუ...": "Q",
-      "ხელოვნება გართობა": "R",
-      "სხვა მომსახურება": "S",
-      "უცნობი საქმიანობა": "unknown",
-      "Mining and Quarrying": "B",
-      Manufacturing: "C",
-      "Electricity Supply": "D",
-      "Water Supply Waste...": "E",
-      Construction: "F",
-      "Trade Repair": "G",
-      "Transportation Stor...": "H",
-      "Accommodation Food...": "I",
-      "Information Comm...": "J",
-      "Financial Activities": "K",
-      "Real Estate Activities": "L",
-      "Professional Activ...": "M",
-      "Administrative Sup...": "N",
-      Education: "P",
-      "Health Social Work": "Q",
-      "Arts Entertainment": "R",
-      "Other Services": "S",
-      "Unknown Activity": "unknown",
-    };
-
-    const sectionCode = sectionMappings[sectionName];
-    const mapping = colorMapping.find(m => m.section === sectionCode);
-    return mapping?.color || "#666666";
-  };
 
   const allSeries = allDataKeys.map((key) => ({
     name: key,

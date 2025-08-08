@@ -1,4 +1,6 @@
 // Chart configuration options for ECharts
+import { getColorForSection } from './chartUtils';
+
 export const getBarChartOption = (data, currentTexts, hiddenDataKeys) => ({
   tooltip: {
     trigger: "axis",
@@ -148,83 +150,6 @@ export const getStackedLineChartOption = (
   currentPage = 0,
   itemsPerPage = 12
 ) => {
-  // Import getSectionColorMapping function
-  const getSectionColorMapping = () => {
-    return [
-      { section: "B", color: "#0080BE" },
-      { section: "C", color: "#EA1E30" },
-      { section: "D", color: "#19C219" },
-      { section: "E", color: "#F2741F" },
-      { section: "F", color: "#5B21A4" },
-      { section: "G", color: "#F2CF1F" },
-      { section: "H", color: "#149983" },
-      { section: "I", color: "#C21979" },
-      { section: "J", color: "#1B6D9A" },
-      { section: "K", color: "#8FDE1D" },
-      { section: "L", color: "#F2F21F" },
-      { section: "M", color: "#477054" },
-      { section: "N", color: "#b4b299" },
-      { section: "P", color: "#07f187" },
-      { section: "Q", color: "#af4fff" },
-      { section: "R", color: "#e4748b" },
-      { section: "S", color: "#61b562" },
-      { section: "unknown", color: "#000000" },
-    ];
-  };
-
-  const getColorForSection = (sectionName) => {
-    // Mapping of section names to section codes for both languages
-    const sectionNameToCode = {
-      // Georgian names
-      "სამთომომპოვებელი მრე...": "B",
-      "დამამუშავებელი მრეწვე...": "C", 
-      "ელექტროენერგია მიწო...": "D",
-      "წყალმომარაგება ნარჩე...": "E",
-      "მშენებლობა": "F",
-      "ვაჭრობა რემონტი": "G",
-      "ტრანსპორტირება დასა...": "H",
-      "განთავსება საკვები": "I",
-      "ინფორმაცია კომუნიკ...": "J",
-      "ფინანსური საქმიანო...": "K",
-      "უძრავი ქონება": "L",
-      "პროფესიული საქმია...": "M",
-      "ადმინისტრაციული მომ...": "N",
-      "განათლება": "P",
-      "ჯანდაცვა სოციალუ...": "Q",
-      "ხელოვნება გართობა": "R",
-      "სხვა მომსახურება": "S",
-      "უცნობი საქმიანობა": "unknown",
-      
-      // English names
-      "Mining and Quarrying": "B",
-      "Manufacturing": "C",
-      "Electricity Supply": "D",
-      "Water Supply Waste...": "E",
-      "Construction": "F",
-      "Trade Repair": "G",
-      "Transportation Stor...": "H",
-      "Accommodation Food...": "I",
-      "Information Comm...": "J",
-      "Financial Activities": "K",
-      "Real Estate Activities": "L",
-      "Professional Activ...": "M",
-      "Administrative Sup...": "N",
-      "Education": "P",
-      "Health Social Work": "Q",
-      "Arts Entertainment": "R",
-      "Other Services": "S",
-      "Unknown Activity": "unknown",
-    };
-
-    const sectionCode = sectionNameToCode[sectionName];
-    if (sectionCode) {
-      const colorMapping = getSectionColorMapping();
-      const colorInfo = colorMapping.find(item => item.section === sectionCode);
-      return colorInfo ? colorInfo.color : "#64748b";
-    }
-    return "#64748b"; // Default gray color
-  };
-
   const allSeries = allDataKeys.map((key) => ({
     name: key,
     dataKey: key,

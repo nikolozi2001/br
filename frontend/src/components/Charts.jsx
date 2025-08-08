@@ -338,6 +338,11 @@ const Charts = ({ isEnglish }) => {
     return baseTitle;
   };
 
+  const getOwnershipTypesTitle = () => {
+    const baseTitle = currentTexts.ownershipTypes;
+    return baseTitle;
+  };
+
   const handleLegendClick = React.useCallback((dataKey) => {
     setHiddenDataKeys((prev) => {
       const newSet = new Set(prev);
@@ -809,7 +814,7 @@ const Charts = ({ isEnglish }) => {
                     data={getCurrentDistributionData()}
                     loading={loading}
                     error={error}
-                    title={currentTexts.ownershipTypes}
+                    title={getOwnershipTypesTitle()}
                     chartIndex={5}
                     isEnglish={isEnglish}
                     currentTexts={currentTexts}
