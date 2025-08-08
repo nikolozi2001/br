@@ -1341,10 +1341,20 @@ function SearchHistory({ isEnglish }) {
                     {group.data.map((item, itemIndex) => (
                       <div
                         key={itemIndex}
-                        className={`flex px-6 py-4 border-b border-gray-200 hover:bg-[#0080BE] hover:text-white transition-all duration-200 cursor-pointer group`}
+                        className={`flex px-6 py-4 border-b border-gray-200 hover:bg-gray-50 transition-all duration-200 group`}
                       >
                         <div className="w-2/5 font-bpg-nino">
-                          {item.Name || "-"}
+                          {item.Person_ID && item.Name ? (
+                            <button
+                              onClick={() => handlePersonClick(item.Person_ID, item.Name)}
+                              className="text-[#0080BE] hover:text-[#0070aa] hover:underline font-medium transition-colors cursor-pointer text-left"
+                              title={isEnglish ? "Click to view details" : "დეტალების სანახავად დააწკაპუნეთ"}
+                            >
+                              {item.Name}
+                            </button>
+                          ) : (
+                            <span>{item.Name || "-"}</span>
+                          )}
                         </div>
                         <div className="w-2/5 font-bpg-nino">
                           {item.Share || "-"}

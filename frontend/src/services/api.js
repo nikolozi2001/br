@@ -388,7 +388,6 @@ export const fetchRepresentatives = async (statId, lang = "ge") => {
       throw new Error("Failed to fetch representatives");
     }
     const data = await response.json();
-    console.log("fetchRepresentatives: Fetched data:", data);
 
     return data;
   } catch (error) {
