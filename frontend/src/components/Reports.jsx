@@ -3,17 +3,29 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
+import { useNavigation } from "../hooks/useNavigation";
 
 function Reports({ isEnglish }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const navigate = useNavigate();
+  const { navigationDirection, isNavigating } = useNavigation();
 
   // Set page-specific title
   useDocumentTitle(isEnglish, getPageTitle('reports', isEnglish));
 
   useEffect(() => {
-    setIsFlipped(true);
-  }, []);
+    // Reset flip state when navigating
+    if (isNavigating) {
+      setIsFlipped(false);
+    }
+    
+    // Trigger flip animation
+    const timer = setTimeout(() => {
+      setIsFlipped(true);
+    }, isNavigating ? 200 : 100);
+    
+    return () => clearTimeout(timer);
+  }, [isNavigating]);
   const handleReportClick = (reportId) => {
     navigate(`/reports/${reportId}`);
   };
@@ -128,7 +140,7 @@ function Reports({ isEnglish }) {
     <div className="w-full">
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <div className={`flipper-container ${isFlipped ? 'flipped' : ''}`}>
+          <div className={`flipper-container ${isFlipped ? 'flipped' : ''} ${navigationDirection === 'left' ? 'flip-left' : 'flip-right'}`}>
             <div className="flipper">
               <div className="border border-[#0080BE] rounded-[0_5px_5px_5px] bg-[#fafafa] py-4 px-5">
                 <ul className="space-y-2.5 reports-list">

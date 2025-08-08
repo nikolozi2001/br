@@ -14,6 +14,7 @@ import {
 } from "../services/api";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
+import { useNavigation } from "../hooks/useNavigation";
 import "../styles/Charts.scss";
 
 // Import modular chart components
@@ -33,6 +34,7 @@ const Charts = ({ isEnglish }) => {
   useDocumentTitle(isEnglish, getPageTitle("charts", isEnglish));
 
   const [isFlipped, setIsFlipped] = useState(false);
+  const { navigationDirection, isNavigating } = useNavigation();
   const [maximizedChart, setMaximizedChart] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [organizationsByYear, setOrganizationsByYear] = useState([]);
@@ -123,8 +125,18 @@ const Charts = ({ isEnglish }) => {
   }, [hiddenDataKeys]);
 
   useEffect(() => {
-    setIsFlipped(true);
-  }, []);
+    // Reset flip state when navigating
+    if (isNavigating) {
+      setIsFlipped(false);
+    }
+    
+    // Trigger flip animation
+    const timer = setTimeout(() => {
+      setIsFlipped(true);
+    }, isNavigating ? 200 : 100);
+    
+    return () => clearTimeout(timer);
+  }, [isNavigating]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -728,7 +740,7 @@ const Charts = ({ isEnglish }) => {
     <div className="w-full">
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <div className={`flipper-container ${isFlipped ? "flipped" : ""}`}>
+          <div className={`flipper-container ${isFlipped ? "flipped" : ""} ${navigationDirection === 'left' ? 'flip-left' : 'flip-right'}`}>
             <div className="flipper">
               <div className="border border-[#0080BE] rounded-[0_5px_5px_5px] bg-[#fafafa] p-4">
                 <div className="charts-grid">

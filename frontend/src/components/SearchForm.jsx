@@ -11,6 +11,7 @@ import { FormActions } from "./FormActions";
 import SearchResults from "./SearchResults";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
+import { useNavigation } from "../hooks/useNavigation";
 import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 
@@ -23,6 +24,7 @@ function SearchForm({ isEnglish }) {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { navigationDirection, isNavigating } = useNavigation();
   const {
     formData,
     setFormData,
@@ -36,8 +38,18 @@ function SearchForm({ isEnglish }) {
   } = useSearchForm(isEnglish);
 
   useEffect(() => {
-    setIsFlipped(true);
-  }, []);
+    // Reset flip state when navigating
+    if (isNavigating) {
+      setIsFlipped(false);
+    }
+    
+    // Trigger flip animation
+    const timer = setTimeout(() => {
+      setIsFlipped(true);
+    }, isNavigating ? 200 : 100);
+    
+    return () => clearTimeout(timer);
+  }, [isNavigating]);
 
   // Check for URL parameters on component mount and auto-search
   useEffect(() => {
@@ -362,7 +374,7 @@ function SearchForm({ isEnglish }) {
     <div className="w-full">
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <div className={`flipper-container ${isFlipped ? "flipped" : ""}`}>
+          <div className={`flipper-container ${isFlipped ? "flipped" : ""} ${navigationDirection === 'left' ? 'flip-left' : 'flip-right'}`}>
             <div className="flipper">
               <div
                 className={`border border-[#0080BE] rounded-[0_5px_5px_5px] ${
