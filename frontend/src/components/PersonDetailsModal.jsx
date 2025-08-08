@@ -71,11 +71,11 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
       }}
     >
       <div 
-        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-[10000]"
+        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-[10000] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-[#0080BE] text-white">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-[#0080BE] text-white flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold font-bpg-nino">{personName}</h2>
             <p className="text-sm opacity-90 font-bpg-nino">
@@ -92,7 +92,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <img src={loaderIcon} alt="Loading..." className="w-12 h-12" />
@@ -105,9 +105,9 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
               <p className="text-red-600 font-bpg-nino">{error}</p>
             </div>
           ) : personDetails.length > 0 ? (
-            <div className="overflow-hidden rounded-lg border border-gray-200">
-              {/* Table Header */}
-              <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base sticky top-0 z-10">
+            <div className="flex flex-col flex-1 m-6 overflow-hidden rounded-lg border border-gray-200">
+              {/* Table Header - Fixed */}
+              <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base flex-shrink-0">
                 <div className="w-2/5">
                   {isEnglish ? "Company" : "კომპანია"}
                 </div>
@@ -119,8 +119,8 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
                 </div>
               </div>
 
-              {/* Table Rows */}
-              <div className="max-h-[calc(90vh-250px)] overflow-y-auto">
+              {/* Table Rows - Scrollable */}
+              <div className="flex-1 overflow-y-auto">
                 {personDetails.map((item, index) => (
                   <div
                     key={index}
@@ -162,7 +162,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
         </div>
 
         {/* Modal Footer - Fixed at bottom */}
-        <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 sticky bottom-0 z-20">
+        <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           <button
             onClick={onClose}
             className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-bpg-nino cursor-pointer"
