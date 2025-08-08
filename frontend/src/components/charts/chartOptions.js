@@ -839,12 +839,23 @@ export const getPieChartOption = (data, currentTexts, isEnglish) => {
     },
     legend: {
       orient: "vertical",
-      right: "5%",
+      right: "2%",
       top: "middle",
-      itemGap: 10,
+      itemGap: 5,
+      itemWidth: 10,
+      itemHeight: 10,
       textStyle: {
-        fontSize: 12,
+        fontSize: isEnglish ? 9 : 9,
         color: "#333",
+        width: 150,
+        lineHeight: 13
+      },
+      formatter: function(name) {
+        // Remove spaces from English text to make it more compact like Georgian
+        if (isEnglish) {
+          return name.replace(/\s+/g, '');
+        }
+        return name;
       },
       data: chartData.map((item) => item.name),
     },
@@ -852,8 +863,8 @@ export const getPieChartOption = (data, currentTexts, isEnglish) => {
       {
         name: currentTexts.ownershipTypes,
         type: "pie",
-        radius: "65%",
-        center: ["40%", "50%"],
+        radius: ["70%"],
+        center: ["35%", "50%"],
         data: chartData,
         label: {
           show: false,

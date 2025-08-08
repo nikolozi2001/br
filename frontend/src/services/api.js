@@ -656,18 +656,18 @@ export const fetchEnterpriseBirthRegion = async (lang = "ge") => {
     const response = await fetch(
       `${API_BASE_URL}/enterprise-birth-region?lang=${lang}`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
       }
     );
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     const rawData = data.recordset || data;
 
@@ -732,7 +732,7 @@ export const fetchEnterpriseBirthSector = async (lang = "ge") => {
     // Transform the API response to the format needed by the chart
     const years = [
       "2014",
-      "2015", 
+      "2015",
       "2016",
       "2017",
       "2018",
@@ -749,13 +749,14 @@ export const fetchEnterpriseBirthSector = async (lang = "ge") => {
 
       // Process each sector for this year
       filteredData.forEach((item) => {
-        const sectorName = item.legend_title;
+        const sectorName =
+          lang === "ge" ? item.legend_title : item.legend_title_en;
         yearData[sectorName] = item[year] || 0;
       });
 
       return yearData;
     });
-    
+
     return result;
   } catch (error) {
     console.error("Error fetching enterprise birth sector data:", error);
@@ -797,7 +798,8 @@ export const fetchEnterpriseDeathSector = async (lang = "ge") => {
 
       // Process each sector
       filteredData.forEach((item) => {
-        const sectorName = item.legend_title;
+        const sectorName =
+          lang === "ge" ? item.legend_title : item.legend_title_en;
         yearData[sectorName] = item[year] || 0;
       });
 
@@ -869,14 +871,16 @@ export const fetchEnterpriseBirthDistribution = async (lang = "ge") => {
     }
     const data = await response.json();
 
-    // Check if data is in recordset format
     const results = data.recordset || data;
 
     if (!results || results.length === 0) {
       return [];
     }
 
-    return results;
+    return results.map((item) => ({
+      ...item,
+      name: lang === "en" ? item.name_en || item.name : item.name,
+    }));
   } catch (error) {
     console.error("Error fetching enterprise birth distribution data:", error);
     return [];
@@ -894,14 +898,16 @@ export const fetchEnterpriseDeathDistribution = async (lang = "ge") => {
     }
     const data = await response.json();
 
-    // Check if data is in recordset format
     const results = data.recordset || data;
 
     if (!results || results.length === 0) {
       return [];
     }
 
-    return results;
+    return results.map((item) => ({
+      ...item,
+      name: lang === "en" ? item.name_en || item.name : item.name,
+    }));
   } catch (error) {
     console.error("Error fetching enterprise death distribution data:", error);
     return [];
@@ -933,15 +939,17 @@ export const fetchPartnersVw = async (statId) => {
     if (!statId) {
       throw new Error("Stat ID is required");
     }
-    
+
     const url = `${API_BASE_URL}/partners-vw?statId=${statId}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to fetch partners VW: ${response.status} - ${errorText}`);
+      throw new Error(
+        `Failed to fetch partners VW: ${response.status} - ${errorText}`
+      );
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -955,15 +963,17 @@ export const fetchAddressWeb = async (statId) => {
     if (!statId) {
       throw new Error("Stat ID is required");
     }
-    
+
     const url = `${API_BASE_URL}/address-web?statId=${statId}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to fetch address web: ${response.status} - ${errorText}`);
+      throw new Error(
+        `Failed to fetch address web: ${response.status} - ${errorText}`
+      );
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -977,15 +987,17 @@ export const fetchFullNameWeb = async (statId) => {
     if (!statId) {
       throw new Error("Stat ID is required");
     }
-    
+
     const url = `${API_BASE_URL}/full-name-web?statId=${statId}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to fetch full name web: ${response.status} - ${errorText}`);
+      throw new Error(
+        `Failed to fetch full name web: ${response.status} - ${errorText}`
+      );
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
