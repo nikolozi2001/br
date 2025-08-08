@@ -158,12 +158,49 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+// Custom hook for scroll functionality - optimized
+const useScrollToTop = () => {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    setShowScrollTop(scrollTop > 300);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    // Throttle scroll events for better performance
+    let timeoutId = null;
+    const throttledHandleScroll = () => {
+      if (timeoutId) return;
+      timeoutId = setTimeout(() => {
+        handleScroll();
+        timeoutId = null;
+      }, 100);
+    };
+
+    window.addEventListener("scroll", throttledHandleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", throttledHandleScroll);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [handleScroll]);
+
+  return { showScrollTop, scrollToTop };
+};
+
 function SearchHistory({ isEnglish }) {
   // Set page-specific title
   useDocumentTitle(isEnglish, getPageTitle("searchHistory", isEnglish));
 
   // Memoize translations to prevent recalculation
   const t = useMemo(() => translations[isEnglish ? "en" : "ge"], [isEnglish]);
+
+  // Custom scroll hook
+  const { showScrollTop, scrollToTop } = useScrollToTop();
 
   // Use reducer for state management
   const [state, dispatch] = useReducer(dataReducer, initialState);
@@ -1528,6 +1565,29 @@ function SearchHistory({ isEnglish }) {
           </div>
         </div>
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 bg-[#0080BE] text-white p-3 rounded-full shadow-lg hover:bg-[#0070aa] transition-all duration-300 z-[9998] hover:scale-110 cursor-pointer"
+          aria-label={isEnglish ? "Scroll to top" : "ზემოთ ასვლა"}
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 10l7-7m0 0l7 7m-7-7v18"
+            />
+          </svg>
+        </button>
+      )}
 
       {/* Person Details Modal */}
       <PersonDetailsModal
