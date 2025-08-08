@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { fetchLegalUnitWeb } from "../services/api";
 import loaderIcon from "../assets/images/equalizer.svg";
 
-const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }) => {
+const PersonDetailsModal = ({
+  isOpen,
+  onClose,
+  personId,
+  personName,
+  isEnglish,
+}) => {
   const [personDetails, setPersonDetails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -15,7 +23,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
 
       setLoading(true);
       setError(null);
-      
+
       try {
         const data = await fetchLegalUnitWeb(personId);
         setPersonDetails(data || []);
@@ -34,17 +42,27 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
     fetchData();
   }, [isOpen, personId, isEnglish]);
 
+  // Handle company name click to navigate to SearchHistory
+  const handleCompanyClick = (legalCode) => {
+    if (legalCode) {
+      // Close the modal first
+      onClose();
+      // Navigate to SearchHistory with the Legal_Code (identificationNumber)
+      navigate(`/search-history?id=${legalCode}`);
+    }
+  };
+
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
 
     // Cleanup function to reset body scroll
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
@@ -58,19 +76,19 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[9999] p-4"
       onClick={handleBackdropClick}
-      style={{ 
-        position: 'fixed',
+      style={{
+        position: "fixed",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 9999
+        zIndex: 9999,
       }}
     >
-      <div 
+      <div
         className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-[10000] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
@@ -114,9 +132,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
                 <div className="w-2/5">
                   {isEnglish ? "Position" : "თანამდებობა"}
                 </div>
-                <div className="w-1/5">
-                  {isEnglish ? "Date" : "თარიღი"}
-                </div>
+                <div className="w-1/5">{isEnglish ? "Date" : "თარიღი"}</div>
               </div>
 
               {/* Table Rows - Scrollable */}
@@ -128,7 +144,15 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
                       index === personDetails.length - 1 ? "border-b-0" : ""
                     }`}
                   >
-                    <div className="w-2/5 font-bpg-nino">
+                    <div
+                      className="w-2/5 font-bpg-nino cursor-pointer text-[#0080BE] hover:text-[#0070aa] hover:underline transition-colors"
+                      onClick={() => handleCompanyClick(item.Legal_Code)}
+                      title={
+                        isEnglish
+                          ? "Click to view company details"
+                          : "კომპანიის დეტალების სანახავად დააწკაპუნეთ"
+                      }
+                    >
                       {item.Full_Name || item.Name || "-"}
                     </div>
                     <div className="w-2/5 font-bpg-nino">

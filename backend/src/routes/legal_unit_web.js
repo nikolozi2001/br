@@ -14,17 +14,19 @@ router.get("/", async (req, res) => {
     const pool = await poolPromise;
     const result = await pool.request().input("personId", personId).query(`
         SELECT 
-        [Full_Name]
-        ,[Position]
-        ,[Stat_ID]
-        ,[Person_ID]
-        ,[Reg_Company_ID]
-        ,[Entity_ID]
-        ,[Name]
-        ,[Date]
-        FROM [register].[dbo].[Hst_RepXLegal_Unit_web]
-        WHERE [Person_ID] = @personId
-        ORDER BY [Date] DESC
+        h.[Full_Name]
+        ,h.[Position]
+        ,h.[Stat_ID]
+        ,h.[Person_ID]
+        ,h.[Reg_Company_ID]
+        ,h.[Entity_ID]
+        ,h.[Name]
+        ,h.[Date]
+        ,d.[Legal_Code]
+        FROM [register].[dbo].[Hst_RepXLegal_Unit_web] h
+        LEFT JOIN [register].[dbo].[DocMain] d ON h.[Stat_ID] = d.[Stat_ID]
+        WHERE h.[Person_ID] = @personId
+        ORDER BY h.[Date] DESC
       `);
 
     res.json(result.recordset);
