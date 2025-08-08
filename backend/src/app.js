@@ -43,6 +43,7 @@ const partnersRouter = require('./routes/partners');
 const partnersVwRouter = require('./routes/partners_vw');
 const addressWebRouter = require('./routes/address_web');
 const fullNameWebRouter = require('./routes/fullName_web');
+const legalUnitWebRouter = require('./routes/legal_unit_web');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -78,6 +79,7 @@ app.use('/api/partners', partnersRouter);
 app.use('/api/partners-vw', partnersVwRouter);
 app.use('/api/address-web', addressWebRouter);
 app.use('/api/full-name-web', fullNameWebRouter);
+app.use('/api/legal-unit-web', legalUnitWebRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

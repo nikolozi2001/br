@@ -388,6 +388,8 @@ export const fetchRepresentatives = async (statId, lang = "ge") => {
       throw new Error("Failed to fetch representatives");
     }
     const data = await response.json();
+    console.log("fetchRepresentatives: Fetched data:", data);
+
     return data;
   } catch (error) {
     console.error("Error fetching representatives:", error);
@@ -1006,6 +1008,30 @@ export const fetchFullNameWeb = async (statId) => {
   }
 };
 
+export const fetchLegalUnitWeb = async (personId) => {
+  try {
+    if (!personId) {
+      throw new Error("Person ID is required");
+    }
+
+    const url = `${API_BASE_URL}/legal-unit-web?personId=${personId}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to fetch legal unit web: ${response.status} - ${errorText}`
+      );
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("fetchLegalUnitWeb: Error occurred:", error);
+    return [];
+  }
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -1036,6 +1062,7 @@ export const API = {
   fetchPartners,
   fetchPartnersVw,
   fetchAddressWeb,
+  fetchLegalUnitWeb,
 };
 
 export default API;
