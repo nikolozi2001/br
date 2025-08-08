@@ -34,11 +34,46 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
     fetchData();
   }, [isOpen, personId, isEnglish]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to reset body scroll
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
+  // Handle backdrop click to close modal
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[9999] p-4"
+      onClick={handleBackdropClick}
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999
+      }}
+    >
+      <div 
+        className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-[10000]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-[#0080BE] text-white">
           <div>
@@ -49,7 +84,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+            className="p-2 hover:bg-red-500 hover:bg-opacity-20 rounded-full cursor-pointer transition-colors"
             aria-label={isEnglish ? "Close modal" : "მოდალის დახურვა"}
           >
             <X size={24} />
@@ -128,7 +163,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
         <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-bpg-nino"
+            className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-bpg-nino cursor-pointer"
           >
             {isEnglish ? "Close" : "დახურვა"}
           </button>
