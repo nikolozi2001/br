@@ -92,7 +92,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <img src={loaderIcon} alt="Loading..." className="w-12 h-12" />
@@ -107,7 +107,7 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
           ) : personDetails.length > 0 ? (
             <div className="overflow-hidden rounded-lg border border-gray-200">
               {/* Table Header */}
-              <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base">
+              <div className="flex px-6 py-3 bg-[#2c7bbf] text-white font-bold font-bpg-nino text-sm sm:text-base sticky top-0 z-10">
                 <div className="w-2/5">
                   {isEnglish ? "Company" : "კომპანია"}
                 </div>
@@ -120,33 +120,35 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
               </div>
 
               {/* Table Rows */}
-              {personDetails.map((item, index) => (
-                <div
-                  key={index}
-                  className={`flex px-6 py-4 border-b border-gray-200 hover:bg-gray-50 transition-colors ${
-                    index === personDetails.length - 1 ? "border-b-0" : ""
-                  }`}
-                >
-                  <div className="w-2/5 font-bpg-nino">
-                    {item.Full_Name || item.Name || "-"}
+              <div className="max-h-[calc(90vh-250px)] overflow-y-auto">
+                {personDetails.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`flex px-6 py-4 border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+                      index === personDetails.length - 1 ? "border-b-0" : ""
+                    }`}
+                  >
+                    <div className="w-2/5 font-bpg-nino">
+                      {item.Full_Name || item.Name || "-"}
+                    </div>
+                    <div className="w-2/5 font-bpg-nino">
+                      {item.Position || "-"}
+                    </div>
+                    <div className="w-1/5 font-bpg-nino">
+                      {item.Date
+                        ? new Date(item.Date).toLocaleDateString(
+                            isEnglish ? "en-US" : "ka-GE",
+                            {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                            }
+                          )
+                        : "-"}
+                    </div>
                   </div>
-                  <div className="w-2/5 font-bpg-nino">
-                    {item.Position || "-"}
-                  </div>
-                  <div className="w-1/5 font-bpg-nino">
-                    {item.Date
-                      ? new Date(item.Date).toLocaleDateString(
-                          isEnglish ? "en-US" : "ka-GE",
-                          {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                          }
-                        )
-                      : "-"}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : (
             <div className="text-center py-12">
@@ -159,8 +161,8 @@ const PersonDetailsModal = ({ isOpen, onClose, personId, personName, isEnglish }
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50">
+        {/* Modal Footer - Fixed at bottom */}
+        <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50 sticky bottom-0 z-20">
           <button
             onClick={onClose}
             className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-bpg-nino cursor-pointer"
