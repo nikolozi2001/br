@@ -44,12 +44,14 @@ const partnersVwRouter = require('./routes/partners_vw');
 const addressWebRouter = require('./routes/address_web');
 const fullNameWebRouter = require('./routes/fullName_web');
 const legalUnitWebRouter = require('./routes/legal_unit_web');
+const gisSearchRouter = require('./routes/gis_search');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
 app.use('/api/legal-forms/gis/:gis', legalFormsRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/activities', activitiesRouter);
+app.use('/api/activities/gis', activitiesRouter);
 app.use('/api/ownership-types', ownershipTypesRouter);
 app.use('/api/sizes', sizesRouter);
 app.use('/api/documents', documentsRouter);
@@ -80,6 +82,7 @@ app.use('/api/partners-vw', partnersVwRouter);
 app.use('/api/address-web', addressWebRouter);
 app.use('/api/full-name-web', fullNameWebRouter);
 app.use('/api/legal-unit-web', legalUnitWebRouter);
+app.use('/api/gis-search', gisSearchRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
