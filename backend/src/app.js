@@ -45,6 +45,7 @@ const addressWebRouter = require('./routes/address_web');
 const fullNameWebRouter = require('./routes/fullName_web');
 const legalUnitWebRouter = require('./routes/legal_unit_web');
 const gisSearchRouter = require('./routes/gis_search');
+const basicInfoRouter = require('./routes/basic_info');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -83,6 +84,7 @@ app.use('/api/address-web', addressWebRouter);
 app.use('/api/full-name-web', fullNameWebRouter);
 app.use('/api/legal-unit-web', legalUnitWebRouter);
 app.use('/api/gis-search', gisSearchRouter);
+app.use('/api/basic-info', basicInfoRouter);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
