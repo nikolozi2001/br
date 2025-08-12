@@ -14,13 +14,10 @@ router.get("/", async (req, res) => {
       partner,
       ownershipType,
       isActive,
-      activityCode,
-      page = 1,
-      limit = 100
+      activityCode
     } = req.query;
 
     const pool = await poolPromise;
-    const offset = (page - 1) * limit;
 
     let query = `
       SELECT [Legal_Code], [Full_Name], [Activity_2_Name], [Abbreviation], [X], [Y]
@@ -76,78 +73,12 @@ router.get("/", async (req, res) => {
       });
     }
 
-    // Add pagination
-    query += ` ORDER BY Legal_Code OFFSET ${offset} ROWS FETCH NEXT ${limit} ROWS ONLY`;
+    // Order by Legal_Code
+    query += " ORDER BY Legal_Code";
 
     const result = await request.query(query);
 
-    // Get total count for pagination
-    let countQuery = `
-      SELECT COUNT(*) as total
-      FROM [register].[dbo].[DocMain]
-      WHERE 1=1
-    `;
-
-    const countRequest = pool.request();
-
-    // Apply same filters for count
-    if (identificationNumber) {
-      countQuery += " AND Legal_Code = @identificationNumber";
-      countRequest.input("identificationNumber", sql.BigInt, identificationNumber);
-    }
-
-    if (organizationName) {
-      countQuery += " AND (Full_Name LIKE @organizationName OR Abbreviation LIKE @organizationName)";
-      countRequest.input("organizationName", sql.NVarChar, `%${organizationName}%`);
-    }
-
-    if (legalForm) {
-      countQuery += " AND Legal_Form_ID = @legalForm";
-      countRequest.input("legalForm", sql.SmallInt, legalForm);
-    }
-
-    if (head) {
-      countQuery += " AND Head LIKE @head";
-      countRequest.input("head", sql.NVarChar, `%${head}%`);
-    }
-
-    if (partner) {
-      countQuery += " AND Partner LIKE @partner";
-      countRequest.input("partner", sql.NVarChar, `%${partner}%`);
-    }
-
-    if (ownershipType) {
-      countQuery += " AND Ownership_Type_ID = @ownershipType";
-      countRequest.input("ownershipType", sql.SmallInt, ownershipType);
-    }
-
-    if (isActive !== undefined) {
-      countQuery += " AND ISActive = @isActive";
-      countRequest.input("isActive", sql.Bit, isActive === 'true');
-    }
-
-    if (activityCode) {
-      const activityCodes = Array.isArray(activityCode) ? activityCode : [activityCode];
-      const activityCodeParams = activityCodes.map((_, index) => `@activityCode${index}`).join(', ');
-      countQuery += ` AND Activity_2_Code IN (${activityCodeParams})`;
-      
-      activityCodes.forEach((code, index) => {
-        countRequest.input(`activityCode${index}`, sql.NVarChar, code);
-      });
-    }
-
-    const countResult = await countRequest.query(countQuery);
-    const total = countResult.recordset[0].total;
-
-    res.json({
-      data: result.recordset,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: total,
-        totalPages: Math.ceil(total / limit)
-      }
-    });
+    res.json(result.recordset);
 
   } catch (error) {
     console.error("Error fetching basic info:", error);
