@@ -40,7 +40,7 @@ export function useSearchForm(isEnglish) {
         const [legalForms, regionsResponse] = await Promise.all([
           fetchLegalForms(isEnglish ? "en" : "ge"),
           fetch(
-            `http://192.168.1.27:5000/api/locations/regions?lang=${
+            `https://br-api.geostat.ge/api/locations/regions?lang=${
               isEnglish ? "en" : "ge"
             }`
           ),
@@ -74,7 +74,7 @@ export function useSearchForm(isEnglish) {
       const codes = [...new Set(selectedRegions.map(region => region.code.split(' ')[0]))];
       
       const municipalitiesPromises = codes.map(code =>
-        fetch(`http://192.168.1.27:5000/api/locations/code/${code}?lang=${isEnglish ? "en" : "ge"}`)
+        fetch(`https://br-api.geostat.ge/api/locations/code/${code}?lang=${isEnglish ? "en" : "ge"}`)
           .then(res => res.json())
       );
 

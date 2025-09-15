@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://192.168.1.27:5000/api";
+const API_BASE_URL = "https://br-api.geostat.ge/api";
 
 // Generic API utility functions for reports
 const handleReportApiResponse = async (response) => {
