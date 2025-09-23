@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
 
     const pool = await poolPromise;
     const result = await pool.request().query(`
-                SELECT TOP 1000
+                SELECT
                      [ID]
                     ,[Parent_ID]
                     ,[Activity_Type_ID]
