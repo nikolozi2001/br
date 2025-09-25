@@ -6,6 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
@@ -14,6 +15,7 @@ import Reports from "./components/Reports";
 import ReportsResults from "./components/ReportsResults";
 import Charts from "./components/Charts";
 import Footer from "./components/Footer";
+import SEO from "./components/SEO";
 import useDocumentTitle from "./hooks/useDocumentTitle";
 import NavigationProvider from "./contexts/NavigationContext.jsx";
 import { useNavigation } from "./hooks/useNavigation";
@@ -73,6 +75,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO isEnglish={isEnglish} />
       <Header isEnglish={isEnglish} />
       <TopNavigation
         isEnglish={isEnglish}
@@ -104,11 +107,13 @@ function AppContent() {
 
 function App() {
   return (
-    <NavigationProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </NavigationProvider>
+    <HelmetProvider>
+      <NavigationProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </NavigationProvider>
+    </HelmetProvider>
   );
 }
 

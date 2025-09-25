@@ -12,6 +12,7 @@ import {
   fetchEnterpriseBirthDistribution,
   fetchEnterpriseDeathDistribution,
 } from "../services/api";
+import SEO from "./SEO";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
 import { useNavigation } from "../hooks/useNavigation";
@@ -736,8 +737,35 @@ const Charts = ({ isEnglish }) => {
     downloadChartFromECharts,
   });
 
+  const chartsStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "DataVisualization",
+    "name": isEnglish ? "Business Register Charts and Analytics" : "ბიზნეს რეგისტრის დიაგრამები და ანალიტიკა",
+    "description": isEnglish 
+      ? "Interactive charts and visualizations showing Georgian business statistics, enterprise birth and death rates, regional distribution, and economic activity analysis"
+      : "ინტერაქტიული დიაგრამები და ვიზუალიზაციები, რომლებიც აჩვენებს ქართული ბიზნესის სტატისტიკას, საწარმოების დაბადებისა და სიკვდილის მაჩვენებლებს, რეგიონულ განაწილებას და ეკონომიკური საქმიანობის ანალიზს",
+    "about": {
+      "@type": "Dataset",
+      "name": isEnglish ? "Georgian Business Statistics" : "ქართული ბიზნესის სტატისტიკა"
+    }
+  };
+
   return (
     <div className="w-full">
+      <SEO 
+        title={isEnglish ? "Business Charts - Data Visualization and Analytics" : "ბიზნეს დიაგრამები - მონაცემთა ვიზუალიზაცია და ანალიტიკა"}
+        description={isEnglish 
+          ? "Explore interactive charts and data visualizations of Georgian business statistics. Analyze enterprise birth and death rates, regional distribution, and economic activities through comprehensive visual analytics."
+          : "დაათვალიერეთ ინტერაქტიული დიაგრამები და ქართული ბიზნესის სტატისტიკის მონაცემთა ვიზუალიზაცია. გაანალიზეთ საწარმოების დაბადებისა და სიკვდილის მაჩვენებლები, რეგიონული განაწილება და ეკონომიკური საქმიანობა ყრმა ვიზუალური ანალიტიკის მეშვეობით."
+        }
+        keywords={isEnglish 
+          ? "business charts, data visualization, economic analytics, enterprise statistics, regional analysis, business intelligence, georgian market data"
+          : "ბიზნეს დიაგრამები, მონაცემთა ვიზუალიზაცია, ეკონომიკური ანალიტიკა, საწარმოო სტატისტიკა, რეგიონული ანალიზი, ბიზნეს ინტელექტი, ქართული ბაზრის მონაცემები"
+        }
+        isEnglish={isEnglish}
+        type="website"
+        structuredData={chartsStructuredData}
+      />
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div className={`flipper-container ${isFlipped ? "flipped" : ""} ${navigationDirection === 'left' ? 'flip-left' : 'flip-right'}`}>

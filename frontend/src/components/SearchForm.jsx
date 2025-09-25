@@ -9,6 +9,7 @@ import { EconomicActivitySection } from "./EconomicActivitySection";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { FormActions } from "./FormActions";
 import SearchResults from "./SearchResults";
+import SEO from "./SEO";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
 import { useNavigation } from "../hooks/useNavigation";
@@ -370,8 +371,38 @@ function SearchForm({ isEnglish }) {
     }));
   };
 
+  const homeStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": isEnglish ? "Business Register Search" : "ბიზნეს რეგისტრის ძებნა",
+    "description": isEnglish 
+      ? "Search and find information about Georgian businesses and economic entities in the official Statistical Business Register"
+      : "მოძებნეთ და იპოვეთ ინფორმაცია ქართული ბიზნესების და ეკონომიკური სუბიექტების შესახებ ოფიციალურ სტატისტიკურ ბიზნეს რეგისტრში",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web Browser",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "GEL"
+    }
+  };
+
   return (
     <div className="w-full">
+      <SEO 
+        title={isEnglish ? "Business Register Search - Find Georgian Companies" : "ბიზნეს რეგისტრის ძებნა - იპოვეთ ქართული კომპანიები"}
+        description={isEnglish 
+          ? "Search the official Statistical Business Register of Georgia. Find comprehensive information about Georgian businesses, economic entities, and their activities."
+          : "მოძებნეთ საქართველოს ოფიციალური სტატისტიკური ბიზნეს რეგისტრი. იპოვეთ ყრმა ინფორმაცია ქართული ბიზნესების, ეკონომიკური სუბიექტების და მათი საქმიანობის შესახებ."
+        }
+        keywords={isEnglish 
+          ? "business search, georgian companies, company lookup, business registry, economic entities, company information"
+          : "ბიზნეს ძებნა, ქართული კომპანიები, კომპანიის მოძებნა, ბიზნეს რეგისტრი, ეკონომიკური სუბიექტები, კომპანიის ინფორმაცია"
+        }
+        isEnglish={isEnglish}
+        type="website"
+        structuredData={homeStructuredData}
+      />
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div className={`flipper-container ${isFlipped ? "flipped" : ""} ${navigationDirection === 'left' ? 'flip-left' : 'flip-right'}`}>

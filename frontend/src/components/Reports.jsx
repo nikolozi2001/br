@@ -1,6 +1,7 @@
 import "../styles/Reports.scss";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SEO from "./SEO";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
 import { useNavigation } from "../hooks/useNavigation";
@@ -136,8 +137,40 @@ function Reports({ isEnglish }) {
     ],
   };
 
+  const currentReports = isEnglish ? reports.english : reports.georgian;
+  
+  const reportsStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": isEnglish ? "Business Register Reports" : "ბიზნეს რეგისტრის ანგარიშები",
+    "description": isEnglish 
+      ? "Statistical reports and analytics about Georgian businesses and economic entities"
+      : "სტატისტიკური ანგარიშები და ანალიტიკა ქართული ბიზნესების და ეკონომიკური სუბიექტების შესახებ",
+    "numberOfItems": currentReports.length,
+    "itemListElement": currentReports.map((report, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "name": report.title,
+      "url": `${window.location.origin}/reports/${report.id}`
+    }))
+  };
+
   return (
     <div className="w-full">
+      <SEO 
+        title={isEnglish ? "Business Reports - Statistical Analysis of Georgian Economy" : "ბიზნეს ანგარიშები - ქართული ეკონომიკის სტატისტიკური ანალიზი"}
+        description={isEnglish 
+          ? "Access comprehensive statistical reports about Georgian businesses, economic activities, and market trends. View birth, death, and survival rates of enterprises."
+          : "მიიღეთ ყრმა სტატისტიკური ანგარიშები ქართული ბიზნესების, ეკონომიკური საქმიანობისა და ბაზრის ტენდენციების შესახებ. იხილეთ საწარმოების დაბადება, სიკვდილისა და გადარჩენის მაჩვენებლები."
+        }
+        keywords={isEnglish 
+          ? "business reports, economic statistics, georgian economy, enterprise statistics, business analytics, market analysis"
+          : "ბიზნეს ანგარიშები, ეკონომიკური სტატისტიკა, ქართული ეკონომიკა, საწარმოო სტატისტიკა, ბიზნეს ანალიტიკა, ბაზრის ანალიზი"
+        }
+        isEnglish={isEnglish}
+        type="website"
+        structuredData={reportsStructuredData}
+      />
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
           <div className={`flipper-container ${isFlipped ? 'flipped' : ''} ${navigationDirection === 'left' ? 'flip-left' : 'flip-right'}`}>
