@@ -346,9 +346,10 @@ const getExcelFileInfo = (reportId, isEnglish) => {
   if (!config) return { title: "", fileName: "", sheetName: "" };
   
   const dateStr = new Date().toISOString().split("T")[0];
+  const title = config.title[isEnglish ? 'en' : 'ge'];
   return {
-    title: config.title[isEnglish ? 'en' : 'ge'],
-    fileName: `${config.fileName[isEnglish ? 'en' : 'ge']}_${dateStr}.xlsx`,
+    title: title,
+    fileName: `${title}_${dateStr}.xlsx`,
     sheetName: config.sheetName[isEnglish ? 'en' : 'ge']
   };
 };
@@ -684,7 +685,7 @@ function ReportsResults({ isEnglish }) {
 
       const dateStr = new Date().toISOString().split("T")[0];
       const title = config.title[isEnglish ? 'en' : 'ge'];
-      const fileName = `${config.fileName[isEnglish ? 'en' : 'ge']}_${dateStr}.xlsx`;
+      const fileName = `${title}_${dateStr}.xlsx`;
       const sheetName = config.sheetName[isEnglish ? 'en' : 'ge'];
 
       // Generate Excel data based on report type
