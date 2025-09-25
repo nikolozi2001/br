@@ -16,33 +16,44 @@ function SearchResults({ results, isEnglish, formData }) {
   useEffect(() => {
     if (formData && formData.identificationNumber) {
       // Check if only identificationNumber is provided (other fields are empty/default)
-      const isOnlyIdentificationNumber = 
-        formData.identificationNumber.trim() !== '' &&
+      const isOnlyIdentificationNumber =
+        formData.identificationNumber.trim() !== "" &&
         !formData.organizationName.trim() &&
         !formData.head.trim() &&
         !formData.partner.trim() &&
-        (!formData.organizationalLegalForm || formData.organizationalLegalForm.length === 0) &&
-        (!formData.legalAddress?.region || formData.legalAddress.region.length === 0) &&
-        (!formData.legalAddress?.municipalityCity || formData.legalAddress.municipalityCity.length === 0) &&
+        (!formData.organizationalLegalForm ||
+          formData.organizationalLegalForm.length === 0) &&
+        (!formData.legalAddress?.region ||
+          formData.legalAddress.region.length === 0) &&
+        (!formData.legalAddress?.municipalityCity ||
+          formData.legalAddress.municipalityCity.length === 0) &&
         !formData.legalAddress?.address?.trim() &&
-        (!formData.personalAddress?.region || formData.personalAddress.region.length === 0) &&
-        (!formData.personalAddress?.municipalityCity || formData.personalAddress.municipalityCity.length === 0) &&
+        (!formData.personalAddress?.region ||
+          formData.personalAddress.region.length === 0) &&
+        (!formData.personalAddress?.municipalityCity ||
+          formData.personalAddress.municipalityCity.length === 0) &&
         !formData.personalAddress?.address?.trim() &&
-        (!formData.activities || formData.activities.length === 0 || 
-         (formData.activities.length === 1 && !formData.activities[0].code && !formData.activities[0].name)) &&
+        (!formData.activities ||
+          formData.activities.length === 0 ||
+          (formData.activities.length === 1 &&
+            !formData.activities[0].code &&
+            !formData.activities[0].name)) &&
         (!formData.ownershipForm || formData.ownershipForm.length === 0) &&
         !formData.businessForm?.trim() &&
         formData.isActive === false; // Include isActive check - should be default (false)
 
       if (isOnlyIdentificationNumber) {
         const url = new URL(window.location);
-        url.searchParams.set('identificationNumber', formData.identificationNumber);
-        window.history.replaceState({}, '', url.toString());
+        url.searchParams.set(
+          "identificationNumber",
+          formData.identificationNumber
+        );
+        window.history.replaceState({}, "", url.toString());
       } else {
         // Clear URL parameters if it's not an identification-only search
         const url = new URL(window.location);
-        url.searchParams.delete('identificationNumber');
-        window.history.replaceState({}, '', url.toString());
+        url.searchParams.delete("identificationNumber");
+        window.history.replaceState({}, "", url.toString());
       }
     }
   }, [formData]);
@@ -285,7 +296,11 @@ function SearchResults({ results, isEnglish, formData }) {
                 </td>
                 <td className={cellClassName}>
                   <button
-                    onClick={() => handleIdentificationNumberClick(result.identificationNumber)}
+                    onClick={() =>
+                      handleIdentificationNumberClick(
+                        result.identificationNumber
+                      )
+                    }
                     className="text-[#0080BE] hover:text-[#006698] hover:underline cursor-pointer font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0080BE]/20 rounded px-1 py-0.5"
                     title="Click to view detailed history"
                   >
@@ -303,15 +318,21 @@ function SearchResults({ results, isEnglish, formData }) {
                 <td className={cellClassName}>
                   {result.factualAddress.address}
                 </td>
-                <td className={cellClassName}>{result.activities?.[0]?.code}</td>
-                <td className={cellClassName}>{result.activities?.[0]?.name}</td>
+                <td className={cellClassName}>
+                  {result.activities?.[0]?.code}
+                </td>
+                <td className={cellClassName}>
+                  {result.activities?.[0]?.name}
+                </td>
                 <td className={cellClassName}>{result.head}</td>
                 <td className={cellClassName}>{result.phone}</td>
                 <td className={cellClassName}>{result.partner}</td>
                 <td className={cellClassName}>{result.email}</td>
                 <td className={cellClassName}>{result.ownershipType}</td>
-                <td className={cellClassName}>{result.isActive ? "✓" : "✗"}</td>
-                <td className={cellClassName}>{result.size}</td>
+                <td className={cellClassName}>
+                  {result.isActive ? "აქტიური" : "არააქტიური"}
+                </td>
+                <td className={cellClassName}>{result.Zoma}</td>
               </tr>
             ))}
           </tbody>

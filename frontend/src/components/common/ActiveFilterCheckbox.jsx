@@ -19,7 +19,7 @@ export function ActiveFilterCheckbox({ isActive, onChange, t, darkMode = false }
         <div className="relative group">
           <svg
             className={`w-5 h-5 ${
-              darkMode ? "text-white" : "text-[#0080BE]"
+              darkMode ? "text-white" : "text-[red]"
             } cursor-help`}
             fill="none"
             stroke="currentColor"

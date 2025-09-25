@@ -111,7 +111,7 @@ function SearchForm({ isEnglish }) {
     const headers = [
       { label: "identificationNumber", path: "identificationNumber" },
       { label: "personalNumber", path: "personalNumber" },
-      { label: "organizationalLegalForm", path: "legalForm" },
+      { label: "organizationalLegalForm", path: "abbreviation" },
       { label: "organizationName", path: "name" },
       { label: "legalRegion", path: "legalAddress.region" },
       { label: "municipalityCity", path: "City_name" },
@@ -131,7 +131,7 @@ function SearchForm({ isEnglish }) {
       { label: "email", path: "email" },
       { label: "ownershipForm", path: "ownershipType" },
       { label: "activeSubject", path: "isActive" },
-      { label: "businessSize", path: "size" },
+      { label: "businessSize", path: "Zoma" },
     ];
 
     const csvContent =
@@ -169,7 +169,7 @@ function SearchForm({ isEnglish }) {
                 value = row[path];
               }
               if (value === "უცნობი") value = "";
-              if (path === "isActive") value = value ? "✓" : "✗";
+              if (path === "isActive") value = value ? "აქტიური" : "არააქტიური";
               return `"${value || ""}"`;
             })
             .join(",")
@@ -222,7 +222,7 @@ function SearchForm({ isEnglish }) {
             <tr>
               <td>${result.identificationNumber || ""}</td>
               <td>${result.personalNumber || ""}</td>
-              <td>${result.legalForm || ""}</td>
+              <td>${result.abbreviation || ""}</td>
               <td>${result.name || ""}</td>
               <td>${result.legalAddress?.region || ""}</td>
               <td>${result.legalAddress?.address || ""}</td>
@@ -235,8 +235,8 @@ function SearchForm({ isEnglish }) {
               <td>${result.partner || ""}</td>
               <td>${result.email || ""}</td>
               <td>${result.ownershipType || ""}</td>
-              <td>${result.isActive ? "✓" : "✗"}</td>
-              <td>${result.size || ""}</td>
+              <td>${result.isActive ? "აქტიური" : "არააქტიური"}</td>
+              <td>${result.Zoma || ""}</td>
             </tr>
           `
             )
