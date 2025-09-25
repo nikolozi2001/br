@@ -801,7 +801,7 @@ export const getGroupedBarChartOption = (data, survivalData, isEnglish) => {
   return options;
 };
 
-export const getPieChartOption = (data, currentTexts, isEnglish) => {
+export const getPieChartOption = (data, currentTexts, isEnglish, isMaximized = false) => {
   // If no data, return empty chart configuration
   if (!data || data.length === 0) {
     return {
@@ -860,14 +860,12 @@ export const getPieChartOption = (data, currentTexts, isEnglish) => {
   return {
     tooltip: {
       trigger: "item",
-      position: "center",
+      position: "top",
       textStyle: {
         textAlign: "center",
       },
       formatter: function (params) {
-        return `${params.seriesName}<br/>${params.marker}${
-          params.name
-        }: ${params.value.toFixed(2)}% (${params.percent}%)`;
+        return `${params.seriesName}<br/>${params.marker}${params.name}: ${params.percent}%`;
       },
     },
     legend: {
@@ -878,7 +876,7 @@ export const getPieChartOption = (data, currentTexts, isEnglish) => {
       itemWidth: 10,
       itemHeight: 10,
       textStyle: {
-        fontSize: isEnglish ? 9 : 9,
+        fontSize: isEnglish ? 16 : 16,
         color: "#333",
         width: 150,
         lineHeight: 13
@@ -900,7 +898,18 @@ export const getPieChartOption = (data, currentTexts, isEnglish) => {
         center: ["35%", "50%"],
         data: chartData,
         label: {
-          show: false,
+          show: isMaximized,
+          position: "outside",
+          formatter: function(params) {
+            if (isMaximized) {
+              return `${params.name}\n${params.percent}%`;
+            }
+            return "";
+          },
+          fontSize: 11,
+          fontWeight: "bold",
+          color: "#333",
+          lineHeight: 16
         },
         emphasis: {
           itemStyle: {

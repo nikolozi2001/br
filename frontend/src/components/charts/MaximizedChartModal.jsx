@@ -175,7 +175,8 @@ const MaximizedChartModal = ({
             option={getPieChartOption(
               maximizedChart.data,
               currentTexts,
-              isEnglish
+              isEnglish,
+              true
             )}
             style={{ height: "100%", width: "100%" }}
           />
