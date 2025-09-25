@@ -1,7 +1,13 @@
 // Chart configuration options for ECharts
-import { getColorForSection } from './chartUtils';
+import { getColorForSection } from "./chartUtils";
 
-export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish = true, isMaximized = false) => ({
+export const getBarChartOption = (
+  data,
+  currentTexts,
+  hiddenDataKeys,
+  isEnglish = true,
+  isMaximized = false
+) => ({
   tooltip: {
     trigger: "axis",
     axisPointer: {
@@ -40,12 +46,12 @@ export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish 
   },
   yAxis: {
     type: "value",
-    name: isMaximized ? "" : (isEnglish ? "Thousand" : "ათასი"),
+    name: isMaximized ? "" : isEnglish ? "Thousand" : "ათასი",
     nameLocation: "end",
     nameGap: 10,
     nameTextStyle: {
       fontSize: 12,
-      color: "#666"
+      color: "#666",
     },
     axisLabel: {
       formatter: function (value) {
@@ -217,12 +223,12 @@ export const getStackedLineChartOption = (
     },
     yAxis: {
       type: "value",
-      name: isMaximized ? "" : (isEnglish ? "" : "ათასი"),
+      name: isMaximized ? "" : isEnglish ? "" : "ათასი",
       nameLocation: "end",
       nameGap: 10,
       nameTextStyle: {
         fontSize: 12,
-        color: "#666"
+        color: "#666",
       },
       axisLabel: {
         formatter: function (value) {
@@ -249,7 +255,11 @@ export const getStackedLineChartOption = (
   };
 };
 
-export const getStackedBarChartOption = (data, isEnglish, isMaximized = false) => {
+export const getStackedBarChartOption = (
+  data,
+  isEnglish,
+  isMaximized = false
+) => {
   // If no data, return empty chart configuration
   if (!data || data.length === 0) {
     return {
@@ -347,12 +357,12 @@ export const getStackedBarChartOption = (data, isEnglish, isMaximized = false) =
     },
     yAxis: {
       type: "value",
-      name: isMaximized ? "" : (isEnglish ? "" : "ათასი"),
+      name: isMaximized ? "" : isEnglish ? "" : "ათასი",
       nameLocation: "end",
       nameGap: 10,
       nameTextStyle: {
         fontSize: 12,
-        color: "#666"
+        color: "#666",
       },
       axisLabel: {
         formatter: function (value) {
@@ -626,7 +636,8 @@ export const getNormalizedStackedBarChartOption = (data, isEnglish) => {
             (sum, k) => sum + (item[k] || 0),
             0
           );
-          const percentage = totalForYear > 0 ? ((item[key] || 0) / totalForYear) * 100 : 0;
+          const percentage =
+            totalForYear > 0 ? ((item[key] || 0) / totalForYear) * 100 : 0;
           return percentage;
         }),
         itemStyle: {
@@ -801,7 +812,12 @@ export const getGroupedBarChartOption = (data, survivalData, isEnglish) => {
   return options;
 };
 
-export const getPieChartOption = (data, currentTexts, isEnglish, isMaximized = false) => {
+export const getPieChartOption = (
+  data,
+  currentTexts,
+  isEnglish,
+  isMaximized = false
+) => {
   // If no data, return empty chart configuration
   if (!data || data.length === 0) {
     return {
@@ -876,15 +892,15 @@ export const getPieChartOption = (data, currentTexts, isEnglish, isMaximized = f
       itemWidth: 10,
       itemHeight: 10,
       textStyle: {
-        fontSize: isEnglish ? 16 : 16,
+        fontSize: isMaximized ? 16 : isEnglish ? 9 : 9,
         color: "#333",
         width: 150,
-        lineHeight: 13
+        lineHeight: 13,
       },
-      formatter: function(name) {
+      formatter: function (name) {
         // Remove spaces from English text to make it more compact like Georgian
         if (isEnglish) {
-          return name.replace(/\s+/g, '');
+          return name.replace(/\s+/g, "");
         }
         return name;
       },
@@ -900,7 +916,7 @@ export const getPieChartOption = (data, currentTexts, isEnglish, isMaximized = f
         label: {
           show: isMaximized,
           position: "outside",
-          formatter: function(params) {
+          formatter: function (params) {
             if (isMaximized) {
               return `${params.name}\n${params.percent}%`;
             }
@@ -909,7 +925,7 @@ export const getPieChartOption = (data, currentTexts, isEnglish, isMaximized = f
           fontSize: 11,
           fontWeight: "bold",
           color: "#333",
-          lineHeight: 16
+          lineHeight: 16,
         },
         emphasis: {
           itemStyle: {
