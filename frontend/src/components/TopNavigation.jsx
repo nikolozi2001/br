@@ -7,6 +7,28 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const location = useLocation();
 
+  // Get current date information
+  const getCurrentMonthName = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth(); // 0-11
+    const currentYear = now.getFullYear();
+    
+    const georgianMonths = [
+      'იანვრის', 'თებერვლის', 'მარტის', 'აპრილის', 'მაისის', 'ივნისის',
+      'ივლისის', 'აგვისტოს', 'სექტემბრის', 'ოქტომბრის', 'ნოემბრის', 'დეკემბრის'
+    ];
+    
+    const englishMonths = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    return {
+      georgian: `${currentYear} წლის ${georgianMonths[currentMonth]} მდგომარეობით`,
+      english: `By ${englishMonths[currentMonth]} Of ${currentYear}`
+    };
+  };
+
   // Add ESC key handler
   useEffect(() => {
     const handleEscKey = (event) => {
@@ -37,6 +59,8 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
     setIsModalOpen(false);
   };
 
+  const dynamicDate = getCurrentMonthName();
+
   const content = {
     georgian: {
       navigation: {
@@ -45,7 +69,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
         charts: "გრაფიკები",
         gis: "GIS ანალიზი",
       },
-      date: "2025 წლის ივნისის მდგომარეობით",
+      date: dynamicDate.georgian,
       languageSwitch: "Switch to English",
       modal: {
         title: "ბიზნეს რეგისტრის შესახებ",
@@ -67,7 +91,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
         charts: "Charts",
         gis: "GIS Analysis",
       },
-      date: "By June Of 2025",
+      date: dynamicDate.english,
       languageSwitch: "გადართვა ქართულზე",
       modal: {
         title: "About Business Register",
