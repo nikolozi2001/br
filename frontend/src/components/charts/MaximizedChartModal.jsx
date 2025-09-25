@@ -38,7 +38,8 @@ const MaximizedChartModal = ({
               maximizedChart.data,
               currentTexts,
               hiddenDataKeys,
-              isEnglish
+              isEnglish,
+              true
             )}
             style={{ height: "100%", width: "100%" }}
           />
@@ -59,7 +60,8 @@ const MaximizedChartModal = ({
                 allDataKeys,
                 legendPage,
                 legendItemsPerPage,
-                isEnglish
+                isEnglish,
+                true
               )}
               style={{ height: "100%", width: "100%" }}
             />
@@ -149,7 +151,7 @@ const MaximizedChartModal = ({
       case "stackedBar":
         return (
           <ReactECharts
-            option={getStackedBarChartOption(maximizedChart.data, isEnglish)}
+            option={getStackedBarChartOption(maximizedChart.data, isEnglish, true)}
             style={{ height: "100%", width: "100%" }}
           />
         );

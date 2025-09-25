@@ -1,7 +1,7 @@
 // Chart configuration options for ECharts
 import { getColorForSection } from './chartUtils';
 
-export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish = true) => ({
+export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish = true, isMaximized = false) => ({
   tooltip: {
     trigger: "axis",
     axisPointer: {
@@ -40,7 +40,7 @@ export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish 
   },
   yAxis: {
     type: "value",
-    name: isEnglish ? "Thousand" : "ათასი",
+    name: isMaximized ? "" : (isEnglish ? "Thousand" : "ათასი"),
     nameLocation: "end",
     nameGap: 10,
     nameTextStyle: {
@@ -49,6 +49,9 @@ export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish 
     },
     axisLabel: {
       formatter: function (value) {
+        if (isMaximized) {
+          return value.toLocaleString();
+        }
         if (value >= 1000) {
           return (value / 1000).toFixed(0);
         }
@@ -157,7 +160,8 @@ export const getStackedLineChartOption = (
   allDataKeys,
   currentPage = 0,
   itemsPerPage = 12,
-  isEnglish = true
+  isEnglish = true,
+  isMaximized = false
 ) => {
   const allSeries = allDataKeys.map((key) => ({
     name: key,
@@ -213,7 +217,7 @@ export const getStackedLineChartOption = (
     },
     yAxis: {
       type: "value",
-      name: isEnglish ? "" : "ათასი",
+      name: isMaximized ? "" : (isEnglish ? "" : "ათასი"),
       nameLocation: "end",
       nameGap: 10,
       nameTextStyle: {
@@ -222,6 +226,9 @@ export const getStackedLineChartOption = (
       },
       axisLabel: {
         formatter: function (value) {
+          if (isMaximized) {
+            return value.toLocaleString();
+          }
           if (value >= 1000) {
             return (value / 1000).toFixed(0);
           }
@@ -242,7 +249,7 @@ export const getStackedLineChartOption = (
   };
 };
 
-export const getStackedBarChartOption = (data, isEnglish) => {
+export const getStackedBarChartOption = (data, isEnglish, isMaximized = false) => {
   // If no data, return empty chart configuration
   if (!data || data.length === 0) {
     return {
@@ -340,7 +347,7 @@ export const getStackedBarChartOption = (data, isEnglish) => {
     },
     yAxis: {
       type: "value",
-      name: isEnglish ? "" : "ათასი",
+      name: isMaximized ? "" : (isEnglish ? "" : "ათასი"),
       nameLocation: "end",
       nameGap: 10,
       nameTextStyle: {
@@ -349,6 +356,9 @@ export const getStackedBarChartOption = (data, isEnglish) => {
       },
       axisLabel: {
         formatter: function (value) {
+          if (isMaximized) {
+            return value.toLocaleString();
+          }
           if (value >= 1000) {
             return (value / 1000).toFixed(0);
           }
