@@ -223,7 +223,7 @@ export const getStackedLineChartOption = (
     },
     yAxis: {
       type: "value",
-      name: isMaximized ? "" : isEnglish ? "" : "ათასი",
+      name: isMaximized ? "" : isEnglish ? "Thousand" : "ათასი",
       nameLocation: "end",
       nameGap: 10,
       nameTextStyle: {
@@ -357,7 +357,7 @@ export const getStackedBarChartOption = (
     },
     yAxis: {
       type: "value",
-      name: isMaximized ? "" : isEnglish ? "" : "ათასი",
+      name: isMaximized ? "" : isEnglish ? "Thousand" : "ათასი",
       nameLocation: "end",
       nameGap: 10,
       nameTextStyle: {
