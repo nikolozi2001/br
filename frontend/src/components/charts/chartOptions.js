@@ -1,7 +1,7 @@
 // Chart configuration options for ECharts
 import { getColorForSection } from './chartUtils';
 
-export const getBarChartOption = (data, currentTexts, hiddenDataKeys) => ({
+export const getBarChartOption = (data, currentTexts, hiddenDataKeys, isEnglish = true) => ({
   tooltip: {
     trigger: "axis",
     axisPointer: {
@@ -28,6 +28,7 @@ export const getBarChartOption = (data, currentTexts, hiddenDataKeys) => ({
     left: "3%",
     right: "4%",
     bottom: "3%",
+    top: "8%",
     containLabel: true,
   },
   xAxis: {
@@ -39,10 +40,17 @@ export const getBarChartOption = (data, currentTexts, hiddenDataKeys) => ({
   },
   yAxis: {
     type: "value",
+    name: isEnglish ? "Thousand" : "ათასი",
+    nameLocation: "end",
+    nameGap: 10,
+    nameTextStyle: {
+      fontSize: 12,
+      color: "#666"
+    },
     axisLabel: {
       formatter: function (value) {
         if (value >= 1000) {
-          return (value / 1000).toFixed(0) + "k";
+          return (value / 1000).toFixed(0);
         }
         return value;
       },
@@ -148,7 +156,8 @@ export const getStackedLineChartOption = (
   data,
   allDataKeys,
   currentPage = 0,
-  itemsPerPage = 12
+  itemsPerPage = 12,
+  isEnglish = true
 ) => {
   const allSeries = allDataKeys.map((key) => ({
     name: key,
@@ -194,7 +203,7 @@ export const getStackedLineChartOption = (
       left: "3%",
       right: "28%",
       bottom: "3%",
-      top: "5%",
+      top: "8%",
       containLabel: true,
     },
     xAxis: {
@@ -204,10 +213,17 @@ export const getStackedLineChartOption = (
     },
     yAxis: {
       type: "value",
+      name: isEnglish ? "" : "ათასი",
+      nameLocation: "end",
+      nameGap: 10,
+      nameTextStyle: {
+        fontSize: 12,
+        color: "#666"
+      },
       axisLabel: {
         formatter: function (value) {
           if (value >= 1000) {
-            return (value / 1000).toFixed(0) + "k";
+            return (value / 1000).toFixed(0);
           }
           return value;
         },
@@ -312,7 +328,7 @@ export const getStackedBarChartOption = (data, isEnglish) => {
       left: "3%",
       right: "25%",
       bottom: "3%",
-      top: "5%",
+      top: "8%",
       containLabel: true,
     },
     xAxis: {
@@ -324,10 +340,17 @@ export const getStackedBarChartOption = (data, isEnglish) => {
     },
     yAxis: {
       type: "value",
+      name: isEnglish ? "" : "ათასი",
+      nameLocation: "end",
+      nameGap: 10,
+      nameTextStyle: {
+        fontSize: 12,
+        color: "#666"
+      },
       axisLabel: {
         formatter: function (value) {
           if (value >= 1000) {
-            return (value / 1000).toFixed(0) + "k";
+            return (value / 1000).toFixed(0);
           }
           return value;
         },

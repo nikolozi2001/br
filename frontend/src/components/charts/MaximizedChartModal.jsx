@@ -58,7 +58,8 @@ const MaximizedChartModal = ({
                 maximizedChart.data,
                 allDataKeys,
                 legendPage,
-                legendItemsPerPage
+                legendItemsPerPage,
+                isEnglish
               )}
               style={{ height: "100%", width: "100%" }}
             />

@@ -49,7 +49,8 @@ const StackedLineChart = ({
             data,
             allDataKeys,
             legendPage,
-            legendItemsPerPage
+            legendItemsPerPage,
+            isEnglish
           )}
           style={{ width: "100%", height: "300px" }}
         />
