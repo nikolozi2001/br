@@ -620,6 +620,13 @@ const generateComplexReportExcel = async (
       ...Array.from({ length: 30 }, () => ({ width: 8 })), // Year columns
       { width: 8 }, // >2024
     ];
+  } else if (reportNum === 10) {
+    worksheet.columns = [
+      { width: 15 }, // Region
+      { width: 12 }, // Activity Code
+      { width: 50 }, // Activity Name
+      ...Array.from({ length: 12 }, () => ({ width: 8 })), // Year columns (2012-2023)
+    ];
   }
 
   // Add title and headers
@@ -674,6 +681,25 @@ const generateComplexReportExcel = async (
 
     worksheet.addRow(headerRow1);
     worksheet.addRow(headerRow2);
+  } else if (reportNum === 10) {
+    // Add structured headers for Report 10
+    const headerRow1 = [
+      isEnglish ? "Region" : "რეგიონი",
+      isEnglish ? "Activity_Code Nace Rev.2" : "საქმიანობის კოდი Nace Rev.2",
+      isEnglish ? "Activity Nace Rev.2" : "საქმიანობა Nace Rev.2",
+      isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
+      ...Array.from({ length: 11 }, () => ""), // Empty cells for year column spanning
+    ];
+
+    const headerRow2 = [
+      "", // Empty for Region
+      "", // Empty for Activity Code
+      "", // Empty for Activity Name
+      ...Array.from({ length: 12 }, (_, i) => (2012 + i).toString()), // Years 2012-2023
+    ];
+
+    worksheet.addRow(headerRow1);
+    worksheet.addRow(headerRow2);
   }
 
   // Add data rows with proper structure
@@ -704,6 +730,19 @@ const generateComplexReportExcel = async (
           return row[`Y${year}`] || row[year] || "";
         }),
         row[">2024"] || row.Gt2024 || "",
+      ];
+      worksheet.addRow(dataRowValues);
+    } else if (reportNum === 10) {
+      // For Report 10, maintain proper column order
+      const dataRowValues = [
+        row.Region,
+        row.Activity_Code,
+        row.Activity_Name,
+        // Year columns 2012-2023
+        ...Array.from({ length: 12 }, (_, i) => {
+          const year = (2012 + i).toString();
+          return row[`Y${year}`] || row[year] || "";
+        }),
       ];
       worksheet.addRow(dataRowValues);
     } else {
