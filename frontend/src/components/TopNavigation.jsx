@@ -10,8 +10,13 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
   // Get current date information
   const getCurrentMonthName = () => {
     const now = new Date();
+    const currentDay = now.getDate();
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
+    
+    // If day is 8 or later, show current month; if less than 8, show previous month
+    const displayMonth = currentDay >= 8 ? currentMonth : (currentMonth - 1 + 12) % 12;
+    const displayYear = currentDay >= 8 ? currentYear : (currentMonth === 0 ? currentYear - 1 : currentYear);
     
     const georgianMonths = [
       'იანვრის', 'თებერვლის', 'მარტის', 'აპრილის', 'მაისის', 'ივნისის',
@@ -24,8 +29,8 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
     ];
     
     return {
-      georgian: `${currentYear} წლის ${georgianMonths[currentMonth]} მდგომარეობით`,
-      english: `By ${englishMonths[currentMonth]} Of ${currentYear}`
+      georgian: `${displayYear} წლის ${georgianMonths[displayMonth]} მდგომარეობით`,
+      english: `By ${englishMonths[displayMonth]} Of ${displayYear}`
     };
   };
 
