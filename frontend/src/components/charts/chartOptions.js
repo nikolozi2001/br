@@ -801,7 +801,6 @@ export const getGroupedBarChartOption = (data, survivalData, isEnglish) => {
     },
     yAxis: {
       type: "value",
-      name: "%",
       axisLabel: {
         formatter: "{value}%",
       },
