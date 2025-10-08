@@ -1088,9 +1088,6 @@ function ReportsResults({ isEnglish }) {
             <h1 className="text-xl font-bpg-nino mb-2 text-center text-gray-800">
               {reportTitle}
             </h1>
-            <div className="text-right font-bpg-nino text-gray-600">
-              1 {isEnglish ? "July" : "ივლისი"} 2025
-            </div>
           </div>
           <div>
             <div className="relative">
