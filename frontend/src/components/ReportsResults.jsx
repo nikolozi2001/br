@@ -578,16 +578,18 @@ const generateStandardReportExcelData = (
     return rowData;
   });
 
-  // Add totals row
-  const totalRow = {};
-  totalRow[headers[0]] = "-";
-  totalRow[headers[1]] = isEnglish ? "Total" : "ჯამი";
-  totalRow[headers[2]] = totals.registered;
-  totalRow[headers[3]] = `${formatNumberWithLocale(totals.registeredPercent)}%`;
-  totalRow[headers[4]] = totals.active;
-  totalRow[headers[5]] = `${formatNumberWithLocale(totals.activePercent)}%`;
+  // Add totals row (skip for report 1)
+  if (reportNum !== 1) {
+    const totalRow = {};
+    totalRow[headers[0]] = "-";
+    totalRow[headers[1]] = isEnglish ? "Total" : "ჯამი";
+    totalRow[headers[2]] = totals.registered;
+    totalRow[headers[3]] = `${formatNumberWithLocale(totals.registeredPercent)}%`;
+    totalRow[headers[4]] = totals.active;
+    totalRow[headers[5]] = `${formatNumberWithLocale(totals.activePercent)}%`;
 
-  excelData.push(totalRow);
+    excelData.push(totalRow);
+  }
   return excelData;
 };
 
