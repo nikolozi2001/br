@@ -78,11 +78,6 @@ function Reports({ isEnglish }) {
         title:
           "რეგისტრირებულ ორგანიზაციათა რაოდენობა წლების მიხედვით ეკონომიკური საქმიანობის სახეების ჭრილში (Nace Rev.2) - კონკრეტულ წელს რეგისტრირებული",
       },
-      {
-        id: 10,
-        title:
-          "საქართველოში რეგისტრირებულ მოქმედ ბიზნეს სუბიექტთა რაოდენობა რეგიონების და ეკონომიკური საქმიანობის სახეების მიხედვით (Nace Rev.2)",
-      },
     ],
     english: [
       {
@@ -128,11 +123,6 @@ function Reports({ isEnglish }) {
         id: 9,
         title:
           "Number of Registered Organizations by Years and Economic Activity Types (NACE Rev.2) - Registered in Specific Year",
-      },
-      {
-        id: 10,
-        title:
-          "Number of Active Business Entities Registered in Georgia by Regions and Economic Activity Types (NACE Rev.2)",
       },
     ],
   };
