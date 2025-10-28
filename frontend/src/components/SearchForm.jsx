@@ -133,6 +133,7 @@ function SearchForm({ isEnglish }) {
       { label: "ownershipForm", path: "ownershipType" },
       { label: "activeSubject", path: "isActive" },
       { label: "businessSize", path: "Zoma" },
+      { label: "initRegDate", path: "Init_Reg_date" },
     ];
 
     const csvContent =
@@ -171,6 +172,7 @@ function SearchForm({ isEnglish }) {
               }
               if (value === "უცნობი") value = "";
               if (path === "isActive") value = value ? "აქტიური" : "არააქტიური";
+              if (path === "Init_Reg_date") value = formatDate(value);
               return `"${value || ""}"`;
             })
             .join(",")
@@ -191,6 +193,19 @@ function SearchForm({ isEnglish }) {
 
   // console.log("Search Results:", searchResults);
   
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      // Format as DD.MM.YYYY
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    } catch {
+      return dateString; // Return original if formatting fails
+    }
+  };
 
   const generateTableContent = (searchResults, t) => {
     return `
@@ -214,6 +229,7 @@ function SearchForm({ isEnglish }) {
             <th>${t.ownershipForm}</th>
             <th>${t.activeSubject}</th>
             <th>${t.businessSize}</th>
+            <th>${t.initRegDate}</th>
           </tr>
         </thead>
         <tbody>
@@ -238,6 +254,7 @@ function SearchForm({ isEnglish }) {
               <td>${result.ownershipType || ""}</td>
               <td>${result.isActive ? "აქტიური" : "არააქტიური"}</td>
               <td>${result.Zoma || ""}</td>
+              <td>${formatDate(result.Init_Reg_date) || ""}</td>
             </tr>
           `
             )
