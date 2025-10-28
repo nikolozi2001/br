@@ -322,6 +322,10 @@ const sortDataByReportType = (dataArray, reportNum) => {
     case 8:
     case 9:
       return [...dataArray].sort((a, b) => {
+        // Keep total row at the top
+        if (a.isTotal) return -1;
+        if (b.isTotal) return 1;
+        
         const aCode = String(a.Activity_Code || "");
         const bCode = String(b.Activity_Code || "");
         if (!aCode && !bCode) return 0;
@@ -331,7 +335,12 @@ const sortDataByReportType = (dataArray, reportNum) => {
       });
 
     default:
-      return dataArray;
+      // For other reports (including 2, 3, 4, 5), preserve total row at top if present
+      return [...dataArray].sort((a, b) => {
+        if (a.isTotal) return -1;
+        if (b.isTotal) return 1;
+        return 0; // Keep original order for non-total rows
+      });
   }
 };
 
@@ -444,6 +453,90 @@ const processReportData = (dataArray, reportNum) => {
   // Sort data based on report type
   processedData = sortDataByReportType(processedData, reportNum);
 
+  // Handle totals row for reports 2, 3, 4, 5, 8, and 9
+  if ([2, 3, 4, 5, 8, 9].includes(reportNum) && processedData.length > 0) {
+    // Check if there's already a total row in the data (usually at the end)
+    // Look for rows with "სულ", "Total", or similar indicators
+    const existingTotalIndex = processedData.findIndex(row => 
+      (row.Activity_Name && (row.Activity_Name.toLowerCase().includes('სულ') || row.Activity_Name.toLowerCase().includes('total'))) ||
+      (row.Legal_Form && (row.Legal_Form.toLowerCase().includes('სულ') || row.Legal_Form.toLowerCase().includes('total'))) ||
+      (row.Ownership_Type && (row.Ownership_Type.toLowerCase().includes('სულ') || row.Ownership_Type.toLowerCase().includes('total'))) ||
+      (row.Location_Name && (row.Location_Name.toLowerCase().includes('სულ') || row.Location_Name.toLowerCase().includes('total')))
+    );
+
+    if (existingTotalIndex !== -1) {
+      // Move the existing total row to the top and mark it as total
+      const existingTotalRow = processedData.splice(existingTotalIndex, 1)[0];
+      existingTotalRow.isTotal = true;
+      processedData.unshift(existingTotalRow);
+    } else {
+      // If no existing total row found, calculate and add our own
+      let totalRow;
+      
+      if ([2, 3, 4, 5].includes(reportNum)) {
+        // Standard reports with Registered_Qty and Active_Qty
+        const totalRegistered = processedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Qty || 0),
+          0
+        );
+        const totalActive = processedData.reduce(
+          (sum, row) => sum + Number(row.Active_Qty || 0),
+          0
+        );
+        const totalRegisteredPercent = processedData.reduce(
+          (sum, row) => sum + Number(row.Registered_Percent || 0),
+          0
+        );
+        const totalActivePercent = processedData.reduce(
+          (sum, row) => sum + Number(row.Active_Percent || 0),
+          0
+        );
+
+        totalRow = {
+          ID: "-",
+          Legal_Form: "სულ",
+          Ownership_Type: "სულ",
+          Location_Code: "-",
+          Location_Name: "სულ",
+          Registered_Qty: totalRegistered,
+          Active_Qty: totalActive,
+          Registered_Percent: totalRegisteredPercent,
+          Active_Percent: totalActivePercent,
+          isTotal: true
+        };
+        } else if (reportNum === 8 || reportNum === 9) {
+          // Report 8 & 9: yearly data with Activity_Code and Activity_Name
+          totalRow = {
+            Activity_Code: "-",
+            Activity_Name: "სულ",
+            isTotal: true
+          };
+          
+          // Calculate totals for all year columns
+          // Add <1995 column
+          totalRow["<1995"] = processedData.reduce(
+            (sum, row) => sum + Number(row["<1995"] || 0),
+            0
+          );
+          
+          // Add yearly columns (1995-2024)
+          for (let year = 1995; year <= 2024; year++) {
+            totalRow[`${year}`] = processedData.reduce(
+              (sum, row) => sum + Number(row[`${year}`] || 0),
+              0
+            );
+          }
+          
+          // Add >2024 column
+          totalRow[">2024"] = processedData.reduce(
+            (sum, row) => sum + Number(row[">2024"] || 0),
+            0
+          );
+        }      // Add total row at the beginning
+      processedData.unshift(totalRow);
+    }
+  }
+
   return processedData;
 };
 
@@ -451,8 +544,7 @@ const processReportData = (dataArray, reportNum) => {
 const generateStandardReportExcelData = (
   sortedData,
   reportNum,
-  isEnglish,
-  totals
+  isEnglish
 ) => {
   const getColumnHeaders = (reportNum, isEnglish) => {
     const baseHeaders = {
@@ -554,7 +646,9 @@ const generateStandardReportExcelData = (
       case 2:
       case 3:
         rowData[headers[0]] = row.ID;
-        rowData[headers[1]] = row.Legal_Form || row.Ownership_Type;
+        rowData[headers[1]] = row.isTotal 
+          ? (isEnglish ? "Total" : "სულ")
+          : (row.Legal_Form || row.Ownership_Type);
         rowData[headers[2]] = row.Registered_Qty;
         rowData[headers[3]] = `${formatNumberWithLocale(
           row.Registered_Percent
@@ -565,7 +659,9 @@ const generateStandardReportExcelData = (
       case 4:
       case 5:
         rowData[headers[0]] = row.Location_Code;
-        rowData[headers[1]] = row.Location_Name;
+        rowData[headers[1]] = row.isTotal 
+          ? (isEnglish ? "Total" : "სულ")
+          : row.Location_Name;
         rowData[headers[2]] = row.Registered_Qty;
         rowData[headers[3]] = `${formatNumberWithLocale(
           row.Registered_Percent
@@ -578,18 +674,7 @@ const generateStandardReportExcelData = (
     return rowData;
   });
 
-  // Add totals row (skip for report 1)
-  if (reportNum !== 1) {
-    const totalRow = {};
-    totalRow[headers[0]] = "-";
-    totalRow[headers[1]] = isEnglish ? "Total" : "ჯამი";
-    totalRow[headers[2]] = totals.registered;
-    totalRow[headers[3]] = `${formatNumberWithLocale(totals.registeredPercent)}%`;
-    totalRow[headers[4]] = totals.active;
-    totalRow[headers[5]] = `${formatNumberWithLocale(totals.activePercent)}%`;
-
-    excelData.push(totalRow);
-  }
+  // Total row is now included in the data automatically for reports 2-5
   return excelData;
 };
 
@@ -724,7 +809,9 @@ const generateComplexReportExcel = async (
       // For Report 8 and 9, maintain proper column order
       const dataRowValues = [
         row.Activity_Code,
-        row.Activity_Name,
+        row.isTotal 
+          ? (isEnglish ? "Total" : "სულ")
+          : row.Activity_Name,
         row["<1995"] || row.Lt1995 || "",
         // Year columns 1995-2024
         ...Array.from({ length: 30 }, (_, i) => {
@@ -733,7 +820,17 @@ const generateComplexReportExcel = async (
         }),
         row[">2024"] || row.Gt2024 || "",
       ];
-      worksheet.addRow(dataRowValues);
+      const addedRow = worksheet.addRow(dataRowValues);
+      
+      // Style the total row differently
+      if (row.isTotal) {
+        addedRow.font = { bold: true };
+        addedRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF0F0F0' }
+        };
+      }
     } else if (reportNum === 10) {
       // For Report 10, maintain proper column order
       const dataRowValues = [
@@ -925,41 +1022,7 @@ function ReportsResults({ isEnglish }) {
     `${isEnglish ? "Report" : "რეპორტი"} ${reportId}`
   );
 
-  // Memoize totals calculation for better performance
-  const totals = useMemo(() => {
-    if (!sortedData || sortedData.length === 0) return null;
-
-    const hasRegistered = sortedData.some(
-      (row) => row.Registered_Qty !== undefined
-    );
-    const hasActive = sortedData.some((row) => row.Active_Qty !== undefined);
-
-    if (!hasRegistered && !hasActive) return null;
-
-    return {
-      registered: hasRegistered
-        ? sortedData.reduce(
-            (sum, row) => sum + Number(row.Registered_Qty || 0),
-            0
-          )
-        : 0,
-      active: hasActive
-        ? sortedData.reduce((sum, row) => sum + Number(row.Active_Qty || 0), 0)
-        : 0,
-      registeredPercent: sortedData.reduce((sum, row) => {
-        if (row.Registered_Percent !== undefined)
-          return sum + Number(row.Registered_Percent);
-        if (row.pct !== undefined) return sum + Number(row.pct);
-        return sum;
-      }, 0),
-      activePercent: sortedData.reduce((sum, row) => {
-        if (row.Active_Percent !== undefined)
-          return sum + Number(row.Active_Percent);
-        if (row.pct_act !== undefined) return sum + Number(row.pct_act);
-        return sum;
-      }, 0),
-    };
-  }, [sortedData]);
+  // Totals are now calculated and included in the data automatically for reports 2-5
 
   // Memoized Excel export function for better performance
   const exportToExcel = useCallback(async () => {
@@ -977,17 +1040,7 @@ function ReportsResults({ isEnglish }) {
       const config = reportConfig;
       if (!config) return;
 
-      // Use the precomputed totals for better performance
-      const excelTotals = totals || {
-        registered: sortedData.reduce(
-          (sum, row) => sum + Number(row.Registered_Qty || 0),
-          0
-        ),
-        active: sortedData.reduce(
-          (sum, row) => sum + Number(row.Active_Qty || 0),
-          0
-        ),
-      };
+      // Totals are now included in the data automatically
 
       const dateStr = new Date().toISOString().split("T")[0];
       const title = config.title[isEnglish ? "en" : "ge"];
@@ -1002,8 +1055,7 @@ function ReportsResults({ isEnglish }) {
         excelData = generateStandardReportExcelData(
           sortedData,
           reportNum,
-          isEnglish,
-          excelTotals
+          isEnglish
         );
       } else if ([6, 7, 8, 9, 10].includes(reportNum)) {
         // Complex reports - create with ExcelJS for better formatting
@@ -1039,7 +1091,7 @@ function ReportsResults({ isEnglish }) {
           : "Excel ფაილის ექსპორტი ვერ მოხერხდა."
       );
     }
-  }, [reportData, sortedData, reportId, reportConfig, isEnglish, totals]);
+  }, [reportData, sortedData, reportId, reportConfig, isEnglish]);
 
   if (loading) {
     return (
@@ -1340,7 +1392,11 @@ function ReportsResults({ isEnglish }) {
                               ? row.Location_Code || index
                               : row.ID || index
                           }
-                          className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                          className={`border-b border-gray-200 transition-colors ${
+                            row.isTotal 
+                              ? "bg-gray-100 font-bold" 
+                              : "hover:bg-gray-50"
+                          }`}
                         >
                           {Number(reportId) === 1 ? (
                             // Report 1: Economic Activities
@@ -1371,7 +1427,9 @@ function ReportsResults({ isEnglish }) {
                                 {row.ID}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino">
-                                {row.Legal_Form}
+                                {row.isTotal 
+                                  ? (isEnglish ? "Total" : "სულ")
+                                  : row.Legal_Form}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Registered_Qty}
@@ -1393,7 +1451,9 @@ function ReportsResults({ isEnglish }) {
                                 {row.ID}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino">
-                                {row.Ownership_Type}
+                                {row.isTotal 
+                                  ? (isEnglish ? "Total" : "სულ")
+                                  : row.Ownership_Type}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Registered_Qty}
@@ -1416,7 +1476,9 @@ function ReportsResults({ isEnglish }) {
                                 {row.Location_Code}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino">
-                                {row.Location_Name}
+                                {row.isTotal 
+                                  ? (isEnglish ? "Total" : "სულ")
+                                  : row.Location_Name}
                               </td>
                               <td className="px-4 py-3 font-bpg-nino text-right">
                                 {row.Registered_Qty}
@@ -1473,9 +1535,10 @@ function ReportsResults({ isEnglish }) {
                                       : row.ID}
                                   </td>
                                   <td className="px-4 py-3 font-bpg-nino">
-                                    {Number(reportId) === 8 ||
-                                    Number(reportId) === 9
-                                      ? row.Activity_Name
+                                    {(Number(reportId) === 8 || Number(reportId) === 9) 
+                                      ? (row.isTotal 
+                                          ? (isEnglish ? "Total" : "სულ")
+                                          : row.Activity_Name)
                                       : row.Legal_Form}
                                   </td>
                                   {/* Year columns: <1995, 1995-2024, >2024 */}
@@ -1524,47 +1587,6 @@ function ReportsResults({ isEnglish }) {
                           )}
                         </tr>
                       ))}
-                      {/* Total row - only show for Report 2, 3, 4 and 5 */}
-                      {(Number(reportId) === 2 ||
-                        Number(reportId) === 3 ||
-                        Number(reportId) === 4 ||
-                        Number(reportId) === 5) && (
-                        <tr className="bg-gray-100 font-bold">
-                          <td className="px-4 py-3 font-bpg-nino">-</td>
-                          <td className="px-4 py-3 font-bpg-nino">
-                            {isEnglish ? "Total" : "სულ"}
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {sortedData.reduce(
-                              (sum, row) => sum + Number(row.Registered_Qty),
-                              0
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {formatNumberWithLocale(
-                              sortedData.reduce(
-                                (sum, row) =>
-                                  sum + Number(row.Registered_Percent),
-                                0
-                              )
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {sortedData.reduce(
-                              (sum, row) => sum + Number(row.Active_Qty),
-                              0
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-bpg-nino text-right">
-                            {formatNumberWithLocale(
-                              sortedData.reduce(
-                                (sum, row) => sum + Number(row.Active_Percent),
-                                0
-                              )
-                            )}
-                          </td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
                 </div>
