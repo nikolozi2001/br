@@ -725,63 +725,183 @@ const generateComplexReportExcel = async (
   // Add headers based on report type
   if ([6, 7].includes(reportNum)) {
     // Add structured headers for Report 6 and 7
-    const headerRow1 = [
+    const headerRow1 = worksheet.addRow([
       isEnglish ? "Code" : "კოდი",
       isEnglish
         ? "Organizational-Legal Form"
         : "ორგანიზაციულ-სამართლებრივი ფორმის დასახელება",
       isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
       ...Array.from({ length: 30 }, () => ""), // Empty cells for year column spanning
-    ];
+    ]);
 
-    const headerRow2 = [
+    const headerRow2 = worksheet.addRow([
       "", // Empty for Code
       "", // Empty for Legal Form
       "<1995",
       ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
       ">2024",
-    ];
+    ]);
 
-    worksheet.addRow(headerRow1);
-    worksheet.addRow(headerRow2);
+    // Style the headers
+    headerRow1.font = { bold: true, size: 11 };
+    headerRow2.font = { bold: true, size: 10 };
+    
+    // Set background color for headers
+    headerRow1.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE6E6FA' } // Light lavender
+    };
+    headerRow2.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF0F8FF' } // Alice blue
+    };
+    
+    // Merge cells for "Number of Organizations" to span across all year columns (32 columns: <1995 + 30 years + >2024)
+    worksheet.mergeCells(headerRow1.number, 3, headerRow1.number, 34);
+    
+    // Center align the merged header
+    const mergedCell = worksheet.getCell(headerRow1.number, 3);
+    mergedCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    
+    // Add borders to header rows
+    for (let col = 1; col <= 34; col++) {
+      const cell1 = worksheet.getCell(headerRow1.number, col);
+      const cell2 = worksheet.getCell(headerRow2.number, col);
+      
+      const borderStyle = { style: 'thin', color: { argb: 'FF000000' } };
+      cell1.border = {
+        top: borderStyle,
+        left: borderStyle,
+        bottom: borderStyle,
+        right: borderStyle
+      };
+      cell2.border = {
+        top: borderStyle,
+        left: borderStyle,
+        bottom: borderStyle,
+        right: borderStyle
+      };
+    }
   } else if ([8, 9].includes(reportNum)) {
     // Add structured headers for Report 8 and 9
-    const headerRow1 = [
+    const headerRow1 = worksheet.addRow([
       isEnglish ? "Activity Code" : "კოდი",
       isEnglish ? "Economic Activity" : "ეკონომიკური საქმიანობის სახე",
       isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
       ...Array.from({ length: 30 }, () => ""), // Empty cells for year column spanning
-    ];
+    ]);
 
-    const headerRow2 = [
+    const headerRow2 = worksheet.addRow([
       "", // Empty for Activity Code
       "", // Empty for Activity Name
       "<1995",
       ...Array.from({ length: 30 }, (_, i) => (1995 + i).toString()),
       ">2024",
-    ];
+    ]);
 
-    worksheet.addRow(headerRow1);
-    worksheet.addRow(headerRow2);
+    // Style the headers
+    headerRow1.font = { bold: true, size: 11 };
+    headerRow2.font = { bold: true, size: 10 };
+    
+    // Set background color for headers
+    headerRow1.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE6E6FA' } // Light lavender
+    };
+    headerRow2.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF0F8FF' } // Alice blue
+    };
+    
+    // Merge cells for "Number of Organizations" to span across all year columns (32 columns: <1995 + 30 years + >2024)
+    worksheet.mergeCells(headerRow1.number, 3, headerRow1.number, 34);
+    
+    // Center align the merged header
+    const mergedCell = worksheet.getCell(headerRow1.number, 3);
+    mergedCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    
+    // Add borders to header rows
+    for (let col = 1; col <= 34; col++) {
+      const cell1 = worksheet.getCell(headerRow1.number, col);
+      const cell2 = worksheet.getCell(headerRow2.number, col);
+      
+      const borderStyle = { style: 'thin', color: { argb: 'FF000000' } };
+      cell1.border = {
+        top: borderStyle,
+        left: borderStyle,
+        bottom: borderStyle,
+        right: borderStyle
+      };
+      cell2.border = {
+        top: borderStyle,
+        left: borderStyle,
+        bottom: borderStyle,
+        right: borderStyle
+      };
+    }
   } else if (reportNum === 10) {
     // Add structured headers for Report 10
-    const headerRow1 = [
+    const headerRow1 = worksheet.addRow([
       isEnglish ? "Region" : "რეგიონი",
       isEnglish ? "Activity_Code Nace Rev.2" : "საქმიანობის კოდი Nace Rev.2",
       isEnglish ? "Activity Nace Rev.2" : "საქმიანობა Nace Rev.2",
       isEnglish ? "Number of Organizations" : "ორგანიზაციათა რაოდენობა",
       ...Array.from({ length: 11 }, () => ""), // Empty cells for year column spanning
-    ];
+    ]);
 
-    const headerRow2 = [
+    const headerRow2 = worksheet.addRow([
       "", // Empty for Region
       "", // Empty for Activity Code
       "", // Empty for Activity Name
       ...Array.from({ length: 12 }, (_, i) => (2012 + i).toString()), // Years 2012-2023
-    ];
+    ]);
 
-    worksheet.addRow(headerRow1);
-    worksheet.addRow(headerRow2);
+    // Style the headers
+    headerRow1.font = { bold: true, size: 11 };
+    headerRow2.font = { bold: true, size: 10 };
+    
+    // Set background color for headers
+    headerRow1.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE6E6FA' } // Light lavender
+    };
+    headerRow2.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF0F8FF' } // Alice blue
+    };
+    
+    // Merge cells for "Number of Organizations" to span across all year columns (12 columns for 2012-2023)
+    worksheet.mergeCells(headerRow1.number, 4, headerRow1.number, 15);
+    
+    // Center align the merged header
+    const mergedCell = worksheet.getCell(headerRow1.number, 4);
+    mergedCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    
+    // Add borders to header rows
+    for (let col = 1; col <= 15; col++) {
+      const cell1 = worksheet.getCell(headerRow1.number, col);
+      const cell2 = worksheet.getCell(headerRow2.number, col);
+      
+      const borderStyle = { style: 'thin', color: { argb: 'FF000000' } };
+      cell1.border = {
+        top: borderStyle,
+        left: borderStyle,
+        bottom: borderStyle,
+        right: borderStyle
+      };
+      cell2.border = {
+        top: borderStyle,
+        left: borderStyle,
+        bottom: borderStyle,
+        right: borderStyle
+      };
+    }
   }
 
   // Add data rows with proper structure
@@ -790,7 +910,9 @@ const generateComplexReportExcel = async (
       // For Report 6 and 7, maintain proper column order
       const dataRowValues = [
         row.ID,
-        row.Legal_Form,
+        row.isTotal 
+          ? (isEnglish ? "Total" : "სულ")
+          : row.Legal_Form,
         row["<1995"] || row.Lt1995 || "",
         // Year columns 1995-2024
         ...Array.from({ length: 30 }, (_, i) => {
@@ -799,7 +921,29 @@ const generateComplexReportExcel = async (
         }),
         row[">2024"] || row.Gt2024 || "",
       ];
-      worksheet.addRow(dataRowValues);
+      const addedRow = worksheet.addRow(dataRowValues);
+      
+      // Style the total row differently
+      if (row.isTotal) {
+        addedRow.font = { bold: true };
+        addedRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF0F0F0' }
+        };
+      }
+      
+      // Add borders to all data rows
+      for (let col = 1; col <= 34; col++) {
+        const cell = worksheet.getCell(addedRow.number, col);
+        const borderStyle = { style: 'thin', color: { argb: 'FFCCCCCC' } };
+        cell.border = {
+          top: borderStyle,
+          left: borderStyle,
+          bottom: borderStyle,
+          right: borderStyle
+        };
+      }
     } else if ([8, 9].includes(reportNum)) {
       // For Report 8 and 9, maintain proper column order
       const dataRowValues = [
@@ -826,6 +970,18 @@ const generateComplexReportExcel = async (
           fgColor: { argb: 'FFF0F0F0' }
         };
       }
+      
+      // Add borders to all data rows for reports 8 and 9
+      for (let col = 1; col <= 34; col++) {
+        const cell = worksheet.getCell(addedRow.number, col);
+        const borderStyle = { style: 'thin', color: { argb: 'FFCCCCCC' } };
+        cell.border = {
+          top: borderStyle,
+          left: borderStyle,
+          bottom: borderStyle,
+          right: borderStyle
+        };
+      }
     } else if (reportNum === 10) {
       // For Report 10, maintain proper column order
       const dataRowValues = [
@@ -838,7 +994,19 @@ const generateComplexReportExcel = async (
           return row[`Y${year}`] || row[year] || "";
         }),
       ];
-      worksheet.addRow(dataRowValues);
+      const addedRow = worksheet.addRow(dataRowValues);
+      
+      // Add borders to all data rows for report 10
+      for (let col = 1; col <= 15; col++) {
+        const cell = worksheet.getCell(addedRow.number, col);
+        const borderStyle = { style: 'thin', color: { argb: 'FFCCCCCC' } };
+        cell.border = {
+          top: borderStyle,
+          left: borderStyle,
+          bottom: borderStyle,
+          right: borderStyle
+        };
+      }
     } else {
       // For other complex reports, use original method
       const dataRowValues = Object.values(row);
