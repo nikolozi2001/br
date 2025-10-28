@@ -718,7 +718,7 @@ export const getGroupedBarChartOption = (data, survivalData, isEnglish) => {
   const survivalYears = Array.from(allSurvivalKeys).sort((a, b) => {
     const yearA = parseInt(a.split("_")[2], 10); // Extract year from Born_in_YYYY
     const yearB = parseInt(b.split("_")[2], 10); // Extract year from Born_in_YYYY
-    return yearB - yearA; // Reverse order: big to small (newest to oldest)
+    return yearA - yearB; // Reverse order: big to small (newest to oldest)
   });
 
   const colors = [
