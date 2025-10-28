@@ -717,13 +717,8 @@ const generateComplexReportExcel = async (
   }
 
   // Add title and headers
-  const titleRow = worksheet.addRow([`Report ${reportNum} - ${title}`]);
+  const titleRow = worksheet.addRow([`${reportNum} - ${title}`]);
   titleRow.font = { bold: true, size: 14 };
-
-  const dateRow = worksheet.addRow([
-    isEnglish ? "Date: 22 July 2025" : "თარიღი: 22 ივლისი 2025",
-  ]);
-  dateRow.font = { size: 12 };
 
   worksheet.addRow([]);
 
