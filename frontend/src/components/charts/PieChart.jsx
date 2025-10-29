@@ -6,7 +6,6 @@ import { getPieChartOption } from "./chartOptions";
 const PieChart = ({
   data,
   loading,
-  error,
   title,
   chartIndex,
   isEnglish,
@@ -14,7 +13,6 @@ const PieChart = ({
   chartRefs,
   handleMaximizeChart,
   onToggle,
-  handleRetry,
   // Chart container props
   chartToggleStates,
   activeDropdown,

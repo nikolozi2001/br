@@ -6,14 +6,12 @@ import { getNormalizedStackedBarChartOption } from "./chartOptions";
 const NormalizedStackedBarChart = ({
   data,
   loading,
-  error,
   title,
   chartIndex,
   isEnglish,
   chartRefs,
   handleMaximizeChart,
   onToggle,
-  handleRetry,
   // Chart container props
   chartToggleStates,
   activeDropdown,
