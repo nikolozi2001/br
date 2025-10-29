@@ -2,7 +2,6 @@ import { translations } from "../translations/searchForm";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
-import { fetchLegalFormsRaw } from "../services/api";
 import "../styles/scrollbar.css";
 
 // Format date function
@@ -20,32 +19,13 @@ const formatDate = (dateString) => {
   }
 };
 
-function SearchResults({ results, isEnglish, formData }) {
+function SearchResults({ results, isEnglish, formData, legalFormsMap }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const navigate = useNavigate();
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [legalFormsMap, setLegalFormsMap] = useState({});
-
-  // Fetch legal forms for mapping
-  useEffect(() => {
-    const loadLegalForms = async () => {
-      try {
-        const legalForms = await fetchLegalFormsRaw();
-        const formsMap = {};
-        legalForms.forEach(form => {
-          formsMap[form.Legal_Form_ID] = form.Legal_Form;
-        });
-        setLegalFormsMap(formsMap);
-      } catch (error) {
-        console.error('Error loading legal forms:', error);
-      }
-    };
-    
-    loadLegalForms();
-  }, []);
 
   // Update URL when only identificationNumber is searched
   useEffect(() => {

@@ -9,12 +9,13 @@ import { EconomicActivitySection } from "./EconomicActivitySection";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { FormActions } from "./FormActions";
 import SearchResults from "./SearchResults";
-import SEO from "./SEO";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
 import { useNavigation } from "../hooks/useNavigation";
+import { fetchLegalFormsRaw } from "../services/api";
 import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
+import SEO from "./SEO";
 
 function SearchForm({ isEnglish }) {
   // Set page-specific title
@@ -27,6 +28,7 @@ function SearchForm({ isEnglish }) {
   const [isLoading, setIsLoading] = useState(false);
   const [abortController, setAbortController] = useState(null);
   const [isStopped, setIsStopped] = useState(false);
+  const [legalFormsMap, setLegalFormsMap] = useState({});
   const { navigationDirection, isNavigating } = useNavigation();
   const {
     formData,
@@ -39,6 +41,24 @@ function SearchForm({ isEnglish }) {
     handleReset,
     handleSubmit,
   } = useSearchForm(isEnglish);
+
+  // Fetch legal forms for mapping
+  useEffect(() => {
+    const loadLegalForms = async () => {
+      try {
+        const legalForms = await fetchLegalFormsRaw();
+        const formsMap = {};
+        legalForms.forEach(form => {
+          formsMap[form.Legal_Form_ID] = form.Legal_Form;
+        });
+        setLegalFormsMap(formsMap);
+      } catch (error) {
+        console.error('Error loading legal forms:', error);
+      }
+    };
+    
+    loadLegalForms();
+  }, []);
 
   useEffect(() => {
     // Reset flip state when navigating
@@ -247,6 +267,7 @@ function SearchForm({ isEnglish }) {
               if (value === "უცნობი") value = "";
               if (path === "isActive") value = value ? "აქტიური" : "არააქტიური";
               if (path === "Init_Reg_date") value = formatDate(value);
+              if (path === "abbreviation") value = legalFormsMap[row.legalFormId] || value;
               return `"${value || ""}"`;
             })
             .join(",")
@@ -313,7 +334,7 @@ function SearchForm({ isEnglish }) {
             <tr>
               <td>${result.identificationNumber || ""}</td>
               <td>${result.personalNumber || ""}</td>
-              <td>${result.abbreviation || ""}</td>
+              <td>${legalFormsMap[result.legalFormId] || result.abbreviation || ""}</td>
               <td>${result.name || ""}</td>
               <td>${result.legalAddress?.region || ""}</td>
               <td>${result.legalAddress?.address || ""}</td>
@@ -630,6 +651,7 @@ function SearchForm({ isEnglish }) {
                             isEnglish={isEnglish}
                             formData={formData}
                             handleInputChange={handleInputChange}
+                            legalFormsMap={legalFormsMap}
                           />
                         )}
                       </div>
