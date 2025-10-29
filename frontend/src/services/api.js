@@ -173,7 +173,7 @@ export const fetchSizes = async (lang) => {
 };
 
 // documents API
-export const fetchDocuments = async (searchParams, lang = "ge") => {
+export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = [], signal = null) => {
   try {
     // First create the basic query params
     const queryParams = new URLSearchParams();
@@ -280,7 +280,8 @@ export const fetchDocuments = async (searchParams, lang = "ge") => {
     const finalUrl = `${API_BASE_URL}/documents?${queryParams}`;
     // console.log("Final request URL:", finalUrl);
 
-    const response = await fetch(finalUrl);
+    const fetchOptions = signal ? { signal } : {};
+    const response = await fetch(finalUrl, fetchOptions);
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }

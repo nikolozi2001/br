@@ -18,13 +18,15 @@ import loaderIcon from "../assets/images/equalizer.svg";
 
 function SearchForm({ isEnglish }) {
   // Set page-specific title
-  useDocumentTitle(isEnglish, getPageTitle('home', isEnglish));
-  
+  useDocumentTitle(isEnglish, getPageTitle("home", isEnglish));
+
   const t = translations[isEnglish ? "en" : "ge"];
   const [isFlipped, setIsFlipped] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [abortController, setAbortController] = useState(null);
+  const [isStopped, setIsStopped] = useState(false);
   const { navigationDirection, isNavigating } = useNavigation();
   const {
     formData,
@@ -43,25 +45,28 @@ function SearchForm({ isEnglish }) {
     if (isNavigating) {
       setIsFlipped(false);
     }
-    
+
     // Trigger flip animation
-    const timer = setTimeout(() => {
-      setIsFlipped(true);
-    }, isNavigating ? 200 : 100);
-    
+    const timer = setTimeout(
+      () => {
+        setIsFlipped(true);
+      },
+      isNavigating ? 200 : 100
+    );
+
     return () => clearTimeout(timer);
   }, [isNavigating]);
 
   // Check for URL parameters on component mount and auto-search
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const identificationNumber = urlParams.get('identificationNumber');
-    
+    const identificationNumber = urlParams.get("identificationNumber");
+
     if (identificationNumber) {
       // Set the form data with the URL parameter
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        identificationNumber: identificationNumber
+        identificationNumber: identificationNumber,
       }));
     }
   }, [setFormData]);
@@ -69,9 +74,13 @@ function SearchForm({ isEnglish }) {
   // Auto-search when formData is updated from URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const identificationNumber = urlParams.get('identificationNumber');
-    
-    if (identificationNumber && formData.identificationNumber === identificationNumber && !showResults) {
+    const identificationNumber = urlParams.get("identificationNumber");
+
+    if (
+      identificationNumber &&
+      formData.identificationNumber === identificationNumber &&
+      !showResults
+    ) {
       // Auto-submit the search
       const autoSearch = async () => {
         setIsLoading(true);
@@ -85,27 +94,73 @@ function SearchForm({ isEnglish }) {
           setIsLoading(false);
         }
       };
-      
+
       autoSearch();
     }
   }, [formData.identificationNumber, handleSubmit, showResults]);
 
+  const handleBackToSearch = () => {
+    setShowResults(false);
+    setSearchResults([]);
+
+    // Clear URL parameters when going back to search
+    const url = new URL(window.location);
+    url.searchParams.delete("identificationNumber");
+    window.history.replaceState({}, "", url.toString());
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
+    // Create new AbortController for this search
+    const controller = new AbortController();
+    setAbortController(controller);
+
     try {
-      const results = await handleSubmit();
+      const results = await handleSubmit(controller.signal);
       setSearchResults(results);
       setShowResults(true);
-      
+
       // After successful search, update URL if it's only identification number search
       // This will be handled by the SearchResults component's useEffect
     } catch (error) {
-      console.error("Error fetching results:", error);
+      if (error.name === "AbortError") {
+        console.log("Search was cancelled");
+      } else {
+        console.error("Error fetching results:", error);
+      }
     } finally {
       setIsLoading(false);
+      setAbortController(null);
     }
+  };
+
+  const handleStopSearch = () => {
+    console.log("Stop search called");
+    
+    // Set flag to indicate search was intentionally stopped
+    setIsStopped(true);
+    
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
+    // Use setTimeout to ensure state updates are processed correctly
+    setTimeout(() => {
+      // Reset all states immediately to ensure proper navigation
+      setIsLoading(false);
+      setShowResults(false);
+      setSearchResults([]);
+      
+      // Clear URL parameters
+      const url = new URL(window.location);
+      url.searchParams.delete('identificationNumber');
+      window.history.replaceState({}, '', url.toString());
+      
+      console.log("States reset, should show search form");
+    }, 0);
   };
 
   const exportToCSV = () => {
@@ -192,14 +247,14 @@ function SearchForm({ isEnglish }) {
   };
 
   // console.log("Search Results:", searchResults);
-  
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
     try {
       const date = new Date(dateString);
       // Format as DD.MM.YYYY
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
       const year = date.getFullYear();
       return `${day}.${month}.${year}`;
     } catch {
@@ -369,16 +424,6 @@ function SearchForm({ isEnglish }) {
     }
   };
 
-  const handleBackToSearch = () => {
-    setShowResults(false);
-    setSearchResults([]);
-    
-    // Clear URL parameters when going back to search
-    const url = new URL(window.location);
-    url.searchParams.delete('identificationNumber');
-    window.history.replaceState({}, '', url.toString());
-  };
-
   const handleLegalFormChange = (options) => {
     setFormData((prev) => ({
       ...prev,
@@ -391,30 +436,36 @@ function SearchForm({ isEnglish }) {
   const homeStructuredData = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": isEnglish ? "Business Register Search" : "ბიზნეს რეგისტრის ძებნა",
-    "description": isEnglish 
+    name: isEnglish ? "Business Register Search" : "ბიზნეს რეგისტრის ძებნა",
+    description: isEnglish
       ? "Search and find information about Georgian businesses and economic entities in the official Statistical Business Register"
       : "მოძებნეთ და იპოვეთ ინფორმაცია ქართული ბიზნესების და ეკონომიკური სუბიექტების შესახებ ოფიციალურ სტატისტიკურ ბიზნეს რეგისტრში",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web Browser",
-    "offers": {
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web Browser",
+    offers: {
       "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "GEL"
-    }
+      price: "0",
+      priceCurrency: "GEL",
+    },
   };
 
   return (
     <div className="w-full">
-      <SEO 
-        title={isEnglish ? "Business Register Search - Find Georgian Companies" : "ბიზნეს რეგისტრის ძებნა - იპოვეთ ქართული კომპანიები"}
-        description={isEnglish 
-          ? "Search the official Statistical Business Register of Georgia. Find comprehensive information about Georgian businesses, economic entities, and their activities."
-          : "მოძებნეთ საქართველოს ოფიციალური სტატისტიკური ბიზნეს რეგისტრი. იპოვეთ ყრმა ინფორმაცია ქართული ბიზნესების, ეკონომიკური სუბიექტების და მათი საქმიანობის შესახებ."
+      <SEO
+        title={
+          isEnglish
+            ? "Business Register Search - Find Georgian Companies"
+            : "ბიზნეს რეგისტრის ძებნა - იპოვეთ ქართული კომპანიები"
         }
-        keywords={isEnglish 
-          ? "business search, georgian companies, company lookup, business registry, economic entities, company information"
-          : "ბიზნეს ძებნა, ქართული კომპანიები, კომპანიის მოძებნა, ბიზნეს რეგისტრი, ეკონომიკური სუბიექტები, კომპანიის ინფორმაცია"
+        description={
+          isEnglish
+            ? "Search the official Statistical Business Register of Georgia. Find comprehensive information about Georgian businesses, economic entities, and their activities."
+            : "მოძებნეთ საქართველოს ოფიციალური სტატისტიკური ბიზნეს რეგისტრი. იპოვეთ ყრმა ინფორმაცია ქართული ბიზნესების, ეკონომიკური სუბიექტების და მათი საქმიანობის შესახებ."
+        }
+        keywords={
+          isEnglish
+            ? "business search, georgian companies, company lookup, business registry, economic entities, company information"
+            : "ბიზნეს ძებნა, ქართული კომპანიები, კომპანიის მოძებნა, ბიზნეს რეგისტრი, ეკონომიკური სუბიექტები, კომპანიის ინფორმაცია"
         }
         isEnglish={isEnglish}
         type="website"
@@ -422,7 +473,11 @@ function SearchForm({ isEnglish }) {
       />
       <div className="container mx-auto">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-6 lg:px-8">
-          <div className={`flipper-container ${isFlipped ? "flipped" : ""} ${navigationDirection === 'left' ? 'flip-left' : 'flip-right'}`}>
+          <div
+            className={`flipper-container ${isFlipped ? "flipped" : ""} ${
+              navigationDirection === "left" ? "flip-left" : "flip-right"
+            }`}
+          >
             <div className="flipper">
               <div
                 className={`border border-[#0080BE] rounded-[0_5px_5px_5px] ${
@@ -432,10 +487,35 @@ function SearchForm({ isEnglish }) {
                 {isLoading ? (
                   <div className="flex justify-center items-center min-h-[400px] bg-white">
                     <div className="flex flex-col items-center space-y-4">
-                      <img src={loaderIcon} alt="Loading..." className="w-12 h-12 animate-pulse" />
+                      <img
+                        src={loaderIcon}
+                        alt="Loading..."
+                        className="w-12 h-12 animate-pulse"
+                      />
                       <p className="text-gray-600 font-bpg-nino text-sm">
                         {isEnglish ? "Loading..." : "იტვირთება..."}
                       </p>
+                      <button
+                        type="button"
+                        className="flex items-center justify-center px-6 py-2 font-bold text-red-600 border border-red-600 hover:bg-red-600 hover:text-white transition-colors cursor-pointer text-sm font-bpg-nino rounded mt-4"
+                        onClick={handleStopSearch}
+                      >
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                        {t.stopSearch}
+                      </button>
                     </div>
                   </div>
                 ) : (
@@ -489,6 +569,29 @@ function SearchForm({ isEnglish }) {
                               </svg>
                               {t.exportToCSV}
                             </button>
+                            {isLoading && (
+                              <button
+                                type="button"
+                                className="flex items-center justify-center px-4 py-2 font-bold text-red-600 border border-red-600 hover:bg-red-600 hover:text-white transition-colors cursor-pointer text-sm font-bpg-nino rounded"
+                                onClick={handleStopSearch}
+                              >
+                                <svg
+                                  className="w-4 h-4 mr-2"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                                {t.stopSearch}
+                              </button>
+                            )}
                             <button
                               onClick={handleBackToSearch}
                               disabled={isLoading}
@@ -627,6 +730,7 @@ function SearchForm({ isEnglish }) {
                           <FormActions
                             t={t}
                             onReset={handleReset}
+                            onStop={handleStopSearch}
                             isLoading={isLoading}
                           />
                         </form>

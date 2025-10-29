@@ -141,14 +141,14 @@ export function useSearchForm(isEnglish) {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (signal = null) => {
     try {
-      const documents = await fetchDocuments(formData, isEnglish ? "en" : "ge", regionOptions);
+      const documents = await fetchDocuments(formData, isEnglish ? "en" : "ge", regionOptions, signal);
       console.log("Search Results:", documents);
       return documents;
     } catch (error) {
       console.error("Error fetching documents:", error);
-      return [];
+      throw error; // Re-throw to allow parent component to handle abort errors
     }
   };
 
