@@ -111,6 +111,13 @@ function SearchForm({ isEnglish }) {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    
+    console.log("Starting new search - resetting states");
+    
+    // Clear any previous states first and reset stopped flag
+    setIsStopped(false);
+    setShowResults(false);
+    setSearchResults([]);
     setIsLoading(true);
 
     // Create new AbortController for this search
@@ -118,37 +125,51 @@ function SearchForm({ isEnglish }) {
     setAbortController(controller);
 
     try {
+      console.log("Calling handleSubmit...");
       const results = await handleSubmit(controller.signal);
-      setSearchResults(results);
-      setShowResults(true);
+      console.log("Got results, isStopped:", isStopped, "signal aborted:", controller.signal?.aborted, "results length:", results?.length);
+      
+      // Always show results if we got them and the request wasn't aborted
+      if (results && results.length > 0 && !controller.signal?.aborted) {
+        console.log("Setting results and showing them");
+        setSearchResults(results);
+        setShowResults(true);
+        setIsLoading(false);
+      } else {
+        console.log("Not showing results - conditions not met");
+        setIsLoading(false);
+      }
 
       // After successful search, update URL if it's only identification number search
       // This will be handled by the SearchResults component's useEffect
     } catch (error) {
       if (error.name === "AbortError") {
-        console.log("Search was cancelled");
+        console.log("Search was cancelled, isStopped:", isStopped);
+        // Only update loading state if this wasn't an intentional stop
+        setIsLoading(false);
       } else {
         console.error("Error fetching results:", error);
+        setIsLoading(false);
       }
     } finally {
-      setIsLoading(false);
       setAbortController(null);
     }
   };
 
   const handleStopSearch = () => {
-    console.log("Stop search called");
-    
+    console.log("Stop search called - setting isStopped to true");
     // Set flag to indicate search was intentionally stopped
     setIsStopped(true);
     
     if (abortController) {
+      console.log("Aborting current request");
       abortController.abort();
       setAbortController(null);
     }
     
     // Use setTimeout to ensure state updates are processed correctly
     setTimeout(() => {
+      console.log("Stop search cleanup - resetting states");
       // Reset all states immediately to ensure proper navigation
       setIsLoading(false);
       setShowResults(false);
@@ -158,8 +179,6 @@ function SearchForm({ isEnglish }) {
       const url = new URL(window.location);
       url.searchParams.delete('identificationNumber');
       window.history.replaceState({}, '', url.toString());
-      
-      console.log("States reset, should show search form");
     }, 0);
   };
 
