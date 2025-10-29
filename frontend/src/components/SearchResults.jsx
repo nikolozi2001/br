@@ -2,6 +2,7 @@ import { translations } from "../translations/searchForm";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
+import { fetchLegalFormsRaw } from "../services/api";
 import "../styles/scrollbar.css";
 
 // Format date function
@@ -26,6 +27,25 @@ function SearchResults({ results, isEnglish, formData }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [legalFormsMap, setLegalFormsMap] = useState({});
+
+  // Fetch legal forms for mapping
+  useEffect(() => {
+    const loadLegalForms = async () => {
+      try {
+        const legalForms = await fetchLegalFormsRaw();
+        const formsMap = {};
+        legalForms.forEach(form => {
+          formsMap[form.Legal_Form_ID] = form.Legal_Form;
+        });
+        setLegalFormsMap(formsMap);
+      } catch (error) {
+        console.error('Error loading legal forms:', error);
+      }
+    };
+    
+    loadLegalForms();
+  }, []);
 
   // Update URL when only identificationNumber is searched
   useEffect(() => {
@@ -220,10 +240,10 @@ function SearchResults({ results, isEnglish, formData }) {
                 {t.personalNumber} {getSortIndicator("personalNumber")}
               </th>
               <th
-                onClick={() => handleSort("legalForm")}
+                onClick={() => handleSort("abbreviation")}
                 className={headerClassName}
               >
-                {t.organizationalLegalForm} {getSortIndicator("legalForm")}
+                {t.organizationalLegalForm} {getSortIndicator("abbreviation")}
               </th>
               <th
                 onClick={() => handleSort("name")}
@@ -301,6 +321,8 @@ function SearchResults({ results, isEnglish, formData }) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedResults.map((result) => (
+              console.log(result),
+              
               <tr
                 key={result.id}
                 className={`group transition-colors ${
@@ -329,7 +351,9 @@ function SearchResults({ results, isEnglish, formData }) {
                   </button>
                 </td>
                 <td className={cellClassName}>{result.personalNumber}</td>
-                <td className={cellClassName}>{result.abbreviation}</td>
+                <td className={cellClassName}>
+                  {legalFormsMap[result.legalFormId] || result.abbreviation}
+                </td>
                 <td className={cellClassName}>{result.name}</td>
                 <td className={cellClassName}>{result.legalAddress.region}</td>
                 <td className={cellClassName}>{result.legalAddress.address}</td>

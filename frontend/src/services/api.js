@@ -73,7 +73,7 @@ export const fetchReport8Data = reportFunctions.fetchReport8Data;
 export const fetchReport9Data = reportFunctions.fetchReport9Data;
 export const fetchReport10Data = reportFunctions.fetchReport10Data;
 
-// Legal Forms API
+// Legal Forms API for dropdowns
 export const fetchLegalForms = async (lang) => {
   try {
     const response = await fetch(`${API_BASE_URL}/legal-forms?lang=${lang}`);
@@ -97,6 +97,28 @@ export const fetchLegalForms = async (lang) => {
       .filter((item) => item.value && item.label); // Filter out any invalid items
   } catch (error) {
     console.error("Error fetching legal forms:", error);
+    return [];
+  }
+};
+
+// Legal Forms API for mapping (returns raw data)
+export const fetchLegalFormsRaw = async (lang = "ge") => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/legal-forms?lang=${lang}`);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+    const data = await response.json();
+
+    // Check if data is in recordset format
+    const forms = data.recordset || data;
+
+    return forms.map((form) => ({
+      Legal_Form_ID: form.ID || form.id,
+      Legal_Form: form.Legal_Form || form.Name || form.label,
+    }));
+  } catch (error) {
+    console.error("Error fetching raw legal forms:", error);
     return [];
   }
 };
@@ -300,6 +322,7 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
       personalNumber: item.Personal_no,
       name: item.Full_Name,
       abbreviation: item.Abbreviation,
+      legalFormId: item.Legal_Form_ID,
       legalAddress: {
         region: item.Region_name,
         city: item.City_Name,
