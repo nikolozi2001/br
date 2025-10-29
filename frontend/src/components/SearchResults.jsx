@@ -4,6 +4,21 @@ import { useNavigate } from "react-router-dom";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import "../styles/scrollbar.css";
 
+// Format date function
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  try {
+    const date = new Date(dateString);
+    // Format as DD.MM.YYYY
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  } catch {
+    return dateString; // Return original if formatting fails
+  }
+};
+
 function SearchResults({ results, isEnglish, formData }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const navigate = useNavigate();
@@ -276,6 +291,12 @@ function SearchResults({ results, isEnglish, formData }) {
               >
                 {t.businessSize} {getSortIndicator("size")}
               </th>
+              <th
+                onClick={() => handleSort("Init_Reg_date")}
+                className={headerClassName}
+              >
+                {t.initRegDate} {getSortIndicator("Init_Reg_date")}
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -333,6 +354,7 @@ function SearchResults({ results, isEnglish, formData }) {
                   {result.isActive ? "აქტიური" : "არააქტიური"}
                 </td>
                 <td className={cellClassName}>{result.Zoma}</td>
+                <td className={cellClassName}>{formatDate(result.Init_Reg_date)}</td>
               </tr>
             ))}
           </tbody>
