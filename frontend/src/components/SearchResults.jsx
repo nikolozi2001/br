@@ -302,7 +302,6 @@ function SearchResults({ results, isEnglish, formData, legalFormsMap }) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedResults.map((result) => (
-              console.log(result),
               
               <tr
                 key={result.id}
