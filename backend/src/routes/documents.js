@@ -25,7 +25,7 @@ router.get("/legal_code/:legalCode", async (req, res) => {
           [City_name2], [Comunity_Code2], [Community_name2], [Village_Code2],
           [Village_name2], [Address2], [Activity_ID], [Activity_Code],
           [Activity_Name], [Activity_2_ID], [Activity_2_Code], [Activity_2_Name],
-          [Head], [mob], [Email], [ISActive], [Zoma], [Zoma_old],
+          [Head], [mob], [Email], [web], [ISActive], [Zoma], [Zoma_old],
           [X], [Y], [Change], [Reg_Date], [Partner], [Head_PN],
           [Partner_PN], [Init_Reg_date]
         FROM [register].[dbo].[DocMain]
@@ -61,7 +61,7 @@ router.get("/", async (req, res) => {
         [Address], [Region_Code2], [Region_name2], [City_Code2],
         [City_name2], [Comunity_Code2], [Community_name2], [Village_Code2],
         [Village_name2], [Address2], [Activity_2_ID], [Activity_2_Code], [Activity_2_Name],
-        [Head], [mob], [Email], [ISActive], [Zoma], [Zoma_old],
+        [Head], [mob], [Email], [web], [ISActive], [Zoma], [Zoma_old],
         [X], [Y], [Change], [Reg_Date], [Partner], [Head_PN],
         [Partner_PN], [Init_Reg_date]
       FROM [register].[dbo].[DocMain]

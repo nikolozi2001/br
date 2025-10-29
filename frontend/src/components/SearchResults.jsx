@@ -270,9 +270,10 @@ function SearchResults({ results, isEnglish, formData, legalFormsMap }) {
               >
                 {t.head} {getSortIndicator("head")}
               </th>
-              <th className={headerClassName}>{t.phone}</th>
               <th className={headerClassName}>{t.partner}</th>
+              <th className={headerClassName}>{t.phone}</th>
               <th className={headerClassName}>{t.email}</th>
+              <th className={headerClassName}>{t.web || "Web"}</th>
               <th
                 onClick={() => handleSort("ownershipType")}
                 className={headerClassName}
@@ -350,9 +351,10 @@ function SearchResults({ results, isEnglish, formData, legalFormsMap }) {
                   {result.activities?.[0]?.name}
                 </td>
                 <td className={cellClassName}>{result.head}</td>
-                <td className={cellClassName}>{result.phone}</td>
                 <td className={cellClassName}>{result.partner}</td>
+                <td className={cellClassName}>{result.phone}</td>
                 <td className={cellClassName}>{result.email}</td>
+                <td className={cellClassName}>{result.web}</td>
                 <td className={cellClassName}>{result.ownershipType}</td>
                 <td className={cellClassName}>
                   {result.isActive ? "აქტიური" : "არააქტიური"}

@@ -221,9 +221,10 @@ function SearchForm({ isEnglish }) {
       { label: "activityCode", path: "activities[0].code" },
       { label: "activityDescription", path: "activities[0].name" },
       { label: "head", path: "head" },
-      { label: "phone", path: "phone" },
       { label: "partner", path: "partner" },
+      { label: "phone", path: "phone" },
       { label: "email", path: "email" },
+      { label: "web", path: "web" },
       { label: "ownershipForm", path: "ownershipType" },
       { label: "activeSubject", path: "isActive" },
       { label: "businessSize", path: "Zoma" },
@@ -318,9 +319,10 @@ function SearchForm({ isEnglish }) {
             <th>NACE 2</th>
             <th>${t.activityDescription}</th>
             <th>${t.head}</th>
-            <th>${t.phone}</th>
             <th>${t.partner}</th>
+            <th>${t.phone}</th>
             <th>${t.email}</th>
+            <th>${t.web || "Web"}</th>
             <th>${t.ownershipForm}</th>
             <th>${t.activeSubject}</th>
             <th>${t.businessSize}</th>
@@ -343,9 +345,10 @@ function SearchForm({ isEnglish }) {
               <td>${result.activities?.[0]?.code || ""}</td>
               <td>${result.activities?.[0]?.name || ""}</td>
               <td>${result.head || ""}</td>
-              <td>${result.phone || ""}</td>
               <td>${result.partner || ""}</td>
+              <td>${result.phone || ""}</td>
               <td>${result.email || ""}</td>
+              <td>${result.web || ""}</td>
               <td>${result.ownershipType || ""}</td>
               <td>${result.isActive ? "აქტიური" : "არააქტიური"}</td>
               <td>${result.Zoma || ""}</td>
