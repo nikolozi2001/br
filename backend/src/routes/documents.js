@@ -109,7 +109,7 @@ router.get("/", async (req, res) => {
         query += ` AND (${conditions})`;
 
         activityCodes.forEach((code, index) => {
-          request.input(`activityCode${index}`, sql.NVarChar, `%${code}%`);
+          request.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
         });
       }
     }

@@ -3,6 +3,17 @@ import sakstatLogoGe from "/src/assets/images/sakstat-logo.svg";
 import sakstatLogoEn from "/src/assets/images/sakstat-logo-en.png";
 
 const Header = ({ isEnglish }) => {
+  const handleHeaderClick = () => {
+    // Clear URL parameters and navigate to home
+    const url = new URL(window.location);
+    url.pathname = '/';
+    const params = Array.from(url.searchParams.keys());
+    params.forEach(param => url.searchParams.delete(param));
+    
+    // Navigate to the clean home URL
+    window.location.href = url.toString();
+  };
+
   const content = {
     georgian: {
       logo: {
@@ -26,7 +37,10 @@ const Header = ({ isEnglish }) => {
 
   return (
     <div className="w-full from-white to-blue-50 py-4 px-3 sm:px-6">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+      <div 
+        onClick={handleHeaderClick}
+        className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 cursor-pointer hover:opacity-90 transition-opacity"
+      >
         {/* Logo */}
         <img
           src={currentLanguage.logo.src}
