@@ -12,6 +12,10 @@ router.get("/", async (req, res) => {
         ? "[register].[CL].[Legal_Forms_EN]"
         : "[register].[CL].[Legal_Forms]";
 
+    const whereClause = lang === "en" 
+      ? "WHERE [ID] NOT IN (0,23,24,25,66,88,999,16,100,200)" 
+      : "WHERE [ID] NOT IN (23,24,25,66,88,999,16,100,200)";
+
     const pool = await poolPromise;
     const result = await pool.request().query(`
                 SELECT TOP (1000) [ID]
@@ -23,6 +27,7 @@ router.get("/", async (req, res) => {
                     ,[Rec_Date]
                     ,[Rec_Type]
                 FROM ${tableName}
+                ${whereClause}
             `);
 
     res.json(result.recordset);
@@ -45,6 +50,10 @@ router.get("/gis/:gis", async (req, res) => {
         ? "[register].[CL].[Legal_Forms_EN]"
         : "[register].[CL].[Legal_Forms]";
 
+    const additionalWhere = lang === "en" 
+      ? "AND [ID] NOT IN (0,23,24,25,66,88,999,16,100,200)" 
+      : "AND [ID] NOT IN (23,24,25,66,88,999,16,100,200)";
+
     const pool = await poolPromise;
     const result = await pool.request().input("gis", sql.Bit, gis).query(`
                 SELECT [ID]
@@ -58,6 +67,7 @@ router.get("/gis/:gis", async (req, res) => {
                     ,[gis]
                 FROM ${tableName}
                 WHERE [gis] = @gis
+                ${additionalWhere}
             `);
 
     if (result.recordset.length === 0) {
