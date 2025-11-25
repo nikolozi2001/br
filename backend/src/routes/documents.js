@@ -54,45 +54,46 @@ router.get("/", async (req, res) => {
     const pool = await poolPromise;
 
     let query = `
-      SELECT [Stat_ID], [Legal_Code], [Personal_no], [Legal_Form_ID],
-        [Abbreviation], [Full_Name], [Ownership_Type_ID], [Ownership_Type],
-        [Region_Code], [Region_name], [City_Code], [City_name],
-        [Comunity_Code], [Community_name], [Village_Code], [Village_name],
-        [Address], [Region_Code2], [Region_name2], [City_Code2],
-        [City_name2], [Comunity_Code2], [Community_name2], [Village_Code2],
-        [Village_name2], [Address2], [Activity_2_ID], [Activity_2_Code], [Activity_2_Name],
-        [Head], [mob], [Email], [web], [ISActive], [Zoma], [Zoma_old],
-        [X], [Y], [Change], [Reg_Date], [Partner], [Head_PN],
-        [Partner_PN], [Init_Reg_date]
-      FROM [register].[dbo].[DocMain]
+      SELECT a.[Stat_ID], a.[Legal_Code], a.[Personal_no], a.[Legal_Form_ID],
+        a.[Abbreviation], a.[Full_Name], a.[Ownership_Type_ID], a.[Ownership_Type],
+        a.[Region_Code], a.[Region_name], a.[City_Code], a.[City_name],
+        a.[Comunity_Code], a.[Community_name], a.[Village_Code], a.[Village_name],
+        a.[Address], a.[Region_Code2], a.[Region_name2], a.[City_Code2],
+        a.[City_name2], a.[Comunity_Code2], a.[Community_name2], a.[Village_Code2],
+        a.[Village_name2], a.[Address2], a.[Activity_ID], a.[Activity_Code],
+        a.[Activity_Name], a.[Activity_2_ID], a.[Activity_2_Code], a.[Activity_2_Name],
+        a.[Head], a.[mob], a.[Email], a.[web], a.[ISActive], a.[Zoma], a.[Zoma_old],
+        a.[X], a.[Y], a.[Change], a.[Reg_Date], a.[Partner], a.[Head_PN],
+        a.[Partner_PN], a.[Init_Reg_date]
+      FROM [register].[dbo].[DocMain] a
       WHERE 1=1
     `;
 
     const request = pool.request();
 
     if (identificationNumber) {
-      query += " AND Legal_Code = @identificationNumber";
+      query += " AND a.Legal_Code = @identificationNumber";
       request.input("identificationNumber", sql.BigInt, identificationNumber);
     }
 
     if (organizationName) {
       query +=
-        " AND (Full_Name LIKE @organizationName OR Abbreviation LIKE @organizationName)";
+        " AND (a.Full_Name LIKE @organizationName OR a.Abbreviation LIKE @organizationName)";
       request.input("organizationName", sql.NVarChar, `%${organizationName}%`);
     }
 
     if (legalForm) {
-      query += " AND Legal_Form_ID = @legalForm";
+      query += " AND a.Legal_Form_ID = @legalForm";
       request.input("legalForm", sql.SmallInt, legalForm);
     }
 
     if (head) {
-      query += " AND Head LIKE @head";
+      query += " AND a.Head LIKE @head";
       request.input("head", sql.NVarChar, `%${head}%`);
     }
 
     if (partner) {
-      query += " AND Partner LIKE @partner";
+      query += " AND a.Partner LIKE @partner";
       request.input("partner", sql.NVarChar, `%${partner}%`);
     }
 
@@ -102,15 +103,33 @@ router.get("/", async (req, res) => {
         : [req.query.activityCode];
 
       if (activityCodes.length > 0) {
-        const conditions = activityCodes
-          .map((_, index) => `(Activity_2_Code LIKE @activityCode${index})`)
-          .join(" OR ");
-
-        query += ` AND (${conditions})`;
-
+        const conditions = [];
+        
         activityCodes.forEach((code, index) => {
-          request.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
+          // Check if it's a single letter (like F, G, etc.)
+          if (code.length === 1 && /^[A-Z]$/i.test(code)) {
+            // Map single letters to Activity_Root_ID values
+            const letterToRootId = {
+              'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 
+              'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 
+              'R': 18, 'S': 19, 'T': 20, 'U': 21
+            };
+            
+            const rootId = letterToRootId[code.toUpperCase()];
+            if (rootId) {
+              conditions.push(`a.Activity_2_ID IN (SELECT ID FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
+              request.input(`rootId${index}`, sql.Int, rootId);
+            }
+          } else {
+            // For detailed codes like "01.11.1", use the LIKE approach
+            conditions.push(`(a.Activity_Code LIKE @activityCode${index} OR a.Activity_2_Code LIKE @activityCode${index})`);
+            request.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
+          }
         });
+
+        if (conditions.length > 0) {
+          query += ` AND (${conditions.join(" OR ")})`;
+        }
       }
     }
 
