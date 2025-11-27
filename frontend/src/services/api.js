@@ -215,7 +215,9 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
       queryParams.append("organizationName", searchParams.organizationName);
     }
     if (searchParams.organizationalLegalForm?.length > 0) {
-      queryParams.append("legalForm", searchParams.organizationalLegalForm[0]);
+      searchParams.organizationalLegalForm.forEach(legalForm => {
+        queryParams.append("legalForm", legalForm);
+      });
     }
     if (searchParams.head) {
       queryParams.append("head", searchParams.head);

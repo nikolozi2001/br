@@ -83,8 +83,13 @@ router.get("/", async (req, res) => {
     }
 
     if (legalForm) {
-      query += " AND a.Legal_Form_ID = @legalForm";
-      request.input("legalForm", sql.SmallInt, legalForm);
+      const legalForms = Array.isArray(legalForm) ? legalForm : [legalForm];
+      const legalFormParams = legalForms.map((_, index) => `@legalForm${index}`).join(', ');
+      query += ` AND a.Legal_Form_ID IN (${legalFormParams})`;
+      
+      legalForms.forEach((form, index) => {
+        request.input(`legalForm${index}`, sql.SmallInt, form);
+      });
     }
 
     if (head) {
