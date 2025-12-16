@@ -12,6 +12,50 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
   const containerRef = useRef();
   const chartRef = useRef();
 
+    // Helper function to wrap text with line breaks
+  const wrapText = (text, maxCharsPerLine = 12) => {
+    if (!text) return '';
+    
+    // If text fits within limit, return as is
+    if (text.length <= maxCharsPerLine) {
+      return text;
+    }
+    
+    // If text contains spaces, try to split at word boundaries
+    if (text.includes(' ')) {
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+      
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        
+        if (testLine.length <= maxCharsPerLine) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            // Single word is too long, break it
+            lines.push(word.substring(0, maxCharsPerLine));
+            currentLine = word.substring(maxCharsPerLine);
+          }
+        }
+      }
+      
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      
+      return lines.join('\n');
+    }
+    
+    // Fallback: break at character boundaries if no spaces
+    return text.match(new RegExp(`.{1,${maxCharsPerLine}}`, 'g')).join('\n');
+  };
+
   // Generic download handler for all formats
   const handleDownload = (format) => {
     if (!chartRef.current) return;
@@ -598,13 +642,37 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
         </div>
       </div>
 
-      <div className="p-2 sm:p-4">
+      <div className="sm:p-1">
         {isIntersecting && (
           <Suspense fallback={<LoadingSpinner message={isEnglish ? "Loading chart..." : "ჩარტი იტვირთება..."} />}>
             {isVisible ? (
               <ReactECharts
                 ref={chartRef}
-                option={getChartOption(dateGroup)}
+                option={{
+                  ...getChartOption(dateGroup),
+                  series: [{
+                    ...getChartOption(dateGroup).series[0],
+                    label: {
+                      show: true,
+                      formatter: (params) => wrapText(params.name, 10),
+                      fontSize: 11,
+                      fontFamily: 'BPG Nino Mtavruli, Arial, sans-serif',
+                      overflow: 'none',
+                      width: null
+                    }
+                  }],
+                  legend: {
+                    ...getChartOption(dateGroup).legend,
+                    formatter: (name) => wrapText(name, 15),
+                    textStyle: {
+                      fontSize: 11,
+                      fontFamily: 'BPG Nino Mtavruli, Arial, sans-serif',
+                      overflow: 'none'
+                    },
+                    itemWidth: 12,
+                    itemHeight: 12
+                  }
+                }}
                 style={{ height: 400 }}
                 opts={{ renderer: 'canvas' }}
                 lazyUpdate={true}
