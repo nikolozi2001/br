@@ -13,13 +13,25 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
   const chartRef = useRef();
 
     // Helper function to wrap text with line breaks
-  const wrapText = (text, maxCharsPerLine = 12, dataLength = 5) => {
+  const wrapText = (text, maxCharsPerLine = 12, dataLength = 5, percentage = null) => {
     if (!text) return '';
+    
+    console.log(percentage, "percentage");
     
     // Dynamic character limit based on number of data items
     // With fewer items, we can afford longer names on one line
     let effectiveLimit = maxCharsPerLine;
-    if (dataLength <= 1) {
+     if (dataLength === 2) {
+      if (percentage !== null && percentage < 30) {
+        // Small slice in 2-partner chart - allow more characters
+        effectiveLimit = Math.max(maxCharsPerLine * 2.5, 25);
+      }
+     } else if (dataLength === 3) {
+      if (percentage !== null && percentage < 20) {
+        // Small slice in 3-partner chart - use moderate spacing
+        effectiveLimit = Math.max(maxCharsPerLine * 1.5, 20);
+      } 
+    } else if (dataLength <= 2) {
       effectiveLimit = Math.max(maxCharsPerLine * 2, 20); // Much more generous for 3 or fewer items
     } else if (dataLength <= 4) {
       effectiveLimit = Math.max(maxCharsPerLine * 1.5, 15); // More generous for 5 or fewer items
@@ -672,7 +684,7 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
                     ...getChartOption(dateGroup).series[0],
                     label: {
                       show: true,
-                      formatter: (params) => wrapText(params.name, 8, dateGroup.data.length),
+                      formatter: (params) => wrapText(params.name, 8, dateGroup.data.length, params.percent),
                       fontSize: 11,
                       fontFamily: 'BPG Nino Mtavruli, Arial, sans-serif',
                       overflow: 'none',
@@ -681,7 +693,16 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
                   }],
                   legend: {
                     ...getChartOption(dateGroup).legend,
-                    formatter: (name) => wrapText(name, 10, dateGroup.data.length),
+                    formatter: (name) => {
+                      const dataItem = dateGroup.data.find(item => item.name === name);
+                      if (!dataItem) return wrapText(name, 10, dateGroup.data.length);
+                      
+                      // Calculate percentage from the data
+                      const totalValue = dateGroup.data.reduce((sum, item) => sum + item.value, 0);
+                      const percentage = (dataItem.value / totalValue) * 100;
+                      
+                      return wrapText(name, 10, dateGroup.data.length, percentage);
+                    },
                     textStyle: {
                       fontSize: 11,
                       fontFamily: 'BPG Nino Mtavruli, Arial, sans-serif',
