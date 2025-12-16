@@ -13,11 +13,20 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
   const chartRef = useRef();
 
     // Helper function to wrap text with line breaks
-  const wrapText = (text, maxCharsPerLine = 12) => {
+  const wrapText = (text, maxCharsPerLine = 12, dataLength = 5) => {
     if (!text) return '';
     
-    // If text fits within limit, return as is
-    if (text.length <= maxCharsPerLine) {
+    // Dynamic character limit based on number of data items
+    // With fewer items, we can afford longer names on one line
+    let effectiveLimit = maxCharsPerLine;
+    if (dataLength <= 1) {
+      effectiveLimit = Math.max(maxCharsPerLine * 2, 20); // Much more generous for 3 or fewer items
+    } else if (dataLength <= 4) {
+      effectiveLimit = Math.max(maxCharsPerLine * 1.5, 15); // More generous for 5 or fewer items
+    }
+    
+    // If text fits within the dynamic limit, return as is
+    if (text.length <= effectiveLimit) {
       return text;
     }
     
@@ -31,16 +40,20 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
         const word = words[i];
         const testLine = currentLine ? `${currentLine} ${word}` : word;
         
-        if (testLine.length <= maxCharsPerLine) {
+        if (testLine.length <= effectiveLimit) {
           currentLine = testLine;
         } else {
           if (currentLine) {
             lines.push(currentLine);
             currentLine = word;
           } else {
-            // Single word is too long, break it
-            lines.push(word.substring(0, maxCharsPerLine));
-            currentLine = word.substring(maxCharsPerLine);
+            // Single word is too long, break it only if extremely long (>25 chars)
+            if (word.length > 20) {
+              lines.push(word.substring(0, effectiveLimit));
+              currentLine = word.substring(effectiveLimit);
+            } else {
+              currentLine = word;
+            }
           }
         }
       }
@@ -52,8 +65,13 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
       return lines.join('\n');
     }
     
-    // Fallback: break at character boundaries if no spaces
-    return text.match(new RegExp(`.{1,${maxCharsPerLine}}`, 'g')).join('\n');
+    // For single words without spaces, keep on one line unless extremely long
+    if (text.length <= 20) {
+      return text;
+    }
+    
+    // Only break extremely long single words
+    return text.match(new RegExp(`.{1,${effectiveLimit}}`, 'g')).join('\n');
   };
 
   // Generic download handler for all formats
@@ -654,7 +672,7 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
                     ...getChartOption(dateGroup).series[0],
                     label: {
                       show: true,
-                      formatter: (params) => wrapText(params.name, 10),
+                      formatter: (params) => wrapText(params.name, 8, dateGroup.data.length),
                       fontSize: 11,
                       fontFamily: 'BPG Nino Mtavruli, Arial, sans-serif',
                       overflow: 'none',
@@ -663,7 +681,7 @@ const ChartContainer = memo(({ dateGroup, index, onToggleDropdown, activeDropdow
                   }],
                   legend: {
                     ...getChartOption(dateGroup).legend,
-                    formatter: (name) => wrapText(name, 15),
+                    formatter: (name) => wrapText(name, 10, dateGroup.data.length),
                     textStyle: {
                       fontSize: 11,
                       fontFamily: 'BPG Nino Mtavruli, Arial, sans-serif',
