@@ -1,7 +1,7 @@
 import "../styles/SearchForm.scss";
 import React, { useState, useEffect } from "react";
 import { translations } from "../translations/searchForm";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import { useSearchForm } from "../hooks/useSearchForm";
 import { AddressSection } from "./AddressSection";
@@ -31,6 +31,7 @@ function SearchForm({ isEnglish }) {
   const [abortController, setAbortController] = useState(null);
   const [isStopped, setIsStopped] = useState(false);
   const [legalFormsMap, setLegalFormsMap] = useState({});
+  const [lastSearchParams, setLastSearchParams] = useState(null); // Store last successful search params
   const { navigationDirection, isNavigating } = useNavigation();
   const {
     formData,
@@ -50,15 +51,15 @@ function SearchForm({ isEnglish }) {
       try {
         const legalForms = await fetchLegalFormsRaw();
         const formsMap = {};
-        legalForms.forEach(form => {
+        legalForms.forEach((form) => {
           formsMap[form.Legal_Form_ID] = form.Legal_Form;
         });
         setLegalFormsMap(formsMap);
       } catch (error) {
-        console.error('Error loading legal forms:', error);
+        console.error("Error loading legal forms:", error);
       }
     };
-    
+
     loadLegalForms();
   }, []);
 
@@ -134,9 +135,9 @@ function SearchForm({ isEnglish }) {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    
+
     console.log("Starting new search - resetting states");
-    
+
     // Clear any previous states first and reset stopped flag
     setIsStopped(false);
     setShowResults(false);
@@ -151,13 +152,26 @@ function SearchForm({ isEnglish }) {
     try {
       console.log("Calling handleSubmit...");
       const response = await handleSubmit(controller.signal);
-      console.log("Got response, isStopped:", isStopped, "signal aborted:", controller.signal?.aborted, "results length:", response?.results?.length);
-      
+      console.log(
+        "Got response, isStopped:",
+        isStopped,
+        "signal aborted:",
+        controller.signal?.aborted,
+        "results length:",
+        response?.results?.length
+      );
+
       // Always show results if we got them and the request wasn't aborted
-      if (response && response.results && response.results.length > 0 && !controller.signal?.aborted) {
+      if (
+        response &&
+        response.results &&
+        response.results.length > 0 &&
+        !controller.signal?.aborted
+      ) {
         console.log("Setting results and showing them");
         setSearchResults(response.results);
         setPagination(response.pagination);
+        setLastSearchParams(formData); // Store the successful search params
         setShowResults(true);
         setIsLoading(false);
       } else {
@@ -185,13 +199,13 @@ function SearchForm({ isEnglish }) {
     console.log("Stop search called - setting isStopped to true");
     // Set flag to indicate search was intentionally stopped
     setIsStopped(true);
-    
+
     if (abortController) {
       console.log("Aborting current request");
       abortController.abort();
       setAbortController(null);
     }
-    
+
     // Use setTimeout to ensure state updates are processed correctly
     setTimeout(() => {
       console.log("Stop search cleanup - resetting states");
@@ -200,32 +214,55 @@ function SearchForm({ isEnglish }) {
       setShowResults(false);
       setSearchResults([]);
       setPagination(null);
-      
+
       // Clear URL parameters
       const url = new URL(window.location);
-      url.searchParams.delete('identificationNumber');
-      window.history.replaceState({}, '', url.toString());
+      url.searchParams.delete("identificationNumber");
+      window.history.replaceState({}, "", url.toString());
     }, 0);
   };
 
   const exportToExcel = async () => {
     try {
+      // Check if there are any search results first
+      if (!searchResults || searchResults.length === 0) {
+        alert(
+          isEnglish
+            ? "No data to export. Please perform a search first."
+            : "ექსპორტისთვის მონაცემები არ არის. ჯერ შეასრულეთ ძებნა."
+        );
+        return;
+      }
+
+      // Check if we have the last search parameters
+      if (!lastSearchParams) {
+        alert(
+          isEnglish
+            ? "Cannot export: search parameters not available"
+            : "ექსპორტი შეუძლებელია: ძებნის პარამეტრები მიუწვდომელია"
+        );
+        return;
+      }
+
       setIsLoading(true);
-      
-      // Create a new search specifically for export that fetches ALL results
-      // by setting a very high limit or using a special export endpoint
+
+      // Use the stored search parameters that generated the current results
       const exportResponse = await fetchDocuments(
-        formData, 
-        isEnglish ? "en" : "ge", 
+        lastSearchParams, // Use stored params instead of current formData
+        isEnglish ? "en" : "ge",
         regionOptions,
         null,
-        { limit: 50000 } // Set a high limit to get all records
+        { limit: 200000 } // Optimal limit that works reliably without memory issues
       );
-      
+
+      console.log("Export API response:", exportResponse);
+
       const allResults = exportResponse.results || [];
-      
+
       if (allResults.length === 0) {
-        alert(isEnglish ? "No data to export" : "ექსპორტისთვის მონაცემები არ არის");
+        alert(
+          isEnglish ? "No data to export" : "ექსპორტისთვის მონაცემები არ არის"
+        );
         return;
       }
 
@@ -290,7 +327,8 @@ function SearchForm({ isEnglish }) {
             if (value === "უცნობი") value = "";
             if (path === "isActive") value = value ? "აქტიური" : "არააქტიური";
             if (path === "Init_Reg_date") value = formatDate(value);
-            if (path === "abbreviation") value = legalFormsMap[row.legalFormId] || value;
+            if (path === "abbreviation")
+              value = legalFormsMap[row.legalFormId] || value;
             return value || "";
           })
         ),
@@ -299,34 +337,54 @@ function SearchForm({ isEnglish }) {
       // Create workbook and worksheet
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-      
-      // Auto-size columns
+
+      // Auto-size columns (optimized for large datasets)
       const colWidths = headers.map((header, index) => {
-        const headerLength = (header.label === "legalRegion" || header.label === "factualRegion") 
-          ? `${t.region} (${header.label === "legalRegion" ? t.legalAddress : t.factualAddress})`.length 
-          : t[header.label].length;
-        const dataLength = Math.max(
-          ...excelData.slice(1).map(row => String(row[index] || "").length),
-          headerLength
-        );
-        return { wch: Math.min(Math.max(dataLength + 2, 10), 50) };
+        const headerLength =
+          header.label === "legalRegion" || header.label === "factualRegion"
+            ? `${t.region} (${
+                header.label === "legalRegion"
+                  ? t.legalAddress
+                  : t.factualAddress
+              })`.length
+            : t[header.label].length;
+
+        // For large datasets, sample only the first 1000 rows for width calculation
+        const sampleSize = Math.min(1000, excelData.length - 1);
+        let maxDataLength = 0;
+
+        for (let i = 1; i <= sampleSize; i++) {
+          const cellLength = String(excelData[i][index] || "").length;
+          if (cellLength > maxDataLength) {
+            maxDataLength = cellLength;
+          }
+        }
+
+        return {
+          wch: Math.min(
+            Math.max(Math.max(maxDataLength, headerLength) + 2, 10),
+            50
+          ),
+        };
       });
-      worksheet['!cols'] = colWidths;
+      worksheet["!cols"] = colWidths;
 
       XLSX.utils.book_append_sheet(workbook, worksheet, "Business Registry");
-      
+
       // Generate filename with current date and record count
-      const fileName = `business_registry_${allResults.length}_records_${new Date().toISOString().split("T")[0]}.xlsx`;
-      
+      const fileName = `business_registry_${allResults.length}_records_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+
       // Write and download file
       XLSX.writeFile(workbook, fileName);
-      
+
       // Show success message
-      alert(isEnglish 
-        ? `Successfully exported ${allResults.length} records to Excel`
-        : `წარმატებით ექსპორტირებულია ${allResults.length} ჩანაწერი Excel-ში`
+      alert(
+        isEnglish
+          ? `Successfully exported ${allResults.length} records to Excel`
+          : `წარმატებით ექსპორტირებულია ${allResults.length} ჩანაწერი Excel-ში`
       );
-      
     } catch (error) {
       console.error("Error exporting to Excel:", error);
       alert(isEnglish ? "Error exporting data" : "ექსპორტისას შეცდომა");
@@ -384,7 +442,9 @@ function SearchForm({ isEnglish }) {
             <tr>
               <td>${result.identificationNumber || ""}</td>
               <td>${result.personalNumber || ""}</td>
-              <td>${legalFormsMap[result.legalFormId] || result.abbreviation || ""}</td>
+              <td>${
+                legalFormsMap[result.legalFormId] || result.abbreviation || ""
+              }</td>
               <td>${result.name || ""}</td>
               <td>${result.legalAddress?.region || ""}</td>
               <td>${result.legalAddress?.address || ""}</td>
