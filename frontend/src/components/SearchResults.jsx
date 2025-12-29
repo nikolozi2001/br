@@ -19,7 +19,7 @@ const formatDate = (dateString) => {
   }
 };
 
-function SearchResults({ results, isEnglish, formData, legalFormsMap }) {
+function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const navigate = useNavigate();
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -374,7 +374,7 @@ function SearchResults({ results, isEnglish, formData, legalFormsMap }) {
               <div>
                 <span className="font-bpg-nino">{t.total}:</span>{" "}
                 <span className="font-medium text-gray-900">
-                  {results.length}
+                  {pagination?.total || results.length}
                 </span>
               </div>
             </div>

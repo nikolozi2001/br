@@ -143,9 +143,9 @@ export function useSearchForm(isEnglish) {
 
   const handleSubmit = async (signal = null) => {
     try {
-      const documents = await fetchDocuments(formData, isEnglish ? "en" : "ge", regionOptions, signal);
-      // console.log("Search Results:", documents);
-      return documents;
+      const response = await fetchDocuments(formData, isEnglish ? "en" : "ge", regionOptions, signal);
+      // console.log("Search Results:", response);
+      return response; // Return full response with results and pagination
     } catch (error) {
       console.error("Error fetching documents:", error);
       throw error; // Re-throw to allow parent component to handle abort errors

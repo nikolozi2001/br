@@ -24,6 +24,7 @@ function SearchForm({ isEnglish }) {
   const t = translations[isEnglish ? "en" : "ge"];
   const [isFlipped, setIsFlipped] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [abortController, setAbortController] = useState(null);
@@ -122,6 +123,7 @@ function SearchForm({ isEnglish }) {
   const handleBackToSearch = () => {
     setShowResults(false);
     setSearchResults([]);
+    setPagination(null);
 
     // Clear URL parameters when going back to search
     const url = new URL(window.location);
@@ -138,6 +140,7 @@ function SearchForm({ isEnglish }) {
     setIsStopped(false);
     setShowResults(false);
     setSearchResults([]);
+    setPagination(null);
     setIsLoading(true);
 
     // Create new AbortController for this search
@@ -146,13 +149,14 @@ function SearchForm({ isEnglish }) {
 
     try {
       console.log("Calling handleSubmit...");
-      const results = await handleSubmit(controller.signal);
-      console.log("Got results, isStopped:", isStopped, "signal aborted:", controller.signal?.aborted, "results length:", results?.length);
+      const response = await handleSubmit(controller.signal);
+      console.log("Got response, isStopped:", isStopped, "signal aborted:", controller.signal?.aborted, "results length:", response?.results?.length);
       
       // Always show results if we got them and the request wasn't aborted
-      if (results && results.length > 0 && !controller.signal?.aborted) {
+      if (response && response.results && response.results.length > 0 && !controller.signal?.aborted) {
         console.log("Setting results and showing them");
-        setSearchResults(results);
+        setSearchResults(response.results);
+        setPagination(response.pagination);
         setShowResults(true);
         setIsLoading(false);
       } else {
@@ -194,6 +198,7 @@ function SearchForm({ isEnglish }) {
       setIsLoading(false);
       setShowResults(false);
       setSearchResults([]);
+      setPagination(null);
       
       // Clear URL parameters
       const url = new URL(window.location);
@@ -651,6 +656,7 @@ function SearchForm({ isEnglish }) {
                         ) : (
                           <SearchResults
                             results={searchResults}
+                            pagination={pagination}
                             isEnglish={isEnglish}
                             formData={formData}
                             handleInputChange={handleInputChange}

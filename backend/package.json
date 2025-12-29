@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "perf-test": "node performance-test.js",
-    "perf-test:watch": "nodemon performance-test.js"
+    "start": "node --max-old-space-size=8192 src/app.js",
+    "dev": "nodemon --max-old-space-size=8192 src/app.js",
+    "perf-test": "node --max-old-space-size=8192 performance-test.js",
+    "perf-test:watch": "nodemon --max-old-space-size=8192 performance-test.js"
   },
   "keywords": [],
   "author": "",

@@ -50,8 +50,13 @@ router.get("/", async (req, res) => {
       x,
       y,
       size,
+      page = 1,
+      limit = 1000, // Default limit to prevent large result sets
     } = req.query;
     const pool = await poolPromise;
+
+    // Calculate offset for pagination
+    const offset = (parseInt(page) - 1) * parseInt(limit);
 
     let query = `
       SELECT a.[Stat_ID], a.[Legal_Code], a.[Personal_no], a.[Legal_Form_ID],
@@ -127,7 +132,7 @@ router.get("/", async (req, res) => {
             }
           } else {
             // For detailed codes like "01.11.1", use the LIKE approach
-            conditions.push(`(a.Activity_Code LIKE @activityCode${index} OR a.Activity_2_Code LIKE @activityCode${index})`);
+            conditions.push(`a.Activity_2_Code LIKE @activityCode${index}`);
             request.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
           }
         });
@@ -229,12 +234,141 @@ router.get("/", async (req, res) => {
       query += " AND Y IS NOT NULL";
     }
 
+    // Add pagination
+    query += ` ORDER BY a.Legal_Code OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+    request.input("offset", sql.Int, offset);
+    request.input("limit", sql.Int, parseInt(limit));
+
+    // Create a separate request for count to avoid parameter conflicts
+    const countRequest = pool.request();
+
+    // Create count query with same WHERE conditions
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM [register].[dbo].[DocMain] a
+      WHERE 1=1
+    `;
+
+    // Add the same parameters and conditions to count query
+    if (identificationNumber) {
+      countQuery += " AND a.Legal_Code = @identificationNumber";
+      countRequest.input("identificationNumber", sql.BigInt, identificationNumber);
+    }
+    if (organizationName) {
+      countQuery += " AND (a.Full_Name LIKE @organizationName OR a.Abbreviation LIKE @organizationName)";
+      countRequest.input("organizationName", sql.NVarChar, `%${organizationName}%`);
+    }
+    if (legalForm) {
+      const legalForms = Array.isArray(legalForm) ? legalForm : [legalForm];
+      const legalFormParams = legalForms.map((_, index) => `@legalForm${index}`).join(', ');
+      countQuery += ` AND a.Legal_Form_ID IN (${legalFormParams})`;
+      legalForms.forEach((form, index) => {
+        countRequest.input(`legalForm${index}`, sql.SmallInt, form);
+      });
+    }
+    if (head) {
+      countQuery += " AND a.Head LIKE @head";
+      countRequest.input("head", sql.NVarChar, `%${head}%`);
+    }
+    if (partner) {
+      countQuery += " AND a.Partner LIKE @partner";
+      countRequest.input("partner", sql.NVarChar, `%${partner}%`);
+    }
+    if (req.query.activityCode) {
+      const activityCodes = Array.isArray(req.query.activityCode) ? req.query.activityCode : [req.query.activityCode];
+      if (activityCodes.length > 0) {
+        const conditions = [];
+        activityCodes.forEach((code, index) => {
+          if (code.length === 1 && /^[A-Z]$/i.test(code)) {
+            const letterToRootId = {
+              'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 
+              'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 
+              'R': 18, 'S': 19, 'T': 20, 'U': 21
+            };
+            const rootId = letterToRootId[code.toUpperCase()];
+            if (rootId) {
+              conditions.push(`a.Activity_2_ID IN (SELECT ID FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
+              countRequest.input(`rootId${index}`, sql.Int, rootId);
+            }
+          } else {
+            conditions.push(`a.Activity_2_Code LIKE @activityCode${index}`);
+            countRequest.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
+          }
+        });
+        if (conditions.length > 0) {
+          countQuery += ` AND (${conditions.join(" OR ")})`;
+        }
+      }
+    }
+    if (req.query.legalAddressRegion) {
+      countQuery += " AND Region_Code = @regionCode";
+      countRequest.input("regionCode", sql.NVarChar(50), req.query.legalAddressRegion);
+    }
+    if (req.query.legalAddressCity) {
+      countQuery += " AND City_Code = @cityCode";
+      countRequest.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
+    }
+    if (req.query.legalAddress) {
+      countQuery += " AND Address LIKE @address";
+      countRequest.input("address", sql.NVarChar, `%${req.query.legalAddress}%`);
+    }
+    if (req.query.factualAddressRegion) {
+      countQuery += " AND Region_Code2 = @regionCode2";
+      countRequest.input("regionCode2", sql.NVarChar(50), req.query.factualAddressRegion);
+    }
+    if (req.query.factualAddressCity) {
+      countQuery += " AND City_Code2 = @cityCode2";
+      countRequest.input("cityCode2", sql.NVarChar(50), req.query.factualAddressCity);
+    }
+    if (req.query.factualAddress) {
+      countQuery += " AND Address2 LIKE @address2";
+      countRequest.input("address2", sql.NVarChar, `%${req.query.factualAddress}%`);
+    }
+    if (ownershipType) {
+      countQuery += " AND Ownership_Type_ID = @ownershipType";
+      countRequest.input("ownershipType", sql.Int, parseInt(ownershipType, 10));
+    }
+    if (size) {
+      let sizeText;
+      switch (size) {
+        case "1": sizeText = "მცირე"; break;
+        case "2": sizeText = "საშუალო"; break;
+        case "3": sizeText = "მსხვილი"; break;
+      }
+      if (sizeText) {
+        countQuery += " AND Zoma = @size";
+        countRequest.input("size", sql.NVarChar, sizeText);
+      }
+    }
+    if (isActive) {
+      countQuery += " AND ISActive = @isActive";
+      countRequest.input("isActive", sql.Int, isActive ? 1 : null);
+    }
+    if (x === "true") {
+      countQuery += " AND X IS NOT NULL";
+    }
+    if (y === "true") {
+      countQuery += " AND Y IS NOT NULL";
+    }
+
+    // Get total count first
+    const countResult = await countRequest.query(countQuery);
+    const totalRecords = countResult.recordset[0].total;
+
     const result = await request.query(query);
 
-    res.json(result.recordset);
+    res.json({
+      data: result.recordset,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: totalRecords,
+        totalPages: Math.ceil(totalRecords / parseInt(limit))
+      }
+    });
   } catch (error) {
     console.error("Error fetching documents:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
 

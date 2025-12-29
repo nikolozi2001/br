@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://br-api.geostat.ge',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: true,
       }

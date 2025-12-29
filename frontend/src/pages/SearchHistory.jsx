@@ -261,8 +261,9 @@ function SearchHistory({ isEnglish }) {
           })
         );
 
-        if (response && response.length > 0) {
-          const data = response[0];
+        const results = response.results || response; // Handle both new and old format
+        if (results && results.length > 0) {
+          const data = results[0];
           dispatch({ type: "SET_DOCUMENT_DATA", payload: data });
 
           // Fetch representatives independently

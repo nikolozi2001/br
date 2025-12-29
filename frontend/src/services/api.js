@@ -1,7 +1,7 @@
 // Use proxy in development, full URL in production
 const API_BASE_URL = import.meta.env.DEV 
   ? "/api"  // Use Vite proxy in development
-  : "https://br-api.geostat.ge/api";  // Use direct URL in production
+  : "http://localhost:5000/api";  // Use direct URL in production
 
 // Generic API utility functions for reports
 const handleReportApiResponse = async (response) => {
@@ -316,8 +316,11 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     const data = await response.json();
     // console.log('Raw response data:', data);
 
+    // Handle new paginated response format
+    const items = data.data || data; // Support both new (paginated) and old format
+    
     // Transform the response data
-    return data.map((item) => ({
+    const transformedData = items.map((item) => ({
       ...item,
       id: item.Stat_ID,
       identificationNumber: item.Legal_Code,
@@ -358,9 +361,15 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
         ? [{ value: item.Zoma.toString(), label: item.Zoma }]
         : [],
     }));
+    
+    // Return data with pagination info if available
+    return {
+      results: transformedData,
+      pagination: data.pagination || null
+    };
   } catch (error) {
     console.error("Error fetching documents:", error);
-    return [];
+    return { results: [], pagination: null };
   }
 };
 
