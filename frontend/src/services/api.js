@@ -199,11 +199,16 @@ export const fetchSizes = async (lang) => {
 
 // documents API
 // eslint-disable-next-line no-unused-vars
-export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = [], signal = null) => {
+export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = [], signal = null, options = {}) => {
   try {
     // First create the basic query params
     const queryParams = new URLSearchParams();
     queryParams.append("lang", lang);
+    
+    // Add limit parameter if provided in options
+    if (options.limit) {
+      queryParams.append("limit", options.limit);
+    }
 
     if (searchParams.identificationNumber) {
       queryParams.append(

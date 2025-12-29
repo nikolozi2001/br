@@ -1,6 +1,7 @@
 import "../styles/SearchForm.scss";
 import React, { useState, useEffect } from "react";
 import { translations } from "../translations/searchForm";
+import * as XLSX from 'xlsx';
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import { useSearchForm } from "../hooks/useSearchForm";
 import { AddressSection } from "./AddressSection";
@@ -12,7 +13,7 @@ import SearchResults from "./SearchResults";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
 import { useNavigation } from "../hooks/useNavigation";
-import { fetchLegalFormsRaw } from "../services/api";
+import { fetchLegalFormsRaw, fetchDocuments } from "../services/api";
 import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 import SEO from "./SEO";
@@ -207,89 +208,131 @@ function SearchForm({ isEnglish }) {
     }, 0);
   };
 
-  const exportToCSV = () => {
-    const headers = [
-      { label: "identificationNumber", path: "identificationNumber" },
-      { label: "personalNumber", path: "personalNumber" },
-      { label: "organizationalLegalForm", path: "abbreviation" },
-      { label: "organizationName", path: "name" },
-      { label: "legalRegion", path: "legalAddress.region" },
-      { label: "municipalityCity", path: "City_name" },
-      { label: "communityName", path: "Community_name" },
-      { label: "villageName", path: "Village_name" },
-      { label: "legalAddress", path: "legalAddress.address" },
-      { label: "factualRegion", path: "factualAddress.region" },
-      { label: "municipalityCity", path: "City_name2" },
-      { label: "communityName", path: "Community_name2" },
-      { label: "villageName", path: "Village_name2" },
-      { label: "factualAddress", path: "factualAddress.address" },
-      { label: "activityCode", path: "activities[0].code" },
-      { label: "activityDescription", path: "activities[0].name" },
-      { label: "head", path: "head" },
-      { label: "partner", path: "partner" },
-      { label: "phone", path: "phone" },
-      { label: "email", path: "email" },
-      { label: "web", path: "web" },
-      { label: "ownershipForm", path: "ownershipType" },
-      { label: "activeSubject", path: "isActive" },
-      { label: "businessSize", path: "Zoma" },
-      { label: "initRegDate", path: "Init_Reg_date" },
-    ];
+  const exportToExcel = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Create a new search specifically for export that fetches ALL results
+      // by setting a very high limit or using a special export endpoint
+      const exportResponse = await fetchDocuments(
+        formData, 
+        isEnglish ? "en" : "ge", 
+        regionOptions,
+        null,
+        { limit: 50000 } // Set a high limit to get all records
+      );
+      
+      const allResults = exportResponse.results || [];
+      
+      if (allResults.length === 0) {
+        alert(isEnglish ? "No data to export" : "ექსპორტისთვის მონაცემები არ არის");
+        return;
+      }
 
-    const csvContent =
-      "\ufeff" +
-      [
+      const headers = [
+        { label: "identificationNumber", path: "identificationNumber" },
+        { label: "personalNumber", path: "personalNumber" },
+        { label: "organizationalLegalForm", path: "abbreviation" },
+        { label: "organizationName", path: "name" },
+        { label: "legalRegion", path: "legalAddress.region" },
+        { label: "municipalityCity", path: "City_name" },
+        { label: "communityName", path: "Community_name" },
+        { label: "villageName", path: "Village_name" },
+        { label: "legalAddress", path: "legalAddress.address" },
+        { label: "factualRegion", path: "factualAddress.region" },
+        { label: "municipalityCity", path: "City_name2" },
+        { label: "communityName", path: "Community_name2" },
+        { label: "villageName", path: "Village_name2" },
+        { label: "factualAddress", path: "factualAddress.address" },
+        { label: "activityCode", path: "activities[0].code" },
+        { label: "activityDescription", path: "activities[0].name" },
+        { label: "head", path: "head" },
+        { label: "partner", path: "partner" },
+        { label: "phone", path: "phone" },
+        { label: "email", path: "email" },
+        { label: "web", path: "web" },
+        { label: "ownershipForm", path: "ownershipType" },
+        { label: "activeSubject", path: "isActive" },
+        { label: "businessSize", path: "Zoma" },
+        { label: "initRegDate", path: "Init_Reg_date" },
+      ];
+
+      // Prepare data for Excel
+      const excelData = [
         // Headers row with translated labels
-        headers
-          .map((header) => {
-            // Handle special cases for addresses
-            if (header.label === "legalRegion") {
-              return `"${t.region} (${t.legalAddress})"`;
-            } else if (header.label === "factualRegion") {
-              return `"${t.region} (${t.factualAddress})"`;
-            }
-            // Normal translation
-            return `"${t[header.label]}"`;
-          })
-          .join(","),
+        headers.map((header) => {
+          // Handle special cases for addresses
+          if (header.label === "legalRegion") {
+            return `${t.region} (${t.legalAddress})`;
+          } else if (header.label === "factualRegion") {
+            return `${t.region} (${t.factualAddress})`;
+          }
+          // Normal translation
+          return t[header.label];
+        }),
         // Data rows
-        ...searchResults.map((row) =>
-          headers
-            .map((header) => {
-              let value;
-              const path = header.path;
-              if (path.includes("[")) {
-                // Handle array paths (activities)
-                const [arrayPath, arrayKey] = path.split(".");
-                value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
-              } else if (path.includes(".")) {
-                // Handle nested object paths (addresses)
-                const [objPath, key] = path.split(".");
-                value = row[objPath][key];
-              } else {
-                // Handle direct properties
-                value = row[path];
-              }
-              if (value === "უცნობი") value = "";
-              if (path === "isActive") value = value ? "აქტიური" : "არააქტიური";
-              if (path === "Init_Reg_date") value = formatDate(value);
-              if (path === "abbreviation") value = legalFormsMap[row.legalFormId] || value;
-              return `"${value || ""}"`;
-            })
-            .join(",")
+        ...allResults.map((row) =>
+          headers.map((header) => {
+            let value;
+            const path = header.path;
+            if (path.includes("[")) {
+              // Handle array paths (activities)
+              const [arrayPath, arrayKey] = path.split(".");
+              value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
+            } else if (path.includes(".")) {
+              // Handle nested object paths (addresses)
+              const [objPath, key] = path.split(".");
+              value = row[objPath][key];
+            } else {
+              // Handle direct properties
+              value = row[path];
+            }
+            if (value === "უცნობი") value = "";
+            if (path === "isActive") value = value ? "აქტიური" : "არააქტიური";
+            if (path === "Init_Reg_date") value = formatDate(value);
+            if (path === "abbreviation") value = legalFormsMap[row.legalFormId] || value;
+            return value || "";
+          })
         ),
-      ].join("\n");
+      ];
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute(
-      "download",
-      `business_registry_${new Date().toISOString().split("T")[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+      
+      // Auto-size columns
+      const colWidths = headers.map((header, index) => {
+        const headerLength = (header.label === "legalRegion" || header.label === "factualRegion") 
+          ? `${t.region} (${header.label === "legalRegion" ? t.legalAddress : t.factualAddress})`.length 
+          : t[header.label].length;
+        const dataLength = Math.max(
+          ...excelData.slice(1).map(row => String(row[index] || "").length),
+          headerLength
+        );
+        return { wch: Math.min(Math.max(dataLength + 2, 10), 50) };
+      });
+      worksheet['!cols'] = colWidths;
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Business Registry");
+      
+      // Generate filename with current date and record count
+      const fileName = `business_registry_${allResults.length}_records_${new Date().toISOString().split("T")[0]}.xlsx`;
+      
+      // Write and download file
+      XLSX.writeFile(workbook, fileName);
+      
+      // Show success message
+      alert(isEnglish 
+        ? `Successfully exported ${allResults.length} records to Excel`
+        : `წარმატებით ექსპორტირებულია ${allResults.length} ჩანაწერი Excel-ში`
+      );
+      
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert(isEnglish ? "Error exporting data" : "ექსპორტისას შეცდომა");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // console.log("Search Results:", searchResults);
@@ -597,7 +640,7 @@ function SearchForm({ isEnglish }) {
                               {t.print || "Print"}
                             </button>
                             <button
-                              onClick={exportToCSV}
+                              onClick={exportToExcel}
                               style={{ fontFamily: georgianFont }}
                               className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer"
                               disabled={!searchResults?.length || isLoading}
@@ -615,7 +658,7 @@ function SearchForm({ isEnglish }) {
                                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                                 />
                               </svg>
-                              {t.exportToCSV}
+                              {t.exportToExcel}
                             </button>
                             {isLoading && (
                               <button

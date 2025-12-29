@@ -34,7 +34,7 @@ export const translations = {
 2) ხელფასი ან დასაქმებულთა რაოდენობა > 0 (ყოველთვიური საშემოსავლო და სხვა დეკლარაციები);
 3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
 4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ ქონების გადასახადისა`,
-    exportToCSV: "ექსპორტი CSV-ში",
+    exportToExcel: "ექსპორტი Excel-ში",
     perPage: "ჩანაწერი",
     showing: "ნაჩვენებია",
     of: "დან",
@@ -91,7 +91,7 @@ export const translations = {
 2) Salary or number of employees > 0 (monthly income and other declarations);
 3) Has profit or loss (profit declaration);
 4) Paid any type of tax, except property tax only`,
-    exportToCSV: "Export to CSV",
+    exportToExcel: "Export to Excel",
     perPage: "items",
     showing: "Showing",
     of: "of",
