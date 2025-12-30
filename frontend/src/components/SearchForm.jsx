@@ -223,175 +223,94 @@ function SearchForm({ isEnglish }) {
   };
 
   const exportToExcel = async () => {
-    try {
-      // Check if there are any search results first
-      if (!searchResults || searchResults.length === 0) {
-        alert(
-          isEnglish
-            ? "No data to export. Please perform a search first."
-            : "ექსპორტისთვის მონაცემები არ არის. ჯერ შეასრულეთ ძებნა."
-        );
-        return;
-      }
-
-      // Check if we have the last search parameters
-      if (!lastSearchParams) {
-        alert(
-          isEnglish
-            ? "Cannot export: search parameters not available"
-            : "ექსპორტი შეუძლებელია: ძებნის პარამეტრები მიუწვდომელია"
-        );
-        return;
-      }
-
-      setIsLoading(true);
-
-      // Use the stored search parameters that generated the current results
-      const exportResponse = await fetchDocuments(
-        lastSearchParams, // Use stored params instead of current formData
-        isEnglish ? "en" : "ge",
-        regionOptions,
-        null,
-        { limit: 200000 } // Optimal limit that works reliably without memory issues
-      );
-
-      console.log("Export API response:", exportResponse);
-
-      const allResults = exportResponse.results || [];
-
-      if (allResults.length === 0) {
-        alert(
-          isEnglish ? "No data to export" : "ექსპორტისთვის მონაცემები არ არის"
-        );
-        return;
-      }
-
-      const headers = [
-        { label: "identificationNumber", path: "identificationNumber" },
-        { label: "personalNumber", path: "personalNumber" },
-        { label: "organizationalLegalForm", path: "abbreviation" },
-        { label: "organizationName", path: "name" },
-        { label: "legalRegion", path: "legalAddress.region" },
-        { label: "municipalityCity", path: "City_name" },
-        { label: "communityName", path: "Community_name" },
-        { label: "villageName", path: "Village_name" },
-        { label: "legalAddress", path: "legalAddress.address" },
-        { label: "factualRegion", path: "factualAddress.region" },
-        { label: "municipalityCity", path: "City_name2" },
-        { label: "communityName", path: "Community_name2" },
-        { label: "villageName", path: "Village_name2" },
-        { label: "factualAddress", path: "factualAddress.address" },
-        { label: "activityCode", path: "activities[0].code" },
-        { label: "activityDescription", path: "activities[0].name" },
-        { label: "head", path: "head" },
-        { label: "partner", path: "partner" },
-        { label: "phone", path: "phone" },
-        { label: "email", path: "email" },
-        { label: "web", path: "web" },
-        { label: "ownershipForm", path: "ownershipType" },
-        { label: "activeSubject", path: "isActive" },
-        { label: "businessSize", path: "Zoma" },
-        { label: "initRegDate", path: "Init_Reg_date" },
-      ];
-
-      // Prepare data for Excel
-      const excelData = [
-        // Headers row with translated labels
-        headers.map((header) => {
-          // Handle special cases for addresses
-          if (header.label === "legalRegion") {
-            return `${t.region} (${t.legalAddress})`;
-          } else if (header.label === "factualRegion") {
-            return `${t.region} (${t.factualAddress})`;
-          }
-          // Normal translation
-          return t[header.label];
-        }),
-        // Data rows
-        ...allResults.map((row) =>
-          headers.map((header) => {
-            let value;
-            const path = header.path;
-            if (path.includes("[")) {
-              // Handle array paths (activities)
-              const [arrayPath, arrayKey] = path.split(".");
-              value = row[arrayPath.split("[")[0]][0]?.[arrayKey] || "";
-            } else if (path.includes(".")) {
-              // Handle nested object paths (addresses)
-              const [objPath, key] = path.split(".");
-              value = row[objPath][key];
-            } else {
-              // Handle direct properties
-              value = row[path];
-            }
-            if (value === "უცნობი") value = "";
-            if (path === "isActive") value = value ? "აქტიური" : "არააქტიური";
-            if (path === "Init_Reg_date") value = formatDate(value);
-            if (path === "abbreviation")
-              value = legalFormsMap[row.legalFormId] || value;
-            return value || "";
-          })
-        ),
-      ];
-
-      // Create workbook and worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-
-      // Auto-size columns (optimized for large datasets)
-      const colWidths = headers.map((header, index) => {
-        const headerLength =
-          header.label === "legalRegion" || header.label === "factualRegion"
-            ? `${t.region} (${
-                header.label === "legalRegion"
-                  ? t.legalAddress
-                  : t.factualAddress
-              })`.length
-            : t[header.label].length;
-
-        // For large datasets, sample only the first 1000 rows for width calculation
-        const sampleSize = Math.min(1000, excelData.length - 1);
-        let maxDataLength = 0;
-
-        for (let i = 1; i <= sampleSize; i++) {
-          const cellLength = String(excelData[i][index] || "").length;
-          if (cellLength > maxDataLength) {
-            maxDataLength = cellLength;
-          }
-        }
-
-        return {
-          wch: Math.min(
-            Math.max(Math.max(maxDataLength, headerLength) + 2, 10),
-            50
-          ),
-        };
-      });
-      worksheet["!cols"] = colWidths;
-
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Business Registry");
-
-      // Generate filename with current date and record count
-      const fileName = `business_registry_${allResults.length}_records_${
-        new Date().toISOString().split("T")[0]
-      }.xlsx`;
-
-      // Write and download file
-      XLSX.writeFile(workbook, fileName);
-
-      // Show success message
-      alert(
-        isEnglish
-          ? `Successfully exported ${allResults.length} records to Excel`
-          : `წარმატებით ექსპორტირებულია ${allResults.length} ჩანაწერი Excel-ში`
-      );
-    } catch (error) {
-      console.error("Error exporting to Excel:", error);
-      alert(isEnglish ? "Error exporting data" : "ექსპორტისას შეცდომა");
-    } finally {
-      setIsLoading(false);
+  try {
+    if (!pagination?.total || !lastSearchParams) {
+      alert(isEnglish ? "No data to export" : "ექსპორტისთვის მონაცემები არ არის");
+      return;
     }
-  };
+
+    const totalRecords = pagination.total;
+    const CHUNK_SIZE = 50000; 
+    setIsLoading(true);
+
+    // Prepare CSV Header
+    const headers = [
+      { label: "identificationNumber", path: "identificationNumber" },
+      { label: "personalNumber", path: "personalNumber" },
+      { label: "organizationName", path: "name" },
+      { label: "legalRegion", path: "legalAddress.region" },
+      { label: "legalAddress", path: "legalAddress.address" },
+      { label: "activityCode", path: "activities[0].code" },
+      { label: "activityDescription", path: "activities[0].name" },
+      { label: "head", path: "head" },
+      { label: "isActive", path: "isActive" },
+      { label: "initRegDate", path: "Init_Reg_date" },
+    ];
+
+    // CSV Start with UTF-8 BOM (essential for Georgian characters in Excel)
+    let csvContent = "\ufeff"; 
+    csvContent += headers.map(h => t[h.label] || h.label).join(",") + "\n";
+
+    // Loop through pages
+    for (let i = 0; i < Math.ceil(totalRecords / CHUNK_SIZE); i++) {
+      // Check if user stopped the search
+      if (isStopped) break;
+
+      const response = await fetchDocuments(
+        lastSearchParams,
+        isEnglish ? "en" : "ge",
+        [],
+        null, // You can pass abortController.signal here
+        { page: i + 1, limit: CHUNK_SIZE }
+      );
+
+      const chunk = response.results || [];
+      
+      // Process chunk into CSV string
+      const chunkRows = chunk.map(row => {
+        return headers.map(header => {
+          let val = "";
+          if (header.path.includes(".")) {
+             const [obj, key] = header.path.replace('activities[0].', 'activities_0_').split(".");
+             // Simple path resolver
+             if (header.path.startsWith("activities")) val = row.activities?.[0]?.[header.path.split('.')[1]];
+             else val = row[header.path.split('.')[0]]?.[header.path.split('.')[1]];
+          } else {
+            val = row[header.path];
+          }
+          
+          if (header.path === "isActive") val = val ? "Active" : "Inactive";
+          if (header.path === "Init_Reg_date") val = formatDate(val);
+          
+          // Escape quotes and wrap in quotes for CSV safety
+          return `"${String(val || "").replace(/"/g, '""')}"`;
+        }).join(",");
+      }).join("\n");
+
+      csvContent += chunkRows + "\n";
+      
+      console.log(`Exported ${Math.min((i + 1) * CHUNK_SIZE, totalRecords)} / ${totalRecords}`);
+    }
+
+    if (isStopped) return;
+
+    // Trigger Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `business_registry_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+  } catch (error) {
+    console.error("Export Error:", error);
+    alert(isEnglish ? "Error during export" : "ექსპორტის შეცდომა");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // console.log("Search Results:", searchResults);
 

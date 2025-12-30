@@ -205,10 +205,10 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     const queryParams = new URLSearchParams();
     queryParams.append("lang", lang);
     
-    // Add limit parameter if provided in options
-    if (options.limit) {
-      queryParams.append("limit", options.limit);
-    }
+     // Use page and limit from options for batching
+    if (options.page) queryParams.append("page", options.page);
+    if (options.limit) queryParams.append("limit", options.limit);
+
 
     if (searchParams.identificationNumber) {
       queryParams.append(

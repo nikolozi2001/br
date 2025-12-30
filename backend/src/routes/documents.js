@@ -235,17 +235,12 @@ router.get("/", async (req, res) => {
     }
 
     // Add pagination - but skip for very high limits (export scenarios)
-    const limitInt = parseInt(limit);
-    const skipPagination = limitInt >= 500000;
-    
-    if (!skipPagination) {
-      query += ` ORDER BY a.Legal_Code OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
-      request.input("offset", sql.Int, offset);
-      request.input("limit", sql.Int, limitInt);
-    } else {
-      // For very high limits (export), just order without pagination
-      query += ` ORDER BY a.Legal_Code`;
-    }
+   const limitInt = parseInt(limit) || 1000;
+const offsetInt = parseInt(offset) || 0;
+
+query += ` ORDER BY a.Legal_Code OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+request.input("offset", sql.Int, offsetInt);
+request.input("limit", sql.Int, limitInt);
 
     // Create a separate request for count to avoid parameter conflicts
     const countRequest = pool.request();
@@ -365,27 +360,16 @@ router.get("/", async (req, res) => {
 
     const result = await request.query(query);
 
-    // Build response based on whether we used pagination or not
+    // Build response with pagination info
     const response = {
-      data: result.recordset
-    };
-    
-    if (!skipPagination) {
-      response.pagination = {
+      data: result.recordset,
+      pagination: {
         page: parseInt(page),
-        limit: parseInt(limit),
+        limit: limitInt,
         total: totalRecords,
-        totalPages: Math.ceil(totalRecords / parseInt(limit))
-      };
-    } else {
-      // For export scenarios (no pagination), set simple pagination info
-      response.pagination = {
-        page: 1,
-        limit: totalRecords,
-        total: totalRecords,
-        totalPages: 1
-      };
-    }
+        totalPages: Math.ceil(totalRecords / limitInt)
+      }
+    };
 
     res.json(response);
   } catch (error) {
