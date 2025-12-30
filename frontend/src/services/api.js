@@ -1,7 +1,7 @@
 // Use proxy in development, full URL in production
 const API_BASE_URL = import.meta.env.DEV 
   ? "/api"  // Use Vite proxy in development
-  : "http://localhost:5000/api";  // Use direct URL in production
+  : "https://br-api.geostat.ge/api";  // Use direct URL in production
 
 // Generic API utility functions for reports
 const handleReportApiResponse = async (response) => {
