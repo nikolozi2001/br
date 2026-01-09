@@ -161,19 +161,23 @@ function SearchForm({ isEnglish }) {
         response?.results?.length
       );
 
-      // Always show results if we got them and the request wasn't aborted
-      if (
-        response &&
-        response.results &&
-        response.results.length > 0 &&
-        !controller.signal?.aborted
-      ) {
+      // Always show results if we got a response and the request wasn't aborted
+      if (response && !controller.signal?.aborted) {
         console.log("Setting results and showing them");
-        setSearchResults(response.results);
+        setSearchResults(response.results || []);
         setPagination(response.pagination);
         setLastSearchParams(formData); // Store the successful search params
         setShowResults(true);
         setIsLoading(false);
+        
+        // Show message if no results found
+        if (!response.results || response.results.length === 0) {
+          alert(
+            isEnglish
+              ? "No results found. Please try different search criteria."
+              : "შედეგები არ მოიძებნა. სცადეთ სხვა ძიების კრიტერიუმები."
+          );
+        }
       } else {
         console.log("Not showing results - conditions not met");
         setIsLoading(false);
@@ -188,6 +192,11 @@ function SearchForm({ isEnglish }) {
         setIsLoading(false);
       } else {
         console.error("Error fetching results:", error);
+        alert(
+          isEnglish
+            ? "An error occurred while searching. Please try again."
+            : "ძებნისას დაფიქსირდა შეცდომა. გთხოვთ, სცადოთ ხელახლა."
+        );
         setIsLoading(false);
       }
     } finally {
