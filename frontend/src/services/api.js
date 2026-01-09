@@ -111,13 +111,16 @@ export const fetchLegalForms = async (lang) => {
 export const fetchLegalFormsRaw = async (lang = "ge") => {
   try {
     const response = await fetch(`${API_BASE_URL}/legal-forms?lang=${lang}`);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
+    if (!response.ok) throw new Error("Network response was not ok");
+    
     const data = await response.json();
-
-    // Check if data is in recordset format
     const forms = data.recordset || data;
+
+    // ADD THIS CHECK: If the API sends an error object instead of an array, don't crash
+    if (!Array.isArray(forms)) {
+      console.error('Legal forms response is not an array:', forms);
+      return [];
+    }
 
     return forms.map((form) => ({
       Legal_Form_ID: form.ID || form.id,

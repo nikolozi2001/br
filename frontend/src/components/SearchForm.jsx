@@ -139,87 +139,44 @@ function SearchForm({ isEnglish }) {
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Starting new search - resetting states");
-
-    // Clear any previous states first and reset stopped flag
+    // Reset states
     setIsStopped(false);
     setShowResults(false);
     setSearchResults([]);
     setPagination(null);
     setIsLoading(true);
 
-    // Create new AbortController for this search
     const controller = new AbortController();
     setAbortController(controller);
 
     try {
-      console.log("Calling handleSubmit...");
+      // We wrap this in a try/catch to catch any unexpected logic errors
       const response = await handleSubmit(controller.signal);
-      console.log(
-        "Got response, isStopped:",
-        isStopped,
-        "signal aborted:",
-        controller.signal?.aborted,
-        "results length:",
-        response?.results?.length
-      );
 
-      // Always show results if we got a response and the request wasn't aborted
+      // If we have a response and it wasn't aborted
       if (response && !controller.signal?.aborted) {
-        console.log("Setting results and showing them");
         setSearchResults(response.results || []);
         setPagination(response.pagination);
-        setLastSearchParams(formData); // Store the successful search params
+        setLastSearchParams(formData);
         setShowResults(true);
-        setIsLoading(false);
-        
-        // Show message if no results found
-        if (!response.results || response.results.length === 0) {
-          alert(
-            isEnglish
-              ? "No results found. Please try different search criteria."
-              : "შედეგები არ მოიძებნა. სცადეთ სხვა ძიების კრიტერიუმები."
-          );
-        }
-      } else {
-        console.log("Not showing results - conditions not met");
-        setIsLoading(false);
-      }
 
-      // After successful search, update URL if it's only identification number search
-      // This will be handled by the SearchResults component's useEffect
+        if (!response.results || response.results.length === 0) {
+          alert(isEnglish ? "No results found." : "შედეგები არ მოიძებნა.");
+        }
+      }
     } catch (error) {
       if (error.name === "AbortError") {
-        console.log("Search was cancelled, isStopped:", isStopped);
-        // Only update loading state if this wasn't an intentional stop
-        if (!isStopped) {
-          setIsLoading(false);
-        }
+        console.log("Search was cancelled");
       } else {
-        console.error("Error fetching results:", error);
-        
-        // Comprehensive state reset on error to prevent component from getting stuck
-        setIsLoading(false);
-        setIsStopped(false);
-        setShowResults(false);
-        setSearchResults([]);
-        setPagination(null);
-        
-        // Show user-friendly error message
-        const errorMessage = error.response?.status === 400 
-          ? (isEnglish 
-              ? "Invalid search parameters. Please check your input and try again." 
-              : "არასწორი ძებნის პარამეტრები. გთხოვთ, შეამოწმოთ თქვენი მონაცემები და სცადოთ ხელახლა.")
-          : (isEnglish
-              ? "An error occurred while searching. Please try again."
-              : "ძებნისას დაფიქსირდა შეცდომა. გთხოვთ, სცადოთ ხელახლა.");
-        
-        alert(errorMessage);
+        console.error("Critical Search Error:", error);
+        alert(isEnglish ? "An error occurred. Please try again." : "დაფიქსირდა შეცდომა. სცადეთ ხელახლა.");
       }
     } finally {
+      // THIS IS THE KEY: This always runs regardless of success or crash
+      setIsLoading(false); 
       setAbortController(null);
     }
-  };
+};
 
   const handleStopSearch = () => {
     console.log("Stop search called - setting isStopped to true");
