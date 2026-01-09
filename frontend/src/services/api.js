@@ -84,6 +84,12 @@ export const fetchLegalForms = async (lang) => {
 
     // Check if data is in recordset format
     const forms = data.recordset || data;
+    
+    // Validate that forms is an array
+    if (!Array.isArray(forms)) {
+      console.error('Legal forms response is not an array:', forms);
+      return [];
+    }
 
     return forms
       .map((form) => ({
@@ -131,6 +137,12 @@ export const fetchActivities = async (lang = "ge") => {
       throw new Error("Network response was not ok");
     }
     const data = await response.json();
+    
+    // Validate that data is an array
+    if (!Array.isArray(data)) {
+      console.error('Activities response is not an array:', data);
+      return { codesOnly: [], codesWithNames: [] };
+    }
 
     const codesOnly = data.map((activity) => ({
       value: activity.Activity_Code,
@@ -165,6 +177,12 @@ export const fetchOwnershipTypes = async (lang = "ge") => {
 
     // Check if data is in recordset format
     const types = data.recordset || data;
+    
+    // Validate that types is an array
+    if (!Array.isArray(types)) {
+      console.error('Ownership types response is not an array:', types);
+      return [];
+    }
 
     return types.map((type) => ({
       value: type.ID?.toString(),
@@ -186,6 +204,12 @@ export const fetchSizes = async (lang) => {
     const data = await response.json();
 
     const sizes = data.recordset || data;
+
+    // Validate that sizes is an array before calling .map()
+    if (!Array.isArray(sizes)) {
+      console.error('Sizes response is not an array:', sizes);
+      return [];
+    }
 
     return sizes.map((size) => ({
       value: size.id.toString(),
@@ -323,6 +347,12 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
 
     // Handle new paginated response format
     const items = data.data || data; // Support both new (paginated) and old format
+    
+    // Validate that items is an array before calling .map()
+    if (!Array.isArray(items)) {
+      console.error('API response is not an array:', items);
+      return { results: [], pagination: data.pagination || null };
+    }
     
     // Transform the response data
     const transformedData = items.map((item) => ({
@@ -462,6 +492,13 @@ export const fetchEnterpriseBirthDeath = async (lang = "ge") => {
 
     // Convert to chart format
     const years = Object.keys(birthData).filter((key) => key !== "hints");
+    
+    // Validate that years is an array before calling .map()
+    if (!Array.isArray(years)) {
+      console.error('Years is not an array:', years);
+      return [];
+    }
+    
     return years.map((year) => ({
       year,
       birth: birthData[year],
@@ -524,6 +561,12 @@ export const fetchEnterpriseNace = async (lang = "ge") => {
       "2022",
       "2023",
     ];
+
+    // Validate that years is an array before calling .map()
+    if (!Array.isArray(years)) {
+      console.error('Years is not an array:', years);
+      return [];
+    }
 
     return years.map((year) => {
       const yearData = { year };
@@ -598,6 +641,12 @@ export const fetchEnterpriseDeathNace = async (lang = "ge") => {
       "2022",
       "2023",
     ];
+
+    // Validate that years is an array before calling .map()
+    if (!Array.isArray(years)) {
+      console.error('Years is not an array:', years);
+      return [];
+    }
 
     return years.map((year) => {
       const yearData = { year };
@@ -789,6 +838,12 @@ export const fetchEnterpriseBirthSector = async (lang = "ge") => {
       "2023",
     ];
 
+    // Validate that years is an array before calling .map()
+    if (!Array.isArray(years)) {
+      console.error('Years is not an array:', years);
+      return [];
+    }
+
     // Correct transformation: Each year becomes a row with sector values as columns
     const result = years.map((year) => {
       const yearData = { year: parseInt(year) };
@@ -839,6 +894,12 @@ export const fetchEnterpriseDeathSector = async (lang = "ge") => {
       "2023",
     ];
 
+    // Validate that years is an array before calling .map()
+    if (!Array.isArray(years)) {
+      console.error('Years is not an array:', years);
+      return [];
+    }
+
     return years.map((year) => {
       const yearData = { year };
 
@@ -871,7 +932,8 @@ export const fetchEnterpriseSurvivalYear = async (lang = "ge") => {
     // Check if data is in recordset format
     const results = data.recordset || data;
 
-    if (!results || results.length === 0) {
+    if (!Array.isArray(results) || results.length === 0) {
+      console.error('Results is not an array or is empty:', results);
       return [];
     }
 
@@ -919,7 +981,8 @@ export const fetchEnterpriseBirthDistribution = async (lang = "ge") => {
 
     const results = data.recordset || data;
 
-    if (!results || results.length === 0) {
+    if (!Array.isArray(results) || results.length === 0) {
+      console.error('Results is not an array or is empty:', results);
       return [];
     }
 
@@ -946,7 +1009,8 @@ export const fetchEnterpriseDeathDistribution = async (lang = "ge") => {
 
     const results = data.recordset || data;
 
-    if (!results || results.length === 0) {
+    if (!Array.isArray(results) || results.length === 0) {
+      console.error('Results is not an array or is empty:', results);
       return [];
     }
 
