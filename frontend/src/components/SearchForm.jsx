@@ -321,6 +321,106 @@ function SearchForm({ isEnglish }) {
   }
 };
 
+  const exportToAccess = async () => {
+    try {
+      if (!pagination?.total || !lastSearchParams) {
+        alert(isEnglish ? "No data to export" : "ექსპორტისთვის მონაცემები არ არის");
+        return;
+      }
+
+      const totalRecords = pagination.total;
+      const CHUNK_SIZE = 100000;
+      setIsLoading(true);
+
+      // Prepare headers for Access (using semicolon separator)
+      const headers = [
+        { label: "identificationNumber", path: "identificationNumber" },
+        { label: "personalNumber", path: "personalNumber" },
+        { label: "organizationName", path: "name" },
+        { label: "legalRegion", path: "legalAddress.region" },
+        { label: "legalAddress", path: "legalAddress.address" },
+        { label: "activityCode", path: "activities[0].code" },
+        { label: "activityDescription", path: "activities[0].name" },
+        { label: "head", path: "head" },
+        { label: "isActive", path: "isActive" },
+        { label: "initRegDate", path: "Init_Reg_date" },
+      ];
+
+      // Access-compatible CSV with UTF-8 BOM and semicolon separator
+      let csvContent = "\ufeff";
+      csvContent += headers.map(h => `"${(t[h.label] || h.label).replace(/"/g, '""')}"`).join(";") + "\n";
+
+      // Loop through pages
+      for (let i = 0; i < Math.ceil(totalRecords / CHUNK_SIZE); i++) {
+        // Check if user stopped the search
+        if (isStopped) return;
+
+        const response = await fetchDocuments(
+          lastSearchParams,
+          isEnglish ? "en" : "ge",
+          [],
+          null,
+          { page: i + 1, limit: CHUNK_SIZE }
+        );
+
+        const chunk = response.results || [];
+        
+        // Process chunk into CSV string with semicolon separator
+        const chunkRows = chunk.map(row => {
+          const getValue = (path) => {
+            const keys = path.split(/[.[\]]/).filter(key => key && key !== '0');
+            let value = row;
+            
+            for (const key of keys) {
+              if (value && typeof value === 'object') {
+                if (Array.isArray(value)) {
+                  value = value[0];
+                } else {
+                  value = value[key];
+                }
+              } else {
+                break;
+              }
+            }
+            
+            return value || "";
+          };
+
+          return headers.map(header => {
+            let value = getValue(header.path);
+            if (typeof value === 'boolean') {
+              value = value ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+            }
+            // Escape quotes and wrap in quotes for Access compatibility
+            return `"${String(value).replace(/"/g, '""')}"`;
+          }).join(";");
+        }).join("\n");
+
+        csvContent += chunkRows + "\n";
+        
+        console.log(`Exported ${Math.min((i + 1) * CHUNK_SIZE, totalRecords)} / ${totalRecords}`);
+      }
+
+      if (isStopped) return;
+
+      // Trigger Download with .csv extension but Access-compatible format
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `business_registry_access_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (error) {
+      console.error("Access Export Error:", error);
+      alert(isEnglish ? "Error during Access export" : "Access ექსპორტის შეცდომა");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // console.log("Search Results:", searchResults);
 
   const formatDate = (dateString) => {
@@ -647,6 +747,27 @@ function SearchForm({ isEnglish }) {
                                 />
                               </svg>
                               {t.exportToExcel}
+                            </button>
+                            <button
+                              onClick={exportToAccess}
+                              style={{ fontFamily: georgianFont }}
+                              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-red-600 cursor-pointer"
+                              disabled={!searchResults?.length || isLoading}
+                            >
+                              <svg
+                                className="w-5 h-5 mr-2 transform group-hover:translate-y-0.5 transition-transform"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+                                />
+                              </svg>
+                              {t.exportToAccess || (isEnglish ? "Export to Access" : "Access-ში ექსპორტი")}
                             </button>
                             {isLoading && (
                               <button
