@@ -192,15 +192,29 @@ function SearchForm({ isEnglish }) {
       if (error.name === "AbortError") {
         console.log("Search was cancelled, isStopped:", isStopped);
         // Only update loading state if this wasn't an intentional stop
-        setIsLoading(false);
+        if (!isStopped) {
+          setIsLoading(false);
+        }
       } else {
         console.error("Error fetching results:", error);
-        alert(
-          isEnglish
-            ? "An error occurred while searching. Please try again."
-            : "ძებნისას დაფიქსირდა შეცდომა. გთხოვთ, სცადოთ ხელახლა."
-        );
+        
+        // Comprehensive state reset on error to prevent component from getting stuck
         setIsLoading(false);
+        setIsStopped(false);
+        setShowResults(false);
+        setSearchResults([]);
+        setPagination(null);
+        
+        // Show user-friendly error message
+        const errorMessage = error.response?.status === 400 
+          ? (isEnglish 
+              ? "Invalid search parameters. Please check your input and try again." 
+              : "არასწორი ძებნის პარამეტრები. გთხოვთ, შეამოწმოთ თქვენი მონაცემები და სცადოთ ხელახლა.")
+          : (isEnglish
+              ? "An error occurred while searching. Please try again."
+              : "ძებნისას დაფიქსირდა შეცდომა. გთხოვთ, სცადოთ ხელახლა.");
+        
+        alert(errorMessage);
       }
     } finally {
       setAbortController(null);
@@ -235,6 +249,30 @@ function SearchForm({ isEnglish }) {
       url.searchParams.delete("identificationNumber");
       window.history.replaceState({}, "", url.toString());
     }, 0);
+  };
+
+  // Recovery function to reset all states when component gets stuck
+  const resetAllStates = () => {
+    console.log("Resetting all states - manual recovery");
+    setIsLoading(false);
+    setIsExporting(false);
+    setExportProgress(0);
+    setExportType('');
+    setShowResults(false);
+    setSearchResults([]);
+    setPagination(null);
+    setIsStopped(false);
+    setIsFlipped(false);
+    
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
+    // Clear URL parameters
+    const url = new URL(window.location);
+    url.searchParams.delete("identificationNumber");
+    window.history.replaceState({}, "", url.toString());
   };
 
   const exportToExcel = async () => {
@@ -283,7 +321,15 @@ function SearchForm({ isEnglish }) {
         { page: i + 1, limit: CHUNK_SIZE }
       );
 
-      const chunk = response.results || [];
+      // Robust error handling for response structure
+      let chunk = [];
+      if (response && response.results && Array.isArray(response.results)) {
+        chunk = response.results;
+      } else {
+        console.warn('Invalid response structure in exportToExcel:', response);
+        // Skip this iteration if response is invalid
+        continue;
+      }
       
       // Process chunk into CSV string
       const chunkRows = chunk.map(row => {
@@ -329,7 +375,16 @@ function SearchForm({ isEnglish }) {
 
   } catch (error) {
     console.error("Export Error:", error);
-    alert(isEnglish ? "Error during export" : "ექსპორტის შეცდომა");
+    
+    // More specific error messages
+    const errorMessage = error.name === "AbortError" 
+      ? (isEnglish ? "Export was cancelled" : "ექსპორტი გაუქმდა")
+      : (isEnglish ? "Error during export. Please try again." : "ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა.");
+    
+    alert(errorMessage);
+    
+    // Reset states to prevent stuck state
+    setIsStopped(false);
   } finally {
     setIsLoading(false);
     setIsExporting(false);
@@ -383,7 +438,15 @@ function SearchForm({ isEnglish }) {
           { page: i + 1, limit: CHUNK_SIZE }
         );
 
-        const chunk = response.results || [];
+        // Robust error handling for response structure
+        let chunk = [];
+        if (response && response.results && Array.isArray(response.results)) {
+          chunk = response.results;
+        } else {
+          console.warn('Invalid response structure in exportToAccess:', response);
+          // Skip this iteration if response is invalid
+          continue;
+        }
         
         // Process chunk into CSV string with semicolon separator
         const chunkRows = chunk.map(row => {
@@ -439,7 +502,16 @@ function SearchForm({ isEnglish }) {
 
     } catch (error) {
       console.error("Access Export Error:", error);
-      alert(isEnglish ? "Error during Access export" : "Access ექსპორტის შეცდომა");
+      
+      // More specific error messages
+      const errorMessage = error.name === "AbortError" 
+        ? (isEnglish ? "Export was cancelled" : "ექსპორტი გაუქმდა")
+        : (isEnglish ? "Error during Access export. Please try again." : "Access ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა.");
+      
+      alert(errorMessage);
+      
+      // Reset states to prevent stuck state
+      setIsStopped(false);
     } finally {
       setIsLoading(false);
       setIsExporting(false);
@@ -987,6 +1059,7 @@ function SearchForm({ isEnglish }) {
                             onReset={handleReset}
                             onStop={handleStopSearch}
                             isLoading={isLoading}
+                            onResetAll={resetAllStates}
                           />
                         </form>
                       </>
