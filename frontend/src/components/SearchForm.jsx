@@ -32,6 +32,9 @@ function SearchForm({ isEnglish }) {
   const [isStopped, setIsStopped] = useState(false);
   const [legalFormsMap, setLegalFormsMap] = useState({});
   const [lastSearchParams, setLastSearchParams] = useState(null); // Store last successful search params
+  const [exportProgress, setExportProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportType, setExportType] = useState(''); // 'excel' or 'access'
   const { navigationDirection, isNavigating } = useNavigation();
   const {
     formData,
@@ -220,6 +223,9 @@ function SearchForm({ isEnglish }) {
       console.log("Stop search cleanup - resetting states");
       // Reset all states immediately to ensure proper navigation
       setIsLoading(false);
+      setIsExporting(false);
+      setExportProgress(0);
+      setExportType('');
       setShowResults(false);
       setSearchResults([]);
       setPagination(null);
@@ -241,6 +247,9 @@ function SearchForm({ isEnglish }) {
     const totalRecords = pagination.total;
     const CHUNK_SIZE = 50000; 
     setIsLoading(true);
+    setIsExporting(true);
+    setExportType('excel');
+    setExportProgress(0);
 
     // Prepare CSV Header
     const headers = [
@@ -261,7 +270,8 @@ function SearchForm({ isEnglish }) {
     csvContent += headers.map(h => t[h.label] || h.label).join(",") + "\n";
 
     // Loop through pages
-    for (let i = 0; i < Math.ceil(totalRecords / CHUNK_SIZE); i++) {
+    const totalChunks = Math.ceil(totalRecords / CHUNK_SIZE);
+    for (let i = 0; i < totalChunks; i++) {
       // Check if user stopped the search
       if (isStopped) break;
 
@@ -298,6 +308,10 @@ function SearchForm({ isEnglish }) {
 
       csvContent += chunkRows + "\n";
       
+      // Update progress
+      const progress = ((i + 1) / totalChunks) * 100;
+      setExportProgress(progress);
+      
       console.log(`Exported ${Math.min((i + 1) * CHUNK_SIZE, totalRecords)} / ${totalRecords}`);
     }
 
@@ -318,6 +332,9 @@ function SearchForm({ isEnglish }) {
     alert(isEnglish ? "Error during export" : "ექსპორტის შეცდომა");
   } finally {
     setIsLoading(false);
+    setIsExporting(false);
+    setExportProgress(0);
+    setExportType('');
   }
 };
 
@@ -331,6 +348,9 @@ function SearchForm({ isEnglish }) {
       const totalRecords = pagination.total;
       const CHUNK_SIZE = 100000;
       setIsLoading(true);
+      setIsExporting(true);
+      setExportType('access');
+      setExportProgress(0);
 
       // Prepare headers for Access (using semicolon separator)
       const headers = [
@@ -398,6 +418,10 @@ function SearchForm({ isEnglish }) {
 
         csvContent += chunkRows + "\n";
         
+        // Update progress
+        const progress = ((i + 1) / Math.ceil(totalRecords / CHUNK_SIZE)) * 100;
+        setExportProgress(progress);
+        
         console.log(`Exported ${Math.min((i + 1) * CHUNK_SIZE, totalRecords)} / ${totalRecords}`);
       }
 
@@ -418,6 +442,9 @@ function SearchForm({ isEnglish }) {
       alert(isEnglish ? "Error during Access export" : "Access ექსპორტის შეცდომა");
     } finally {
       setIsLoading(false);
+      setIsExporting(false);
+      setExportProgress(0);
+      setExportType('');
     }
   };
 
@@ -666,14 +693,40 @@ function SearchForm({ isEnglish }) {
                 {isLoading ? (
                   <div className="flex justify-center items-center min-h-[400px] bg-white">
                     <div className="flex flex-col items-center space-y-4">
-                      <img
-                        src={loaderIcon}
-                        alt="Loading..."
-                        className="w-12 h-12 animate-pulse"
-                      />
-                      <p className="text-gray-600 font-bpg-nino text-sm">
-                        {isEnglish ? "Loading..." : "იტვირთება..."}
-                      </p>
+                      {isExporting ? (
+                        <>
+                          <div className="w-64">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700 font-bpg-nino">
+                                {exportType === 'excel' 
+                                  ? (isEnglish ? 'Exporting to Excel...' : 'Excel-ში ექსპორტი...') 
+                                  : (isEnglish ? 'Exporting to Access...' : 'Access-ში ექსპორტი...')
+                                }
+                              </span>
+                              <span className="text-sm font-medium text-gray-700 font-bpg-nino">
+                                {Math.round(exportProgress)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                              <div 
+                                className="bg-[#0080BE] h-2.5 rounded-full transition-all duration-300 ease-out" 
+                                style={{ width: `${exportProgress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <img
+                            src={loaderIcon}
+                            alt="Loading..."
+                            className="w-12 h-12 animate-pulse"
+                          />
+                          <p className="text-gray-600 font-bpg-nino text-sm">
+                            {isEnglish ? "Loading..." : "იტვირთება..."}
+                          </p>
+                        </>
+                      )}
                       <button
                         type="button"
                         className="flex items-center justify-center px-6 py-2 font-bold text-red-600 border border-red-600 hover:bg-red-600 hover:text-white transition-colors cursor-pointer text-sm font-bpg-nino rounded mt-4"
@@ -693,7 +746,7 @@ function SearchForm({ isEnglish }) {
                             d="M6 18L18 6M6 6l12 12"
                           />
                         </svg>
-                        {t.stopSearch}
+                        {isExporting ? (isEnglish ? 'Cancel Export' : 'ექსპორტის გაუქმება') : t.stopSearch}
                       </button>
                     </div>
                   </div>
