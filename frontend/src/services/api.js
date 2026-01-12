@@ -246,7 +246,7 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     if (searchParams.organizationName) {
       queryParams.append("organizationName", searchParams.organizationName);
     }
-    if (searchParams.organizationalLegalForm?.length > 0) {
+    if (searchParams.organizationalLegalForm && Array.isArray(searchParams.organizationalLegalForm) && searchParams.organizationalLegalForm.length > 0) {
       searchParams.organizationalLegalForm.forEach(legalForm => {
         queryParams.append("legalForm", legalForm);
       });
@@ -258,17 +258,20 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
       queryParams.append("partner", searchParams.partner);
     }
     // Handle ownershipType
-    if (searchParams.ownershipForm?.length > 0) {
-      const ownershipId = parseInt(searchParams.ownershipForm[0].value, 10);
-      if (!isNaN(ownershipId)) {
-        queryParams.append("ownershipType", ownershipId);
+    if (searchParams.ownershipForm && Array.isArray(searchParams.ownershipForm) && searchParams.ownershipForm.length > 0) {
+      const ownershipForm = searchParams.ownershipForm[0];
+      if (ownershipForm && ownershipForm.value) {
+        const ownershipId = parseInt(ownershipForm.value, 10);
+        if (!isNaN(ownershipId)) {
+          queryParams.append("ownershipType", ownershipId);
+        }
       }
     }
     if (searchParams.isActive) {
       queryParams.append("isActive", searchParams.isActive);
     }
     // Handle size/business form
-    if (searchParams.businessForm?.length > 0) {
+    if (searchParams.businessForm && Array.isArray(searchParams.businessForm) && searchParams.businessForm.length > 0) {
       const size = searchParams.businessForm[0];
       // Ensure we're using the numeric ID value, not the label
       if (size && size.value) {
@@ -282,9 +285,9 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     }
 
     // Handle activities separately
-    if (searchParams.activities && searchParams.activities.length > 0) {
+    if (searchParams.activities && Array.isArray(searchParams.activities) && searchParams.activities.length > 0) {
       searchParams.activities.forEach((activity) => {
-        if (activity.code) {
+        if (activity && activity.code) {
           queryParams.append("activityCode", activity.code);
         }
       });
@@ -293,13 +296,13 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     // console.log("Search Params:", searchParams);
 
     // Handle legalAddress region
-    if (searchParams.legalAddress?.region?.length > 0) {
+    if (searchParams.legalAddress?.region && Array.isArray(searchParams.legalAddress.region) && searchParams.legalAddress.region.length > 0) {
       const regionValue = searchParams.legalAddress.region[0];
       queryParams.append("legalAddressRegion", regionValue);
     }
 
     // Handle legalAddress municipalityCity
-    if (searchParams.legalAddress?.municipalityCity?.length > 0) {
+    if (searchParams.legalAddress?.municipalityCity && Array.isArray(searchParams.legalAddress.municipalityCity) && searchParams.legalAddress.municipalityCity.length > 0) {
       const cityValue = searchParams.legalAddress.municipalityCity[0];
       queryParams.append("legalAddressCity", cityValue);
     }
@@ -310,13 +313,13 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     }
 
     // Handle factualAddress region
-    if (searchParams.personalAddress?.region?.length > 0) {
+    if (searchParams.personalAddress?.region && Array.isArray(searchParams.personalAddress.region) && searchParams.personalAddress.region.length > 0) {
       const regionValue = searchParams.personalAddress.region[0];
       queryParams.append("factualAddressRegion", regionValue);
     }
 
     // Handle factualAddress municipalityCity
-    if (searchParams.personalAddress?.municipalityCity?.length > 0) {
+    if (searchParams.personalAddress?.municipalityCity && Array.isArray(searchParams.personalAddress.municipalityCity) && searchParams.personalAddress.municipalityCity.length > 0) {
       const cityValue = searchParams.personalAddress.municipalityCity[0];
       queryParams.append("factualAddressCity", cityValue);
     }

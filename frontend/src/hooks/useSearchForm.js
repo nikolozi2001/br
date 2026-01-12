@@ -28,11 +28,29 @@ const initialFormData = {
 };
 
 export function useSearchForm(isEnglish) {
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(() => ({
+    ...initialFormData,
+    activities: Array.isArray(initialFormData.activities) 
+      ? initialFormData.activities 
+      : [{ code: "", name: "" }]
+  }));
   const [organizationalLegalFormOptions, setOrganizationalLegalFormOptions] = useState([]);
   const [regionOptions, setRegionOptions] = useState([]);
   const [personalMunicipalityOptions, setPersonalMunicipalityOptions] = useState([]);
   const [legalMunicipalityOptions, setLegalMunicipalityOptions] = useState([]);
+
+  // Create a wrapped setFormData to ensure activities is always an array
+  const safeSetFormData = (updater) => {
+    setFormData(prev => {
+      const updated = typeof updater === 'function' ? updater(prev) : updater;
+      return {
+        ...updated,
+        activities: Array.isArray(updated.activities) 
+          ? updated.activities 
+          : [{ code: "", name: "" }]
+      };
+    });
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -164,7 +182,7 @@ export function useSearchForm(isEnglish) {
 
   return {
     formData,
-    setFormData,
+    setFormData: safeSetFormData,
     organizationalLegalFormOptions,
     regionOptions,
     personalMunicipalityOptions,

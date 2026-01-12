@@ -24,7 +24,7 @@ export function EconomicActivitySection({
     loadActivities();
   }, [isEnglish]);
 
-  const selectedActivityCodes = safeActivities.length
+  const selectedActivityCodes = safeActivities.length && Array.isArray(activities.codesOnly)
     ? activities.codesOnly.filter((opt) =>
         safeActivities.some(
           (activity) =>
@@ -33,7 +33,7 @@ export function EconomicActivitySection({
       )
     : [];
 
-  const selectedActivitiesWithNames = safeActivities.length
+  const selectedActivitiesWithNames = safeActivities.length && Array.isArray(activities.codesWithNames)
     ? activities.codesWithNames.filter((opt) =>
         safeActivities.some(
           (activity) =>
@@ -43,11 +43,11 @@ export function EconomicActivitySection({
     : [];
 
   const handleActivityCodeChange = (selected) => {
-    if (selected && selected.length > 0) {
+    if (selected && Array.isArray(selected) && selected.length > 0) {
       const newActivities = selected.map((item) => {
-        const matchingNameOption = activities.codesWithNames.find(
-          (opt) => opt.value === item.value
-        );
+        const matchingNameOption = Array.isArray(activities.codesWithNames) 
+          ? activities.codesWithNames.find((opt) => opt.value === item.value)
+          : null;
         return {
           code: item.value.replace("Activity_", "Activity_2_"),
           name: matchingNameOption ? matchingNameOption.label : "",
@@ -68,7 +68,7 @@ export function EconomicActivitySection({
   const handleActivitiesChange = (selected) => {
     setFormData((prev) => ({
       ...prev,
-      activities: selected
+      activities: (selected && Array.isArray(selected))
         ? selected.map((item) => ({
             code: item.value.replace("Activity_", "Activity_2_"),
             name: item.label,

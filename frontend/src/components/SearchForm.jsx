@@ -89,10 +89,14 @@ function SearchForm({ isEnglish }) {
     const identificationNumber = urlParams.get("identificationNumber");
 
     if (identificationNumber) {
-      // Set the form data with the URL parameter
+      // Set the form data with the URL parameter and ensure activities is an array
       setFormData((prev) => ({
         ...prev,
         identificationNumber: identificationNumber,
+        activities: Array.isArray(prev.activities) ? prev.activities : [{
+          code: "",
+          name: ""
+        }],
       }));
     }
   }, [setFormData]);
