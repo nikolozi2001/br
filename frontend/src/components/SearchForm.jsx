@@ -444,7 +444,11 @@ function SearchForm({ isEnglish }) {
             for (const key of keys) {
               if (value && typeof value === 'object') {
                 if (Array.isArray(value)) {
+                  // For arrays, get first element and then access the key
                   value = value[0];
+                  if (value && typeof value === 'object' && key) {
+                    value = value[key];
+                  }
                 } else {
                   value = value[key];
                 }
