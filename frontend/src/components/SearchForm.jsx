@@ -304,7 +304,6 @@ function SearchForm({ isEnglish }) {
         return headers.map(header => {
           let val = "";
           if (header.path.includes(".")) {
-             const [obj, key] = header.path.replace('activities[0].', 'activities_0_').split(".");
              // Simple path resolver
              if (header.path.startsWith("activities")) val = row.activities?.[0]?.[header.path.split('.')[1]];
              else val = row[header.path.split('.')[0]]?.[header.path.split('.')[1]];
