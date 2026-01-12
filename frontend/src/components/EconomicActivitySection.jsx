@@ -2,58 +2,78 @@ import { useEffect, useState } from "react";
 import CustomSelect from "./common/CustomSelect";
 import { fetchActivities } from "../services/api";
 
-export function EconomicActivitySection({ formData, setFormData, t, isEnglish }) {
+export function EconomicActivitySection({
+  formData,
+  setFormData,
+  t,
+  isEnglish,
+}) {
+  const safeActivities = Array.isArray(formData.activities)
+    ? formData.activities
+    : [];
+
   const [activities, setActivities] = useState({
     codesOnly: [],
     codesWithNames: [],
   });
   useEffect(() => {
     const loadActivities = async () => {
-      const data = await fetchActivities(isEnglish ? 'en' : 'ge');
+      const data = await fetchActivities(isEnglish ? "en" : "ge");
       setActivities(data);
     };
     loadActivities();
   }, [isEnglish]);
-  const selectedActivityCodes = formData.activities
-    ? activities.codesOnly.filter(opt => 
-        formData.activities.some(activity => activity.code === opt.value.replace('Activity_', 'Activity_2_'))
+
+  const selectedActivityCodes = safeActivities.length
+    ? activities.codesOnly.filter((opt) =>
+        safeActivities.some(
+          (activity) =>
+            activity.code === opt.value.replace("Activity_", "Activity_2_")
+        )
       )
     : [];
 
-  const selectedActivitiesWithNames = formData.activities
-    ? activities.codesWithNames.filter(opt => 
-        formData.activities.some(activity => activity.code === opt.value.replace('Activity_', 'Activity_2_'))
+  const selectedActivitiesWithNames = safeActivities.length
+    ? activities.codesWithNames.filter((opt) =>
+        safeActivities.some(
+          (activity) =>
+            activity.code === opt.value.replace("Activity_", "Activity_2_")
+        )
       )
     : [];
 
   const handleActivityCodeChange = (selected) => {
     if (selected && selected.length > 0) {
-      const newActivities = selected.map(item => {
-        const matchingNameOption = activities.codesWithNames.find(opt => opt.value === item.value);
+      const newActivities = selected.map((item) => {
+        const matchingNameOption = activities.codesWithNames.find(
+          (opt) => opt.value === item.value
+        );
         return {
-          code: item.value.replace('Activity_', 'Activity_2_'),
-          name: matchingNameOption ? matchingNameOption.label : ""
+          code: item.value.replace("Activity_", "Activity_2_"),
+          name: matchingNameOption ? matchingNameOption.label : "",
         };
       });
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        activities: newActivities
+        activities: newActivities,
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        activities: []
+        activities: [],
       }));
     }
   };
 
   const handleActivitiesChange = (selected) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      activities: selected ? selected.map(item => ({
-        code: item.value.replace('Activity_', 'Activity_2_'),
-        name: item.label
-      })) : []
+      activities: selected
+        ? selected.map((item) => ({
+            code: item.value.replace("Activity_", "Activity_2_"),
+            name: item.label,
+          }))
+        : [],
     }));
   };
 
