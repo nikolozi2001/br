@@ -1,5 +1,5 @@
 // Simple service worker for basic caching
-const CACHE_NAME = 'business-register-v1';
+const CACHE_NAME = 'business-register-v2'; // Updated version to force cache refresh
 
 // Cache essential files - these will be available after build
 const urlsToCache = [
