@@ -323,7 +323,22 @@ function SearchForm({ isEnglish }) {
           // Handle special fields
           if (header.path === "legalFormId") val = legalFormsMap[val] || row.abbreviation || "";
           if (header.path === "isActive") val = val ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
-          if (header.path === "Init_Reg_date") val = formatDate(val);
+          
+          // Handle date field - keep ISO format without quotes for Excel to recognize as date
+          if (header.path === "Init_Reg_date") {
+            if (val) {
+              try {
+                const date = new Date(val);
+                // Format as YYYY-MM-DD for Excel date recognition
+                val = date.toISOString().split('T')[0];
+                // Return without quotes so Excel recognizes it as a date
+                return val;
+              } catch {
+                return `"${String(val || "").replace(/"/g, '""')}"`;
+              }
+            }
+            return "";
+          }
           
           // Escape quotes and wrap in quotes for CSV safety
           return `"${String(val || "").replace(/"/g, '""')}"`;
