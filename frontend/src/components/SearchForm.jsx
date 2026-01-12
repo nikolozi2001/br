@@ -261,13 +261,22 @@ function SearchForm({ isEnglish }) {
     const headers = [
       { label: "identificationNumber", path: "identificationNumber" },
       { label: "personalNumber", path: "personalNumber" },
+      { label: "organizationalLegalForm", path: "legalFormId" },
       { label: "organizationName", path: "name" },
       { label: "legalRegion", path: "legalAddress.region" },
       { label: "legalAddress", path: "legalAddress.address" },
+      { label: "factualRegion", path: "factualAddress.region" },
+      { label: "factualAddress", path: "factualAddress.address" },
       { label: "activityCode", path: "activities[0].code" },
       { label: "activityDescription", path: "activities[0].name" },
       { label: "head", path: "head" },
-      { label: "isActive", path: "isActive" },
+      { label: "partner", path: "partner" },
+      { label: "phone", path: "phone" },
+      { label: "email", path: "email" },
+      { label: "web", path: "web" },
+      { label: "ownershipForm", path: "ownershipType" },
+      { label: "activeSubject", path: "isActive" },
+      { label: "businessSize", path: "Zoma" },
       { label: "initRegDate", path: "Init_Reg_date" },
     ];
 
@@ -311,7 +320,9 @@ function SearchForm({ isEnglish }) {
             val = row[header.path];
           }
           
-          if (header.path === "isActive") val = val ? "Active" : "Inactive";
+          // Handle special fields
+          if (header.path === "legalFormId") val = legalFormsMap[val] || row.abbreviation || "";
+          if (header.path === "isActive") val = val ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
           if (header.path === "Init_Reg_date") val = formatDate(val);
           
           // Escape quotes and wrap in quotes for CSV safety
@@ -378,13 +389,22 @@ function SearchForm({ isEnglish }) {
       const headers = [
         { label: "identificationNumber", path: "identificationNumber" },
         { label: "personalNumber", path: "personalNumber" },
+        { label: "organizationalLegalForm", path: "legalFormId" },
         { label: "organizationName", path: "name" },
         { label: "legalRegion", path: "legalAddress.region" },
         { label: "legalAddress", path: "legalAddress.address" },
+        { label: "factualRegion", path: "factualAddress.region" },
+        { label: "factualAddress", path: "factualAddress.address" },
         { label: "activityCode", path: "activities[0].code" },
         { label: "activityDescription", path: "activities[0].name" },
         { label: "head", path: "head" },
-        { label: "isActive", path: "isActive" },
+        { label: "partner", path: "partner" },
+        { label: "phone", path: "phone" },
+        { label: "email", path: "email" },
+        { label: "web", path: "web" },
+        { label: "ownershipForm", path: "ownershipType" },
+        { label: "activeSubject", path: "isActive" },
+        { label: "businessSize", path: "Zoma" },
         { label: "initRegDate", path: "Init_Reg_date" },
       ];
 
@@ -438,11 +458,20 @@ function SearchForm({ isEnglish }) {
 
           return headers.map(header => {
             let value = getValue(header.path);
-            if (typeof value === 'boolean') {
+            
+            // Handle special fields
+            if (header.path === "legalFormId") {
+              value = legalFormsMap[value] || row.abbreviation || "";
+            } else if (header.path === "isActive") {
+              value = value ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+            } else if (header.path === "Init_Reg_date") {
+              value = formatDate(value);
+            } else if (typeof value === 'boolean') {
               value = value ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
             }
+            
             // Escape quotes and wrap in quotes for Access compatibility
-            return `"${String(value).replace(/"/g, '""')}"`;
+            return `"${String(value || "").replace(/"/g, '""')}"`;
           }).join(";");
         }).join("\n");
 
