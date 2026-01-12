@@ -3,21 +3,29 @@ import * as XLSX from 'xlsx';
 
 export const exportToExcel = (data, filename, sheetName = 'Chart Data') => {
   try {
+    // Add array validation
+    if (!Array.isArray(data)) {
+      console.error('Data must be an array for Excel export');
+      return false;
+    }
+
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(data);
     
     // Auto-size columns
-    const columnWidths = [];
-    const headers = Object.keys(data[0] || {});
-    headers.forEach((header, index) => {
-      const maxLength = Math.max(
-        header.length,
-        ...data.map(row => String(row[header] || '').length)
-      );
-      columnWidths[index] = { width: Math.min(maxLength + 2, 50) };
-    });
-    
-    worksheet['!cols'] = columnWidths;
+    if (data.length > 0) {
+      const columnWidths = [];
+      const headers = Object.keys(data[0] || {});
+      headers.forEach((header, index) => {
+        const maxLength = Math.max(
+          header.length,
+          ...data.map(row => String(row[header] || '').length)
+        );
+        columnWidths[index] = { width: Math.min(maxLength + 2, 50) };
+      });
+      
+      worksheet['!cols'] = columnWidths;
+    }
     
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
     XLSX.writeFile(workbook, `${filename}.xlsx`);
@@ -31,6 +39,12 @@ export const exportToExcel = (data, filename, sheetName = 'Chart Data') => {
 
 export const exportToCSV = (data, filename) => {
   try {
+    // Add array validation
+    if (!Array.isArray(data)) {
+      console.error('Data must be an array for CSV export');
+      return false;
+    }
+
     const headers = Object.keys(data[0] || {});
     const csvContent = [
       headers.join(','),
@@ -83,6 +97,12 @@ export const exportToJSON = (data, filename) => {
 
 export const copyToClipboard = async (data) => {
   try {
+    // Add array validation
+    if (!Array.isArray(data)) {
+      console.error('Data must be an array for clipboard copy');
+      return false;
+    }
+
     const headers = Object.keys(data[0] || {});
     const tableText = [
       headers.join('\t'),

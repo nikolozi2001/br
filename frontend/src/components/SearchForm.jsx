@@ -54,9 +54,16 @@ function SearchForm({ isEnglish }) {
       try {
         const legalForms = await fetchLegalFormsRaw();
         const formsMap = {};
-        legalForms.forEach((form) => {
-          formsMap[form.Legal_Form_ID] = form.Legal_Form;
-        });
+        
+        // Ensure legalForms is an array before calling forEach
+        if (Array.isArray(legalForms)) {
+          legalForms.forEach((form) => {
+            formsMap[form.Legal_Form_ID] = form.Legal_Form;
+          });
+        } else {
+          console.error('Legal forms data is not an array:', legalForms);
+        }
+        
         setLegalFormsMap(formsMap);
       } catch (error) {
         console.error("Error loading legal forms:", error);
@@ -666,7 +673,7 @@ function SearchForm({ isEnglish }) {
   const handleLegalFormChange = (options) => {
     setFormData((prev) => ({
       ...prev,
-      organizationalLegalForm: options
+      organizationalLegalForm: (options && Array.isArray(options))
         ? options.map((option) => option.value)
         : [],
     }));
@@ -935,7 +942,7 @@ function SearchForm({ isEnglish }) {
                                   legalAddress: {
                                     ...prev.legalAddress,
                                     region: selected
-                                      ? selected.map((option) => option.value)
+                                      ? (Array.isArray(selected) ? selected.map((option) => option.value) : [])
                                       : [],
                                   },
                                 }));
@@ -946,7 +953,7 @@ function SearchForm({ isEnglish }) {
                                   legalAddress: {
                                     ...prev.legalAddress,
                                     municipalityCity: selected
-                                      ? selected.map((option) => option.value)
+                                      ? (Array.isArray(selected) ? selected.map((option) => option.value) : [])
                                       : [],
                                   },
                                 }));
@@ -972,7 +979,7 @@ function SearchForm({ isEnglish }) {
                                   personalAddress: {
                                     ...prev.personalAddress,
                                     region: selected
-                                      ? selected.map((option) => option.value)
+                                      ? (Array.isArray(selected) ? selected.map((option) => option.value) : [])
                                       : [],
                                   },
                                 }));
@@ -983,7 +990,7 @@ function SearchForm({ isEnglish }) {
                                   personalAddress: {
                                     ...prev.personalAddress,
                                     municipalityCity: selected
-                                      ? selected.map((option) => option.value)
+                                      ? (Array.isArray(selected) ? selected.map((option) => option.value) : [])
                                       : [],
                                   },
                                 }));

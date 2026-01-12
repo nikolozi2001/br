@@ -27,49 +27,62 @@ export const createBaseChartConfig = () => ({
   animationEasing: 'cubicOut',
 });
 
-export const createBarChartOption = (data, currentTexts, hiddenDataKeys) => ({
-  ...createBaseChartConfig(),
-  legend: {
-    data: [currentTexts.birth, currentTexts.death],
-    selected: {
-      [currentTexts.birth]: !hiddenDataKeys.has("birth"),
-      [currentTexts.death]: !hiddenDataKeys.has("death"),
-    },
-  },
-  xAxis: {
-    type: "category",
-    data: data.map((item) => item.year),
-    axisTick: {
-      alignWithLabel: true,
-    },
-  },
-  yAxis: {
-    type: "value",
-    axisLabel: {
-      formatter: function (value) {
-        return value.toLocaleString();
+export const createBarChartOption = (data, currentTexts, hiddenDataKeys) => {
+  // Add array validation
+  if (!Array.isArray(data)) {
+    console.error('Chart data must be an array');
+    return {
+      ...createBaseChartConfig(),
+      xAxis: { type: "category", data: [] },
+      yAxis: { type: "value" },
+      series: []
+    };
+  }
+
+  return {
+    ...createBaseChartConfig(),
+    legend: {
+      data: [currentTexts.birth, currentTexts.death],
+      selected: {
+        [currentTexts.birth]: !hiddenDataKeys.has("birth"),
+        [currentTexts.death]: !hiddenDataKeys.has("death"),
       },
     },
-  },
-  series: [
-    {
-      name: currentTexts.birth,
-      type: "bar",
-      data: data.map((item) => item.birth),
-      itemStyle: {
-        color: "#2563eb",
+    xAxis: {
+      type: "category",
+      data: data.map((item) => item.year),
+      axisTick: {
+        alignWithLabel: true,
       },
     },
-    {
-      name: currentTexts.death,
-      type: "bar",
-      data: data.map((item) => item.death),
-      itemStyle: {
-        color: "#dc2626",
+    yAxis: {
+      type: "value",
+      axisLabel: {
+        formatter: function (value) {
+          return value.toLocaleString();
+        },
       },
     },
-  ],
-});
+    series: [
+      {
+        name: currentTexts.birth,
+        type: "bar",
+        data: data.map((item) => item.birth),
+        itemStyle: {
+          color: "#2563eb",
+        },
+      },
+      {
+        name: currentTexts.death,
+        type: "bar",
+        data: data.map((item) => item.death),
+        itemStyle: {
+          color: "#dc2626",
+        },
+      },
+    ],
+  };
+};
 
 export const createStackedLineChartOption = (
   data,
