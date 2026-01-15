@@ -264,8 +264,10 @@ function SearchForm({ isEnglish }) {
       { label: "organizationalLegalForm", path: "legalFormId" },
       { label: "organizationName", path: "name" },
       { label: "legalRegion", path: "legalAddress.region" },
+      { label: "legalCity", path: "legalAddress.city" },
       { label: "legalAddress", path: "legalAddress.address" },
       { label: "factualRegion", path: "factualAddress.region" },
+      { label: "factualCity", path: "factualAddress.city" },
       { label: "factualAddress", path: "factualAddress.address" },
       { label: "activityCode", path: "activities[0].code" },
       { label: "activityDescription", path: "activities[0].name" },
@@ -407,8 +409,10 @@ function SearchForm({ isEnglish }) {
         { label: "organizationalLegalForm", path: "legalFormId" },
         { label: "organizationName", path: "name" },
         { label: "legalRegion", path: "legalAddress.region" },
+        { label: "legalCity", path: "legalAddress.city" },
         { label: "legalAddress", path: "legalAddress.address" },
         { label: "factualRegion", path: "factualAddress.region" },
+        { label: "factualCity", path: "factualAddress.city" },
         { label: "factualAddress", path: "factualAddress.address" },
         { label: "activityCode", path: "activities[0].code" },
         { label: "activityDescription", path: "activities[0].name" },
@@ -561,8 +565,10 @@ function SearchForm({ isEnglish }) {
             <th>${t.organizationalLegalForm}</th>
             <th>${t.organizationName}</th>
             <th>${t.region} (${t.legalAddress})</th>
+            <th>${t.city} (${t.legalAddress})</th>
             <th>${t.legalAddress}</th>
             <th>${t.region} (${t.factualAddress})</th>
+            <th>${t.city} (${t.factualAddress})</th>
             <th>${t.factualAddress}</th>
             <th>NACE 2</th>
             <th>${t.activityDescription}</th>
@@ -589,8 +595,10 @@ function SearchForm({ isEnglish }) {
               }</td>
               <td>${result.name || ""}</td>
               <td>${result.legalAddress?.region || ""}</td>
+              <td>${result.legalAddress?.city || ""}</td>
               <td>${result.legalAddress?.address || ""}</td>
               <td>${result.factualAddress?.region || ""}</td>
+              <td>${result.factualAddress?.city || ""}</td>
               <td>${result.factualAddress?.address || ""}</td>
               <td>${result.activities?.[0]?.code || ""}</td>
               <td>${result.activities?.[0]?.name || ""}</td>
