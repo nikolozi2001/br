@@ -239,6 +239,13 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
                 {getSortIndicator("legalAddress.region")}
               </th>
               <th
+                onClick={() => handleSort("legalAddress.city")}
+                className={headerClassName}
+              >
+                {t.city} ({t.legalAddress}){" "}
+                {getSortIndicator("legalAddress.city")}
+              </th>
+              <th
                 onClick={() => handleSort("legalAddress.address")}
                 className={headerClassName}
               >
@@ -250,6 +257,13 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
               >
                 {t.region} ({t.factualAddress}){" "}
                 {getSortIndicator("factualAddress.region")}
+              </th>
+              <th
+                onClick={() => handleSort("factualAddress.city")}
+                className={headerClassName}
+              >
+                {t.city} ({t.factualAddress}){" "}
+                {getSortIndicator("factualAddress.city")}
               </th>
               <th
                 onClick={() => handleSort("factualAddress.address")}
@@ -336,10 +350,12 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
                 </td>
                 <td className={cellClassName}>{result.name}</td>
                 <td className={cellClassName}>{result.legalAddress.region}</td>
+                <td className={cellClassName}>{result.legalAddress.city}</td>
                 <td className={cellClassName}>{result.legalAddress.address}</td>
                 <td className={cellClassName}>
                   {result.factualAddress.region}
                 </td>
+                <td className={cellClassName}>{result.factualAddress.city}</td>
                 <td className={cellClassName}>
                   {result.factualAddress.address}
                 </td>
