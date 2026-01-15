@@ -252,6 +252,8 @@ function SearchForm({ isEnglish }) {
 
     const totalRecords = pagination.total;
     const CHUNK_SIZE = 50000; 
+    const MAX_RECORDS_PER_FILE = 600000;
+    
     setIsLoading(true);
     setIsExporting(true);
     setExportType('excel');
@@ -282,91 +284,184 @@ function SearchForm({ isEnglish }) {
       { label: "initRegDate", path: "Init_Reg_date" },
     ];
 
-    // CSV Start with UTF-8 BOM (essential for Georgian characters in Excel)
-    let csvContent = "\ufeff"; 
-    csvContent += headers.map(h => t[h.label] || h.label).join(",") + "\n";
+    const headerRow = headers.map(h => t[h.label] || h.label).join(",") + "\n";
 
-    // Loop through pages
-    const totalChunks = Math.ceil(totalRecords / CHUNK_SIZE);
-    for (let i = 0; i < totalChunks; i++) {
-      // Check if user stopped the search
-      if (isStopped) break;
-
-      const response = await fetchDocuments(
-        lastSearchParams,
-        isEnglish ? "en" : "ge",
-        [],
-        null, // You can pass abortController.signal here
-        { page: i + 1, limit: CHUNK_SIZE }
-      );
-
-      // Robust error handling for response structure
-      let chunk = [];
-      if (response && response.results && Array.isArray(response.results)) {
-        chunk = response.results;
-      } else {
-        console.warn('Invalid response structure in exportToExcel:', response);
-        // Skip this iteration if response is invalid
-        continue;
-      }
+    // Check if we need to split into multiple files
+    if (totalRecords > MAX_RECORDS_PER_FILE) {
+      const totalFiles = Math.ceil(totalRecords / MAX_RECORDS_PER_FILE);
       
-      // Process chunk into CSV string
-      const chunkRows = chunk.map(row => {
-        return headers.map(header => {
-          let val = "";
-          if (header.path.includes(".")) {
-             // Simple path resolver
-             if (header.path.startsWith("activities")) val = row.activities?.[0]?.[header.path.split('.')[1]];
-             else val = row[header.path.split('.')[0]]?.[header.path.split('.')[1]];
+      for (let fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
+        if (isStopped) break;
+        
+        const startRecord = fileIndex * MAX_RECORDS_PER_FILE;
+        const endRecord = Math.min(startRecord + MAX_RECORDS_PER_FILE, totalRecords);
+        const recordsInThisFile = endRecord - startRecord;
+        
+        // CSV Start with UTF-8 BOM and headers for each file
+        let csvContent = "\ufeff" + headerRow;
+        
+        const startChunk = Math.floor(startRecord / CHUNK_SIZE);
+        const endChunk = Math.ceil(endRecord / CHUNK_SIZE);
+        
+        for (let chunkIndex = startChunk; chunkIndex < endChunk; chunkIndex++) {
+          if (isStopped) break;
+          
+          const response = await fetchDocuments(
+            lastSearchParams,
+            isEnglish ? "en" : "ge",
+            [],
+            null,
+            { page: chunkIndex + 1, limit: CHUNK_SIZE }
+          );
+
+          let chunk = [];
+          if (response && response.results && Array.isArray(response.results)) {
+            chunk = response.results;
           } else {
-            val = row[header.path];
+            console.warn('Invalid response structure in exportToExcel:', response);
+            continue;
           }
           
-          // Handle special fields
-          if (header.path === "legalFormId") val = legalFormsMap[val] || row.abbreviation || "";
-          if (header.path === "isActive") val = val ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+          // Filter records for current file
+          const chunkStartInFile = Math.max(0, startRecord - chunkIndex * CHUNK_SIZE);
+          const chunkEndInFile = Math.min(chunk.length, endRecord - chunkIndex * CHUNK_SIZE);
+          const filteredChunk = chunk.slice(chunkStartInFile, chunkEndInFile);
           
-          // Handle date field - keep ISO format without quotes for Excel to recognize as date
-          if (header.path === "Init_Reg_date") {
-            if (val) {
-              try {
-                const date = new Date(val);
-                // Format as YYYY-MM-DD for Excel date recognition
-                val = date.toISOString().split('T')[0];
-                // Return without quotes so Excel recognizes it as a date
-                return val;
-              } catch {
-                return `"${String(val || "").replace(/"/g, '""')}"`;
+          // Process chunk into CSV string
+          const chunkRows = filteredChunk.map(row => {
+            return headers.map(header => {
+              let val = "";
+              if (header.path.includes(".")) {
+                if (header.path.startsWith("activities")) val = row.activities?.[0]?.[header.path.split('.')[1]];
+                else val = row[header.path.split('.')[0]]?.[header.path.split('.')[1]];
+              } else {
+                val = row[header.path];
               }
+              
+              // Handle special fields
+              if (header.path === "legalFormId") val = legalFormsMap[val] || row.abbreviation || "";
+              if (header.path === "isActive") val = val ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+              
+              // Handle date field
+              if (header.path === "Init_Reg_date") {
+                if (val) {
+                  try {
+                    const date = new Date(val);
+                    val = date.toISOString().split('T')[0];
+                    return val;
+                  } catch {
+                    return `"${String(val || "").replace(/"/g, '""')}"`;
+                  }
+                }
+                return "";
+              }
+              
+              return `"${String(val || "").replace(/"/g, '""')}"`;
+            }).join(",");
+          }).join("\n");
+
+          if (chunkRows) csvContent += chunkRows + "\n";
+        }
+        
+        if (isStopped) break;
+        
+        // Download each file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `business_registry_${new Date().toISOString().split('T')[0]}_part${fileIndex + 1}_of_${totalFiles}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Update progress
+        const progress = ((fileIndex + 1) / totalFiles) * 100;
+        setExportProgress(progress);
+        
+        console.log(`File ${fileIndex + 1}/${totalFiles} exported with ${recordsInThisFile} records`);
+        
+        // Small delay between downloads
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } else {
+      // Single file export (original logic)
+      let csvContent = "\ufeff" + headerRow;
+      
+      const totalChunks = Math.ceil(totalRecords / CHUNK_SIZE);
+      for (let i = 0; i < totalChunks; i++) {
+        if (isStopped) break;
+
+        const response = await fetchDocuments(
+          lastSearchParams,
+          isEnglish ? "en" : "ge",
+          [],
+          null,
+          { page: i + 1, limit: CHUNK_SIZE }
+        );
+
+        let chunk = [];
+        if (response && response.results && Array.isArray(response.results)) {
+          chunk = response.results;
+        } else {
+          console.warn('Invalid response structure in exportToExcel:', response);
+          continue;
+        }
+        
+        // Process chunk into CSV string
+        const chunkRows = chunk.map(row => {
+          return headers.map(header => {
+            let val = "";
+            if (header.path.includes(".")) {
+              if (header.path.startsWith("activities")) val = row.activities?.[0]?.[header.path.split('.')[1]];
+              else val = row[header.path.split('.')[0]]?.[header.path.split('.')[1]];
+            } else {
+              val = row[header.path];
             }
-            return "";
-          }
-          
-          // Escape quotes and wrap in quotes for CSV safety
-          return `"${String(val || "").replace(/"/g, '""')}"`;
-        }).join(",");
-      }).join("\n");
+            
+            // Handle special fields
+            if (header.path === "legalFormId") val = legalFormsMap[val] || row.abbreviation || "";
+            if (header.path === "isActive") val = val ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+            
+            // Handle date field
+            if (header.path === "Init_Reg_date") {
+              if (val) {
+                try {
+                  const date = new Date(val);
+                  val = date.toISOString().split('T')[0];
+                  return val;
+                } catch {
+                  return `"${String(val || "").replace(/"/g, '""')}"`;
+                }
+              }
+              return "";
+            }
+            
+            return `"${String(val || "").replace(/"/g, '""')}"`;
+          }).join(",");
+        }).join("\n");
 
-      csvContent += chunkRows + "\n";
-      
-      // Update progress
-      const progress = ((i + 1) / totalChunks) * 100;
-      setExportProgress(progress);
-      
-      console.log(`Exported ${Math.min((i + 1) * CHUNK_SIZE, totalRecords)} / ${totalRecords}`);
+        csvContent += chunkRows + "\n";
+        
+        // Update progress
+        const progress = ((i + 1) / totalChunks) * 100;
+        setExportProgress(progress);
+        
+        console.log(`Exported ${Math.min((i + 1) * CHUNK_SIZE, totalRecords)} / ${totalRecords}`);
+      }
+
+      if (isStopped) return;
+
+      // Single file download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `business_registry_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-
-    if (isStopped) return;
-
-    // Trigger Download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `business_registry_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 
   } catch (error) {
     console.error("Export Error:", error);
