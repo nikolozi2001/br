@@ -378,14 +378,19 @@ function SearchForm({ isEnglish }) {
         const link = document.createElement("a");
         link.setAttribute("href", url);
         link.setAttribute("download", `business_registry_${new Date().toISOString().split('T')[0]}_part${fileIndex + 1}_of_${totalFiles}.csv`);
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
+        
+        // Wait a bit before removing the link
+        await new Promise(resolve => setTimeout(resolve, 100));
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         
         console.log(`File ${fileIndex + 1}/${totalFiles} exported with ${recordsInThisFile} records`);
         
-        // Small delay between downloads
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Longer delay between downloads to prevent browser blocking
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } else {
       // Single file export (original logic)
