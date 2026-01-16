@@ -289,6 +289,8 @@ function SearchForm({ isEnglish }) {
     // Check if we need to split into multiple files
     if (totalRecords > MAX_RECORDS_PER_FILE) {
       const totalFiles = Math.ceil(totalRecords / MAX_RECORDS_PER_FILE);
+      const totalChunksOverall = Math.ceil(totalRecords / CHUNK_SIZE);
+      let processedChunks = 0;
       
       for (let fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
         if (isStopped) break;
@@ -361,6 +363,11 @@ function SearchForm({ isEnglish }) {
           }).join("\n");
 
           if (chunkRows) csvContent += chunkRows + "\n";
+          
+          // Update progress after each chunk
+          processedChunks++;
+          const progress = (processedChunks / totalChunksOverall) * 100;
+          setExportProgress(progress);
         }
         
         if (isStopped) break;
@@ -374,10 +381,6 @@ function SearchForm({ isEnglish }) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        // Update progress
-        const progress = ((fileIndex + 1) / totalFiles) * 100;
-        setExportProgress(progress);
         
         console.log(`File ${fileIndex + 1}/${totalFiles} exported with ${recordsInThisFile} records`);
         
