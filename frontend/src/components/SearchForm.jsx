@@ -1,5 +1,6 @@
 import "../styles/SearchForm.scss";
 import React, { useState, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { translations } from "../translations/searchForm";
 import * as XLSX from "xlsx";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
@@ -263,6 +264,7 @@ function SearchForm({ isEnglish }) {
     // Helper function to fetch data in parallel batches
     const fetchInBatches = async (startPage, endPage) => {
       const pages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+      const totalPages = pages.length;
       let allResults = [];
       
       for (let i = 0; i < pages.length; i += CONCURRENCY) {
@@ -292,8 +294,18 @@ function SearchForm({ isEnglish }) {
           }
         });
 
-        // Update progress after each batch
-        setExportProgress((allResults.length / totalRecords) * 100);
+        // Calculate progress based on pages completed (not records)
+        const pagesCompleted = Math.min(i + CONCURRENCY, totalPages);
+        const progressPercent = Math.round((pagesCompleted / totalPages) * 100);
+        console.log(`Progress: ${progressPercent}% (${pagesCompleted}/${totalPages} pages)`);
+        
+        // Use flushSync to force synchronous state update and UI repaint
+        flushSync(() => {
+          setExportProgress(progressPercent);
+        });
+
+        // Small delay to ensure UI repaints
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
       
       return allResults;
@@ -471,8 +483,9 @@ function SearchForm({ isEnglish }) {
   } finally {
     setIsLoading(false);
     setIsExporting(false);
-    setExportProgress(0);
     setExportType('');
+    // Delay progress reset so user can see 100% completion
+    setTimeout(() => setExportProgress(0), 1500);
   }
 };
 
@@ -496,6 +509,7 @@ function SearchForm({ isEnglish }) {
       const fetchInBatches = async () => {
         const totalChunks = Math.ceil(totalRecords / CHUNK_SIZE);
         const pages = Array.from({ length: totalChunks }, (_, i) => i + 1);
+        const totalPages = pages.length;
         
         let allResults = [];
         
@@ -526,8 +540,18 @@ function SearchForm({ isEnglish }) {
             }
           });
 
-          // Update progress after each batch
-          setExportProgress((allResults.length / totalRecords) * 100);
+          // Calculate progress based on pages completed
+          const pagesCompleted = Math.min(i + CONCURRENCY, totalPages);
+          const progressPercent = Math.round((pagesCompleted / totalPages) * 100);
+          console.log(`Access Progress: ${progressPercent}% (${pagesCompleted}/${totalPages} pages)`);
+          
+          // Use flushSync to force synchronous state update and UI repaint
+          flushSync(() => {
+            setExportProgress(progressPercent);
+          });
+
+          // Small delay to ensure UI repaints
+          await new Promise(resolve => setTimeout(resolve, 10));
         }
         
         return allResults;
@@ -640,8 +664,9 @@ function SearchForm({ isEnglish }) {
     } finally {
       setIsLoading(false);
       setIsExporting(false);
-      setExportProgress(0);
       setExportType('');
+      // Delay progress reset so user can see 100% completion
+      setTimeout(() => setExportProgress(0), 1500);
     }
   };
 
