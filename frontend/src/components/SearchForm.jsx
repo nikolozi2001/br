@@ -500,10 +500,53 @@ function SearchForm({ isEnglish }) {
 
       const totalRecords = pagination.total;
       const CHUNK_SIZE = 100000;
+      const CONCURRENCY = 5; // Optimal concurrency for API requests
+      
       setIsLoading(true);
       setIsExporting(true);
       setExportType('access');
       setExportProgress(0);
+
+      // Helper function to fetch data in parallel batches
+      const fetchInBatches = async () => {
+        const totalChunks = Math.ceil(totalRecords / CHUNK_SIZE);
+        const pages = Array.from({ length: totalChunks }, (_, i) => i + 1);
+        
+        let allResults = [];
+        
+        for (let i = 0; i < pages.length; i += CONCURRENCY) {
+          if (isStopped) break;
+
+          const batch = pages.slice(i, i + CONCURRENCY);
+          const responses = await Promise.all(
+            batch.map(async page => {
+              try {
+                return await fetchDocuments(
+                  lastSearchParams,
+                  isEnglish ? "en" : "ge",
+                  [],
+                  null,
+                  { page, limit: CHUNK_SIZE }
+                );
+              } catch (error) {
+                console.warn(`Error fetching page ${page}:`, error);
+                return { results: [] }; // Return empty results on error
+              }
+            })
+          );
+
+          responses.forEach(response => {
+            if (response && response.results && Array.isArray(response.results)) {
+              allResults.push(...response.results);
+            }
+          });
+
+          // Update progress after each batch
+          setExportProgress((allResults.length / totalRecords) * 100);
+        }
+        
+        return allResults;
+      };
 
       // Prepare headers for Access (using semicolon separator)
       const headers = [
@@ -534,81 +577,56 @@ function SearchForm({ isEnglish }) {
       let csvContent = "\ufeff";
       csvContent += headers.map(h => `"${(t[h.label] || h.label).replace(/"/g, '""')}"`).join(";") + "\n";
 
-      // Loop through pages
-      for (let i = 0; i < Math.ceil(totalRecords / CHUNK_SIZE); i++) {
-        // Check if user stopped the search
-        if (isStopped) return;
+      // Loop through pages in parallel batches
+      const allResults = await fetchInBatches();
+      
+      if (isStopped) return;
 
-        const response = await fetchDocuments(
-          lastSearchParams,
-          isEnglish ? "en" : "ge",
-          [],
-          null,
-          { page: i + 1, limit: CHUNK_SIZE }
-        );
-
-        // Robust error handling for response structure
-        let chunk = [];
-        if (response && response.results && Array.isArray(response.results)) {
-          chunk = response.results;
-        } else {
-          console.warn('Invalid response structure in exportToAccess:', response);
-          // Skip this iteration if response is invalid
-          continue;
-        }
-        
-        // Process chunk into CSV string with semicolon separator
-        const chunkRows = chunk.map(row => {
-          const getValue = (path) => {
-            const keys = path.split(/[.[\]]/).filter(key => key && key !== '0');
-            let value = row;
-            
-            for (const key of keys) {
-              if (value && typeof value === 'object') {
-                if (Array.isArray(value)) {
-                  // For arrays, get first element and then access the key
-                  value = value[0];
-                  if (value && typeof value === 'object' && key) {
-                    value = value[key];
-                  }
-                } else {
+      // Process all results into CSV string with semicolon separator
+      const allRows = allResults.map(row => {
+        const getValue = (path) => {
+          const keys = path.split(/[.[\]]/).filter(key => key && key !== '0');
+          let value = row;
+          
+          for (const key of keys) {
+            if (value && typeof value === 'object') {
+              if (Array.isArray(value)) {
+                // For arrays, get first element and then access the key
+                value = value[0];
+                if (value && typeof value === 'object' && key) {
                   value = value[key];
                 }
               } else {
-                break;
+                value = value[key];
               }
+            } else {
+              break;
             }
-            
-            return value || "";
-          };
+          }
+          
+          return value || "";
+        };
 
-          return headers.map(header => {
-            let value = getValue(header.path);
-            
-            // Handle special fields
-            if (header.path === "legalFormId") {
-              value = legalFormsMap[value] || row.abbreviation || "";
-            } else if (header.path === "isActive") {
-              value = value ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
-            } else if (header.path === "Init_Reg_date") {
-              value = formatDate(value);
-            } else if (typeof value === 'boolean') {
-              value = value ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
-            }
-            
-            // Escape quotes and wrap in quotes for Access compatibility
-            return `"${String(value || "").replace(/"/g, '""')}"`;
-          }).join(";");
-        }).join("\n");
+        return headers.map(header => {
+          let value = getValue(header.path);
+          
+          // Handle special fields
+          if (header.path === "legalFormId") {
+            value = legalFormsMap[value] || row.abbreviation || "";
+          } else if (header.path === "isActive") {
+            value = value ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+          } else if (header.path === "Init_Reg_date") {
+            value = formatDate(value);
+          } else if (typeof value === 'boolean') {
+            value = value ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+          }
+          
+          // Escape quotes and wrap in quotes for Access compatibility
+          return `"${String(value || "").replace(/"/g, '""')}"`;
+        }).join(";");
+      }).join("\n");
 
-        csvContent += chunkRows + "\n";
-        
-        // Update progress
-        const progress = ((i + 1) / Math.ceil(totalRecords / CHUNK_SIZE)) * 100;
-        setExportProgress(progress);
-        
-        console.log(`Exported ${Math.min((i + 1) * CHUNK_SIZE, totalRecords)} / ${totalRecords}`);
-      }
+      csvContent += allRows + "\n";
 
       if (isStopped) return;
 
