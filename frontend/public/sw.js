@@ -41,11 +41,41 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests (like Google Analytics, external APIs)
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Skip chrome-extension and other non-http(s) requests
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Return cached version or fetch from network
-        return response || fetch(event.request);
+        if (response) {
+          return response;
+        }
+
+        // Clone the request because it can only be used once
+        return fetch(event.request.clone())
+          .then((networkResponse) => {
+            // Cache successful responses for same-origin requests
+            if (networkResponse && networkResponse.status === 200) {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return networkResponse;
+          })
+          .catch((error) => {
+            console.warn('Fetch failed:', error);
+            // Return a fallback or rethrow
+            throw error;
+          });
       })
   );
 });
