@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="ka">
-
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3PD81RRQ54"></script>
@@ -12,13 +11,43 @@
   </script>
 
   <meta charset="UTF-8" />
-  
+
+  <!-- ✅ Versioned index redirect (must be BEFORE module script loads) -->
+  <script>
+    (function () {
+      // Change this value on every deployment (or inject automatically)
+      var BUILD = "2026-01-27_1";
+
+      try {
+        var url = new URL(window.location.href);
+
+        // prevent loops
+        if (url.searchParams.get("__v") === BUILD) return;
+
+        fetch("/index.html?probe=" + Date.now(), { cache: "no-store" })
+          .then(function (r) { return r.text(); })
+          .then(function (html) {
+            var m = html.match(/\/assets\/index-[^"]+\.js/);
+            var current = m ? m[0] : null;
+
+            // In dev your script is /src/main.jsx, in prod it will be /assets/index-xxxx.js
+            // So if current build is hashed and we are not on that, reload.
+            if (current) {
+              url.searchParams.set("__v", BUILD);
+              window.location.replace(url.toString());
+            }
+          })
+          .catch(function(){});
+      } catch(e) {}
+    })();
+  </script>
+
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ბიზნეს რეგისტრი | Business Register</title>
   <meta name="description" content="სტატისტიკური ბიზნეს რეგისტრი - Statistical Business Register" />
@@ -29,18 +58,18 @@
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
 
   <link rel="stylesheet" href="src/index.css">
-  <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"> -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PHLFTNCM" height="0" width="0"
-      style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
+  <noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PHLFTNCM" height="0" width="0"
+      style="display:none;visibility:hidden"></iframe>
+  </noscript>
 
   <div id="root"></div>
+
+  <!-- ✅ keep module script last -->
   <script type="module" src="/src/main.jsx"></script>
 </body>
-
 </html>
