@@ -107,7 +107,7 @@ function SearchForm({ isEnglish }) {
         }],
       }));
     }
-  }, [setFormData]);
+  }, []); // Run only on mount
 
   // Auto-search when formData is updated from URL parameters
   useEffect(() => {

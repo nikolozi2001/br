@@ -20,7 +20,7 @@ This document outlines the comprehensive SEO improvements implemented for the Bu
 
 ### 3. **Progressive Web App (PWA) Support**
 - ✅ Web App Manifest (`/public/manifest.json`)
-- ✅ Service Worker for basic caching (`/public/sw.js`)
+- ❌ Service Worker removed (was causing browser throttling issues)
 - ✅ PWA meta tags in HTML
 - ✅ Theme color and app icons configuration
 

@@ -74,6 +74,8 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
   }, [formData]);
 
   const sortData = (data, config) => {
+    // Ensure data is an array
+    if (!Array.isArray(data)) return [];
     if (!config.key) return data;
 
     return [...data].sort((a, b) => {
