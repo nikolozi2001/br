@@ -110,32 +110,63 @@ function SearchForm({ isEnglish }) {
   }, []); // Run only on mount
 
   // Auto-search when formData is updated from URL parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const identificationNumber = urlParams.get("identificationNumber");
+useEffect(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const identificationNumber = urlParams.get("identificationNumber");
 
-    if (
-      identificationNumber &&
-      formData.identificationNumber === identificationNumber &&
-      !showResults
-    ) {
-      // Auto-submit the search
-      const autoSearch = async () => {
-        setIsLoading(true);
-        try {
-          const results = await handleSubmit();
-          setSearchResults(results);
+  if (
+    identificationNumber &&
+    formData.identificationNumber === identificationNumber &&
+    !showResults
+  ) {
+    const controller = new AbortController();
+    setAbortController(controller);
+
+    const autoSearch = async () => {
+      // Reset states same as normal submit
+      setIsStopped(false);
+      setShowResults(false);
+      setSearchResults([]);
+      setPagination(null);
+      setIsLoading(true);
+
+      try {
+        const response = await handleSubmit(controller.signal);
+
+        if (response && !controller.signal.aborted) {
+          setSearchResults(response.results || []);
+          setPagination(response.pagination || null);
+          setLastSearchParams(formData);
           setShowResults(true);
-        } catch (error) {
-          console.error("Error fetching results from URL:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
 
-      autoSearch();
-    }
-  }, [formData.identificationNumber, handleSubmit, showResults]);
+          if (!response.results || response.results.length === 0) {
+            alert(isEnglish ? "No results found." : "შედეგები არ მოიძებნა.");
+          }
+        }
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Auto-search was cancelled");
+        } else {
+          console.error("Error fetching results from URL:", error);
+          alert(
+            isEnglish
+              ? "An error occurred. Please try again."
+              : "დაფიქსირდა შეცდომა. სცადეთ ხელახლა."
+          );
+        }
+      } finally {
+        setIsLoading(false);
+        setAbortController(null);
+      }
+    };
+
+    autoSearch();
+
+    // Cleanup if user navigates away fast / component unmounts
+    return () => controller.abort();
+  }
+}, [formData.identificationNumber, showResults, isEnglish]); // keep deps minimal
+
 
   const handleBackToSearch = () => {
     setShowResults(false);
