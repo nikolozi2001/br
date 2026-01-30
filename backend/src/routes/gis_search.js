@@ -3,11 +3,12 @@ const router = express.Router();
 const sql = require("mssql");
 const { poolPromise } = require("../config/database");
 
-// GET by city (Region_Code2), legal form, and search text in Full_Name
-// Query params: city (region code), legalForm (optional), search (optional)
+// GET by city (Region_Code2), legal form, activity, and search text in Full_Name
+// Query params: city (required), legalForm (optional), activity (optional), search (optional)
+// activity: single letter (A-U) or detailed code (01.11.1), comma-separated for multiple
 router.get("/", async (req, res) => {
   try {
-    const { city, legalForm, search } = req.query;
+    const { city, legalForm, activity, search } = req.query;
 
     // City is required
     if (!city || city.trim() === "") {
@@ -17,7 +18,7 @@ router.get("/", async (req, res) => {
       });
     }
 
-    console.log("GIS Search Parameters:", { city, legalForm, search });
+    console.log("GIS Search Parameters:", { city, legalForm, activity, search });
 
     const cityCode = parseInt(city);
     if (isNaN(cityCode)) {
@@ -34,6 +35,40 @@ router.get("/", async (req, res) => {
       const legalFormId = parseInt(legalForm);
       if (!isNaN(legalFormId)) {
         whereClause += " AND [Legal_Form_ID] = @legalForm";
+      }
+    }
+    
+    // Add activity filter if provided
+    let activityWhereClause = "";
+    const letterToRootId = {
+      'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 
+      'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 
+      'R': 18, 'S': 19, 'T': 20, 'U': 21
+    };
+    
+    if (activity && activity.trim() !== "") {
+      const activityCodes = activity.split(",").map(code => code.trim()).filter(code => code);
+      
+      if (activityCodes.length > 0) {
+        const conditions = [];
+        
+        activityCodes.forEach((code, index) => {
+          // Check if it's a single letter (like F, G, etc.)
+          if (code.length === 1 && /^[A-Z]$/i.test(code)) {
+            // Map single letters to Activity_Root_ID values
+            const rootId = letterToRootId[code.toUpperCase()];
+            if (rootId) {
+              conditions.push(`[Activity_2_ID] IN (SELECT [ID] FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
+            }
+          } else {
+            // For detailed codes like "01.11.1", use the LIKE approach
+            conditions.push(`[Activity_2_Code] LIKE @activityCode${index}`);
+          }
+        });
+
+        if (conditions.length > 0) {
+          activityWhereClause = ` AND (${conditions.join(" OR ")})`;
+        }
       }
     }
     
@@ -93,6 +128,7 @@ router.get("/", async (req, res) => {
         ,[web]
       FROM [register].[dbo].[DocMain]
       ${whereClause}
+      ${activityWhereClause}
       ORDER BY [Full_Name]
     `;
 
@@ -108,13 +144,31 @@ router.get("/", async (req, res) => {
       }
     }
     
+    // Bind activity filter parameters
+    if (activity && activity.trim() !== "") {
+      const activityCodes = activity.split(",").map(code => code.trim()).filter(code => code);
+      
+      if (activityCodes.length > 0) {
+        activityCodes.forEach((code, index) => {
+          if (code.length === 1 && /^[A-Z]$/i.test(code)) {
+            const rootId = letterToRootId[code.toUpperCase()];
+            if (rootId) {
+              request.input(`rootId${index}`, sql.Int, rootId);
+            }
+          } else {
+            request.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
+          }
+        });
+      }
+    }
+    
     if (search && search.trim() !== "") {
       request.input("search", sql.NVarChar, `%${search}%`);
     }
 
     const result = await request.query(query);
     console.log("Number of records found:", result.recordset.length);
-    console.log("Query executed with filters:", { city: cityCode, legalForm, search });
+    console.log("Query executed with filters:", { city: cityCode, legalForm, activity, search });
     
     res.json(result.recordset);
   } catch (error) {
