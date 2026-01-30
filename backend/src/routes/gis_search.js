@@ -3,86 +3,150 @@ const router = express.Router();
 const sql = require("mssql");
 const { poolPromise } = require("../config/database");
 
+// GET by city (Region_Code2), legal form, and search text in Full_Name
+// Query params: city (region code), legalForm (optional), search (optional)
 router.get("/", async (req, res) => {
   try {
-    const reg = parseInt(req.query.reg) || 0;
-    const leg = parseInt(req.query.leg) || 0;
-    const act = parseInt(req.query.act) || 0;
-    const nameOrCode = req.query.nameOrCode || "";
+    const { city, legalForm, search } = req.query;
 
-    console.log("GIS Search Parameters:", { reg, leg, act, nameOrCode });
+    // City is required
+    if (!city || city.trim() === "") {
+      return res.status(400).json({ 
+        error: "City parameter is required",
+        message: "Please provide a city (region code) to search"
+      });
+    }
 
-    let filter = "";
-    if (reg > 0) filter += " AND dm.Region_Code2 = @reg";
-    if (act > 0) filter += " AND a2.ID = @act";
-    if (leg > 0) filter += " AND dm.Legal_Form_ID = @leg";
-    if (nameOrCode) {
-      // Check if nameOrCode is numeric (for Legal_Code exact match) or text (for Full_Name search)
-      const isNumeric = /^\d+$/.test(nameOrCode.toString().trim());
-      
-      if (isNumeric) {
-        // For numeric input, search both Legal_Code (exact match) and Full_Name (partial match)
-        filter += " AND (dm.Legal_Code = @nameOrCodeExact OR UPPER(LTRIM(RTRIM(dm.Full_Name))) LIKE UPPER(@nameOrCode))";
-      } else {
-        // For text input, search only Full_Name and Legal_Code as string
-        filter += " AND (UPPER(LTRIM(RTRIM(dm.Full_Name))) LIKE UPPER(@nameOrCode) OR CAST(dm.Legal_Code AS NVARCHAR) LIKE @nameOrCode)";
+    console.log("GIS Search Parameters:", { city, legalForm, search });
+
+    const cityCode = parseInt(city);
+    if (isNaN(cityCode)) {
+      return res.status(400).json({ 
+        error: "Invalid city parameter",
+        message: "City must be a valid region code"
+      });
+    }
+
+    let whereClause = " WHERE [Region_Code2] = @city AND [ISActive] = 1";
+    
+    // Add legal form filter if provided
+    if (legalForm && legalForm.trim() !== "") {
+      const legalFormId = parseInt(legalForm);
+      if (!isNaN(legalFormId)) {
+        whereClause += " AND [Legal_Form_ID] = @legalForm";
       }
+    }
+    
+    // Add Full_Name search if provided
+    if (search && search.trim() !== "") {
+      whereClause += " AND [Full_Name] LIKE @search";
     }
 
     const query = `
-      SELECT  
-        a2.ID,
-        REPLACE(REPLACE(REPLACE(dm.Full_Name, '''', ''), CHAR(13), ''), CHAR(10), '') AS Full_Name,
-        dm.Legal_Code,
-        dm.Region_Code2,
-        dm.Legal_Form_ID,
-        l.Abbreviation,
-        dm.Activity_2_Name,
-        dm.X,
-        dm.Y
-      FROM [register].[dbo].[DocMain] dm
-      LEFT JOIN [register].[CL].[Legal_Forms] l 
-        ON l.ID = dm.Legal_Form_ID
-      LEFT JOIN [register].[CL].[Activities_NACE2] a1 
-        ON a1.Activity_Code = dm.Activity_2_Code
-      LEFT JOIN [register].[CL].[Activities_NACE2] a2 
-        ON a1.Activity_Root_ID = a2.Activity_Root_ID 
-       AND a1.Activity_Root_ID = a2.ID
-      WHERE dm.ISActive = 1 
-        AND dm.X > 0
-        ${filter}
+      SELECT TOP (1000) 
+        [Stat_ID]
+        ,[Legal_Code]
+        ,[Personal_no]
+        ,[Legal_Form_ID]
+        ,[Abbreviation]
+        ,[Full_Name]
+        ,[Ownership_Type_ID]
+        ,[Ownership_Type]
+        ,[Region_Code]
+        ,[Region_name]
+        ,[City_Code]
+        ,[City_name]
+        ,[Comunity_Code]
+        ,[Community_name]
+        ,[Village_Code]
+        ,[Village_name]
+        ,[Address]
+        ,[Region_Code2]
+        ,[Region_name2]
+        ,[City_Code2]
+        ,[City_name2]
+        ,[Comunity_Code2]
+        ,[Community_name2]
+        ,[Village_Code2]
+        ,[Village_name2]
+        ,[Address2]
+        ,[Activity_ID]
+        ,[Activity_Code]
+        ,[Activity_Name]
+        ,[Activity_2_ID]
+        ,[Activity_2_Code]
+        ,[Activity_2_Name]
+        ,[Head]
+        ,[mob]
+        ,[Email]
+        ,[ISActive]
+        ,[Zoma]
+        ,[Zoma_old]
+        ,[X]
+        ,[Y]
+        ,[Change]
+        ,[Reg_Date]
+        ,[Partner]
+        ,[Head_PN]
+        ,[Partner_PN]
+        ,[Init_Reg_date]
+        ,[web]
+      FROM [register].[dbo].[DocMain]
+      ${whereClause}
+      ORDER BY [Full_Name]
     `;
 
     const pool = await poolPromise;
     const request = pool.request();
 
-    if (reg > 0) request.input("reg", sql.Int, reg);
-    if (act > 0) request.input("act", sql.Int, act);
-    if (leg > 0) request.input("leg", sql.Int, leg);
-    if (nameOrCode) {
-      const trimmedValue = nameOrCode.toString().trim();
-      const isNumeric = /^\d+$/.test(trimmedValue);
-      
-      if (isNumeric) {
-        // For numeric input, bind both exact numeric value and partial text search
-        request.input("nameOrCodeExact", sql.BigInt, parseInt(trimmedValue));
-        request.input("nameOrCode", sql.NVarChar, `%${trimmedValue}%`);
-      } else {
-        // For text input, bind only partial text search
-        request.input("nameOrCode", sql.NVarChar, `%${trimmedValue}%`);
+    request.input("city", sql.Int, cityCode);
+    
+    if (legalForm && legalForm.trim() !== "") {
+      const legalFormId = parseInt(legalForm);
+      if (!isNaN(legalFormId)) {
+        request.input("legalForm", sql.SmallInt, legalFormId);
       }
+    }
+    
+    if (search && search.trim() !== "") {
+      request.input("search", sql.NVarChar, `%${search}%`);
     }
 
     const result = await request.query(query);
-    //how can I understand length of result.recordset
-    // if (Array.isArray(result.recordset)) {
-    //   console.log("Number of records found:", result.recordset.length);
-    // }
-
+    console.log("Number of records found:", result.recordset.length);
+    console.log("Query executed with filters:", { city: cityCode, legalForm, search });
+    
     res.json(result.recordset);
   } catch (error) {
     console.error("Error fetching DocMain data:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+});
+
+// GET available regions/cities for dropdown
+router.get("/cities", async (req, res) => {
+  try {
+    const query = `
+      SELECT DISTINCT 
+        [Region_Code2] AS code,
+        [Region_name2] AS name,
+        [City_Code2] AS cityCode,
+        [City_name2] AS cityName
+      FROM [register].[dbo].[DocMain]
+      WHERE [ISActive] = 1 
+        AND [Region_Code2] IS NOT NULL
+        AND [City_name2] IS NOT NULL
+      ORDER BY [City_name2]
+    `;
+
+    const pool = await poolPromise;
+    const result = await pool.request().query(query);
+    
+    console.log("Available cities/regions:", result.recordset.length);
+    res.json(result.recordset);
+  } catch (error) {
+    console.error("Error fetching cities:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
 
