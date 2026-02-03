@@ -12,24 +12,29 @@ router.get("/", async (req, res) => {
 
     // City is required
     if (!city || city.trim() === "") {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "City parameter is required",
-        message: "Please provide a city (region code) to search"
+        message: "Please provide a city (region code) to search",
       });
     }
 
-    console.log("GIS Search Parameters:", { city, legalForm, activity, search });
+    console.log("GIS Search Parameters:", {
+      city,
+      legalForm,
+      activity,
+      search,
+    });
 
     const cityCode = parseInt(city);
     if (isNaN(cityCode)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Invalid city parameter",
-        message: "City must be a valid region code"
+        message: "City must be a valid region code",
       });
     }
 
     let whereClause = " WHERE [Region_Code2] = @city AND [ISActive] = 1";
-    
+
     // Add legal form filter if provided
     if (legalForm && legalForm.trim() !== "") {
       const legalFormId = parseInt(legalForm);
@@ -37,28 +42,51 @@ router.get("/", async (req, res) => {
         whereClause += " AND [Legal_Form_ID] = @legalForm";
       }
     }
-    
+
     // Add activity filter if provided
     let activityWhereClause = "";
     const letterToRootId = {
-      'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 
-      'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 
-      'R': 18, 'S': 19, 'T': 20, 'U': 21
+      A: 1,
+      B: 2,
+      C: 3,
+      D: 4,
+      E: 5,
+      F: 6,
+      G: 7,
+      H: 8,
+      I: 9,
+      J: 10,
+      K: 11,
+      L: 12,
+      M: 13,
+      N: 14,
+      O: 15,
+      P: 16,
+      Q: 17,
+      R: 18,
+      S: 19,
+      T: 20,
+      U: 21,
     };
-    
+
     if (activity && activity.trim() !== "") {
-      const activityCodes = activity.split(",").map(code => code.trim()).filter(code => code);
-      
+      const activityCodes = activity
+        .split(",")
+        .map((code) => code.trim())
+        .filter((code) => code);
+
       if (activityCodes.length > 0) {
         const conditions = [];
-        
+
         activityCodes.forEach((code, index) => {
           // Check if it's a single letter (like F, G, etc.)
           if (code.length === 1 && /^[A-Z]$/i.test(code)) {
             // Map single letters to Activity_Root_ID values
             const rootId = letterToRootId[code.toUpperCase()];
             if (rootId) {
-              conditions.push(`[Activity_2_ID] IN (SELECT [ID] FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
+              conditions.push(
+                `[Activity_2_ID] IN (SELECT [ID] FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`,
+              );
             }
           } else {
             // For detailed codes like "01.11.1", use the LIKE approach
@@ -71,14 +99,14 @@ router.get("/", async (req, res) => {
         }
       }
     }
-    
+
     // Add Full_Name search if provided
     if (search && search.trim() !== "") {
       whereClause += " AND [Full_Name] LIKE @search";
     }
 
     const query = `
-      SELECT TOP (1000) 
+      SELECT 
         [Stat_ID]
         ,[Legal_Code]
         ,[Personal_no]
@@ -136,18 +164,21 @@ router.get("/", async (req, res) => {
     const request = pool.request();
 
     request.input("city", sql.Int, cityCode);
-    
+
     if (legalForm && legalForm.trim() !== "") {
       const legalFormId = parseInt(legalForm);
       if (!isNaN(legalFormId)) {
         request.input("legalForm", sql.SmallInt, legalFormId);
       }
     }
-    
+
     // Bind activity filter parameters
     if (activity && activity.trim() !== "") {
-      const activityCodes = activity.split(",").map(code => code.trim()).filter(code => code);
-      
+      const activityCodes = activity
+        .split(",")
+        .map((code) => code.trim())
+        .filter((code) => code);
+
       if (activityCodes.length > 0) {
         activityCodes.forEach((code, index) => {
           if (code.length === 1 && /^[A-Z]$/i.test(code)) {
@@ -161,19 +192,26 @@ router.get("/", async (req, res) => {
         });
       }
     }
-    
+
     if (search && search.trim() !== "") {
       request.input("search", sql.NVarChar, `%${search}%`);
     }
 
     const result = await request.query(query);
     console.log("Number of records found:", result.recordset.length);
-    console.log("Query executed with filters:", { city: cityCode, legalForm, activity, search });
-    
+    console.log("Query executed with filters:", {
+      city: cityCode,
+      legalForm,
+      activity,
+      search,
+    });
+
     res.json(result.recordset);
   } catch (error) {
     console.error("Error fetching DocMain data:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 });
 
@@ -195,12 +233,14 @@ router.get("/cities", async (req, res) => {
 
     const pool = await poolPromise;
     const result = await pool.request().query(query);
-    
+
     console.log("Available cities/regions:", result.recordset.length);
     res.json(result.recordset);
   } catch (error) {
     console.error("Error fetching cities:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 });
 
