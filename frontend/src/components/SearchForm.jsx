@@ -342,7 +342,7 @@ useEffect(() => {
       return allResults;
     };
 
-    // Prepare CSV Header
+    // Prepare headers for Excel
     const headers = [
       { label: "identificationNumber", path: "identificationNumber" },
       { label: "personalNumber", path: "personalNumber" },
@@ -367,7 +367,7 @@ useEffect(() => {
       { label: "initRegDate", path: "Init_Reg_date" },
     ];
 
-    const headerRow = headers.map(h => t[h.label] || h.label).join(",") + "\n";
+    const headerLabels = headers.map(h => t[h.label] || h.label);
 
     // Precompile field getters for optimal performance (avoid repeated .split())
     const getters = headers.map(header => {
@@ -385,7 +385,7 @@ useEffect(() => {
       };
     });
 
-    // Optimized field formatter
+    // Optimized field formatter for Excel (no quotes needed)
     const formatField = (val, headerPath, row) => {
       // Handle special fields
       if (headerPath === "legalFormId") {
@@ -399,10 +399,38 @@ useEffect(() => {
           const date = new Date(val);
           return date.toISOString().split('T')[0];
         } catch {
-          return `"${String(val || "").replace(/"/g, '""')}"`;
+          return String(val || "");
         }
       }
-      return `"${String(val || "").replace(/"/g, '""')}"`;
+      return val !== undefined && val !== null ? String(val) : "";
+    };
+
+    // Helper function to create and download Excel file
+    const createAndDownloadExcel = (data, filename) => {
+      // Create worksheet data with headers
+      const wsData = [headerLabels];
+      
+      // Add data rows
+      data.forEach(row => {
+        const rowData = getters.map(({ getter, path }) => {
+          const val = getter(row);
+          return formatField(val, path, row);
+        });
+        wsData.push(rowData);
+      });
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Set column widths for better readability
+      ws['!cols'] = headerLabels.map(() => ({ wch: 20 }));
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Business Registry");
+
+      // Generate Excel file and trigger download
+      XLSX.writeFile(wb, filename);
     };
 
     // Check if we need to split into multiple files
@@ -429,35 +457,9 @@ useEffect(() => {
         const fileEndIndex = fileStartIndex + (endRecord - startRecord);
         const fileResults = allResults.slice(fileStartIndex, fileEndIndex);
         
-        // Use array for efficient CSV building
-        const csvParts = ["\ufeff" + headerRow];
-        
-        // Process all results for this file into CSV using precompiled getters
-        const fileRows = fileResults.map(row => {
-          return getters.map(({ getter, path }) => {
-            const val = getter(row);
-            return formatField(val, path, row);
-          }).join(",");
-        }).join("\n");
-
-        if (fileRows) csvParts.push(fileRows);
-        
-        const csvContent = csvParts.join("\n");
-        
-        // Download this file
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `business_registry_${new Date().toISOString().split('T')[0]}_part${fileIndex + 1}_of_${totalFiles}.csv`);
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        // Wait a bit before removing the link
-        await new Promise(resolve => setTimeout(resolve, 100));
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Create and download Excel file
+        const filename = `business_registry_${new Date().toISOString().split('T')[0]}_part${fileIndex + 1}_of_${totalFiles}.xlsx`;
+        createAndDownloadExcel(fileResults, filename);
         
         console.log(`File ${fileIndex + 1}/${totalFiles} exported with ${fileResults.length} records`);
         
@@ -473,30 +475,9 @@ useEffect(() => {
       
       if (isStopped) return;
       
-      // Use array for efficient CSV building
-      const csvParts = ["\ufeff" + headerRow];
-      
-      // Process all results into CSV using precompiled getters
-      const allRows = allResults.map(row => {
-        return getters.map(({ getter, path }) => {
-          const val = getter(row);
-          return formatField(val, path, row);
-        }).join(",");
-      }).join("\n");
-
-      if (allRows) csvParts.push(allRows);
-      
-      const csvContent = csvParts.join("\n");
-
-      // Single file download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `business_registry_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Create and download Excel file
+      const filename = `business_registry_${new Date().toISOString().split('T')[0]}.xlsx`;
+      createAndDownloadExcel(allResults, filename);
     }
 
   } catch (error) {
