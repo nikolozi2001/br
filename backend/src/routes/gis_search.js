@@ -8,7 +8,10 @@ const { poolPromise } = require("../config/database");
 // activity: single letter (A-U) or detailed code (01.11.1), comma-separated for multiple
 router.get("/", async (req, res) => {
   try {
-    const { city, legalForm, activity, search } = req.query;
+    // Support both 'leg' and 'legalForm' parameter names
+    const { city, search } = req.query;
+    const legalForm = req.query.legalForm || req.query.leg;
+    const activity = req.query.activity || req.query.act;
 
     // City is required
     if (!city || city.trim() === "") {
