@@ -283,12 +283,12 @@ useEffect(() => {
     }
 
     const totalRecords = pagination.total;
-    const CHUNK_SIZE = 25000;  // Reduced from 50K for better memory management
-    const MAX_RECORDS_PER_FILE = 200000; // Reduced from 600K to prevent memory issues with large exports
-    const CONCURRENCY = 4; // Reduced from 6 to lower peak memory usage
+    const CHUNK_SIZE = 50000;  // Optimal batch size for API requests
+    const MAX_RECORDS_PER_FILE = 200000; // Keep at 200K - larger causes RangeError in xlsx compression
+    const CONCURRENCY = 5; // Balanced for parallel API requests
     
     // Warn user about large exports
-    const LARGE_EXPORT_THRESHOLD = 300000;
+    const LARGE_EXPORT_THRESHOLD = 400000;
     if (totalRecords > LARGE_EXPORT_THRESHOLD) {
       const confirmExport = window.confirm(
         isEnglish 
@@ -434,36 +434,38 @@ useEffect(() => {
       return val !== undefined && val !== null ? String(val) : "";
     };
 
-    // Helper function to create and download Excel file
+    // Helper function to create and download Excel file - optimized approach
     const createAndDownloadExcel = (data, filename) => {
       console.log(`Creating Excel file with ${data.length} records...`);
       const startTime = performance.now();
       
-      // Create worksheet data with headers
-      const wsData = [headerLabels];
+      // Pre-allocate array for better performance (avoid dynamic resizing)
+      const wsData = new Array(data.length + 1);
+      wsData[0] = headerLabels;
       
-      // Add data rows
-      data.forEach((row, index) => {
-        const rowData = getters.map(({ getter, path }) => {
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        wsData[i + 1] = getters.map(({ getter, path }) => {
           const val = getter(row);
           return formatField(val, path, row);
         });
-        wsData.push(rowData);
         
         // Log progress every 50000 rows
-        if ((index + 1) % 50000 === 0) {
-          console.log(`Processed ${index + 1}/${data.length} rows for Excel`);
+        if ((i + 1) % 50000 === 0) {
+          console.log(`Processed ${i + 1}/${data.length} rows for Excel`);
         }
-      });
+      }
 
       console.log(`Data preparation complete in ${((performance.now() - startTime) / 1000).toFixed(2)}s`);
       console.log(`Creating workbook...`);
       
-      // Create workbook and worksheet
+      // Create workbook and worksheet with optimized settings
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      
+      // Use json_to_sheet for potentially faster processing with dense arrays
+      const ws = XLSX.utils.aoa_to_sheet(wsData, { dense: true });
 
-      // Set column widths for better readability
+      // Set column widths
       ws['!cols'] = headerLabels.map(() => ({ wch: 20 }));
 
       // Add worksheet to workbook
@@ -471,9 +473,16 @@ useEffect(() => {
 
       console.log(`Writing file: ${filename}...`);
       
-      // Generate Excel file and trigger download
-      XLSX.writeFile(wb, filename);
+      const writeStartTime = performance.now();
       
+      // Use writeFile directly - more reliable for large files
+      // Note: compression causes RangeError with large datasets, so we skip it
+      XLSX.writeFile(wb, filename, {
+        bookType: 'xlsx',
+        cellStyles: false,  // Skip cell styles for speed
+      });
+      
+      console.log(`File write complete in ${((performance.now() - writeStartTime) / 1000).toFixed(2)}s`);
       console.log(`Excel export complete in ${((performance.now() - startTime) / 1000).toFixed(2)}s`);
     };
 
