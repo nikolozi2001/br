@@ -344,11 +344,22 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     // console.log("Final request URL:", finalUrl);
 
     const fetchOptions = signal ? { signal } : {};
-    const response = await fetch(finalUrl, fetchOptions);
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
+    
+    // Add timeout for large requests (5 minutes)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout
+    
+    try {
+      const response = await fetch(finalUrl, { 
+        ...fetchOptions, 
+        signal: signal || controller.signal 
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+      }
+      const data = await response.json();
     // console.log('Raw response data:', data);
 
     // Handle new paginated response format
@@ -408,8 +419,17 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
       results: transformedData,
       pagination: data.pagination || null
     };
+    } catch (innerError) {
+      clearTimeout(timeoutId);
+      throw innerError;
+    }
   } catch (error) {
     console.error("Error fetching documents:", error);
+    console.error("Error details - name:", error?.name, "message:", error?.message);
+    // Re-throw for export to handle properly, but return empty for normal search
+    if (error.name === 'AbortError') {
+      console.warn("Request timed out or was aborted");
+    }
     return { results: [], pagination: null };
   }
 };

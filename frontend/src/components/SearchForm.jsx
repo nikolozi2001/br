@@ -283,9 +283,20 @@ useEffect(() => {
     }
 
     const totalRecords = pagination.total;
-    const CHUNK_SIZE = 50000; 
-    const MAX_RECORDS_PER_FILE = 600000;
-    const CONCURRENCY = 6; // Optimal for parallel API requests
+    const CHUNK_SIZE = 25000;  // Reduced from 50K for better memory management
+    const MAX_RECORDS_PER_FILE = 200000; // Reduced from 600K to prevent memory issues with large exports
+    const CONCURRENCY = 4; // Reduced from 6 to lower peak memory usage
+    
+    // Warn user about large exports
+    const LARGE_EXPORT_THRESHOLD = 300000;
+    if (totalRecords > LARGE_EXPORT_THRESHOLD) {
+      const confirmExport = window.confirm(
+        isEnglish 
+          ? `Warning: You are about to export ${totalRecords.toLocaleString()} records. This may take a long time and could cause browser performance issues. Do you want to continue?`
+          : `გაფრთხილება: თქვენ აპირებთ ${totalRecords.toLocaleString()} ჩანაწერის ექსპორტს. ამას შეიძლება დიდი დრო დასჭირდეს და შეიძლება გამოიწვიოს ბრაუზერის მუშაობის პრობლემები. გსურთ გაგრძელება?`
+      );
+      if (!confirmExport) return;
+    }
     
     setIsLoading(true);
     setIsExporting(true);
@@ -297,23 +308,33 @@ useEffect(() => {
       const pages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
       const totalPages = pages.length;
       let allResults = [];
+      let fetchErrors = 0;
+      
+      console.log(`Starting export: ${totalPages} pages, ${totalRecords} total records`);
       
       for (let i = 0; i < pages.length; i += CONCURRENCY) {
         if (isStopped) break;
 
         const batch = pages.slice(i, i + CONCURRENCY);
+        console.log(`Fetching batch: pages ${batch.join(', ')}`);
+        
         const responses = await Promise.all(
           batch.map(async page => {
             try {
-              return await fetchDocuments(
+              const result = await fetchDocuments(
                 lastSearchParams,
                 isEnglish ? "en" : "ge",
                 [],
                 null,
                 { page, limit: CHUNK_SIZE }
               );
+              if (!result?.results?.length) {
+                console.warn(`Page ${page} returned empty results`);
+              }
+              return result;
             } catch (error) {
-              console.warn(`Error fetching page ${page}:`, error);
+              console.error(`Error fetching page ${page}:`, error);
+              fetchErrors++;
               return { results: [] };
             }
           })
@@ -324,6 +345,8 @@ useEffect(() => {
             allResults.push(...response.results);
           }
         });
+        
+        console.log(`Batch complete. Total records so far: ${allResults.length}`);
 
         // Calculate progress based on pages completed (not records)
         const pagesCompleted = Math.min(i + CONCURRENCY, totalPages);
@@ -337,6 +360,12 @@ useEffect(() => {
 
         // Small delay to ensure UI repaints
         await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      
+      console.log(`Fetch complete. Total records: ${allResults.length}, Errors: ${fetchErrors}`);
+      
+      if (fetchErrors > 0 && allResults.length === 0) {
+        throw new Error(`All ${fetchErrors} fetch requests failed`);
       }
       
       return allResults;
@@ -407,18 +436,29 @@ useEffect(() => {
 
     // Helper function to create and download Excel file
     const createAndDownloadExcel = (data, filename) => {
+      console.log(`Creating Excel file with ${data.length} records...`);
+      const startTime = performance.now();
+      
       // Create worksheet data with headers
       const wsData = [headerLabels];
       
       // Add data rows
-      data.forEach(row => {
+      data.forEach((row, index) => {
         const rowData = getters.map(({ getter, path }) => {
           const val = getter(row);
           return formatField(val, path, row);
         });
         wsData.push(rowData);
+        
+        // Log progress every 50000 rows
+        if ((index + 1) % 50000 === 0) {
+          console.log(`Processed ${index + 1}/${data.length} rows for Excel`);
+        }
       });
 
+      console.log(`Data preparation complete in ${((performance.now() - startTime) / 1000).toFixed(2)}s`);
+      console.log(`Creating workbook...`);
+      
       // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -429,8 +469,12 @@ useEffect(() => {
       // Add worksheet to workbook
       XLSX.utils.book_append_sheet(wb, ws, "Business Registry");
 
+      console.log(`Writing file: ${filename}...`);
+      
       // Generate Excel file and trigger download
       XLSX.writeFile(wb, filename);
+      
+      console.log(`Excel export complete in ${((performance.now() - startTime) / 1000).toFixed(2)}s`);
     };
 
     // Check if we need to split into multiple files
@@ -482,11 +526,27 @@ useEffect(() => {
 
   } catch (error) {
     console.error("Export Error:", error);
+    console.error("Error name:", error?.name);
+    console.error("Error message:", error?.message);
+    console.error("Error stack:", error?.stack);
     
-    // More specific error messages
-    const errorMessage = error.name === "AbortError" 
-      ? (isEnglish ? "Export was cancelled" : "ექსპორტი გაუქმდა")
-      : (isEnglish ? "Error during export. Please try again." : "ექსპორტის შეცდომა. გთხოვთ, სცადოთ ხელახლა.");
+    // More specific error messages based on error type
+    let errorMessage;
+    if (error.name === "AbortError") {
+      errorMessage = isEnglish ? "Export was cancelled" : "ექსპორტი გაუქმდა";
+    } else if (error.message?.includes("memory") || error.message?.includes("heap")) {
+      errorMessage = isEnglish 
+        ? "Export failed due to memory limitations. Try exporting fewer records."
+        : "ექსპორტი ვერ მოხერხდა მეხსიერების შეზღუდვის გამო. სცადეთ ნაკლები ჩანაწერების ექსპორტი.";
+    } else if (error.message?.includes("timeout") || error.message?.includes("Timeout")) {
+      errorMessage = isEnglish 
+        ? "Export timed out. Try exporting fewer records."
+        : "ექსპორტის დრო ამოიწურა. სცადეთ ნაკლები ჩანაწერების ექსპორტი.";
+    } else {
+      errorMessage = isEnglish 
+        ? `Error during export: ${error.message || 'Unknown error'}. Please try again.`
+        : `ექსპორტის შეცდომა: ${error.message || 'უცნობი შეცდომა'}. გთხოვთ, სცადოთ ხელახლა.`;
+    }
     
     alert(errorMessage);
     
