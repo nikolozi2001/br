@@ -284,19 +284,8 @@ useEffect(() => {
 
     const totalRecords = pagination.total;
     const CHUNK_SIZE = 50000;  // Optimal batch size for API requests
-    const MAX_RECORDS_PER_FILE = 200000; // Keep at 200K - larger causes RangeError in xlsx compression
+    const MAX_RECORDS_PER_FILE = 600000; // Keep at 200K - larger causes RangeError in xlsx compression
     const CONCURRENCY = 5; // Balanced for parallel API requests
-    
-    // Warn user about large exports
-    const LARGE_EXPORT_THRESHOLD = 400000;
-    if (totalRecords > LARGE_EXPORT_THRESHOLD) {
-      const confirmExport = window.confirm(
-        isEnglish 
-          ? `Warning: You are about to export ${totalRecords.toLocaleString()} records. This may take a long time and could cause browser performance issues. Do you want to continue?`
-          : `გაფრთხილება: თქვენ აპირებთ ${totalRecords.toLocaleString()} ჩანაწერის ექსპორტს. ამას შეიძლება დიდი დრო დასჭირდეს და შეიძლება გამოიწვიოს ბრაუზერის მუშაობის პრობლემები. გსურთ გაგრძელება?`
-      );
-      if (!confirmExport) return;
-    }
     
     setIsLoading(true);
     setIsExporting(true);
