@@ -13,24 +13,50 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
     const currentDay = now.getDate();
     const currentMonth = now.getMonth(); // 0-11
     const currentYear = now.getFullYear();
-    
+
     // If day is 8 or later, show current month; if less than 8, show previous month
-    const displayMonth = currentDay >= 8 ? currentMonth : (currentMonth - 1 + 12) % 12;
-    const displayYear = currentDay >= 8 ? currentYear : (currentMonth === 0 ? currentYear - 1 : currentYear);
-    
+    const displayMonth =
+      currentDay >= 8 ? currentMonth : (currentMonth - 1 + 12) % 12;
+    const displayYear =
+      currentDay >= 8
+        ? currentYear
+        : currentMonth === 0
+          ? currentYear - 1
+          : currentYear;
+
     const georgianMonths = [
-      'იანვრის', 'თებერვლის', 'მარტის', 'აპრილის', 'მაისის', 'ივნისის',
-      'ივლისის', 'აგვისტოს', 'სექტემბრის', 'ოქტომბრის', 'ნოემბრის', 'დეკემბრის'
+      "იანვრის",
+      "თებერვლის",
+      "მარტის",
+      "აპრილის",
+      "მაისის",
+      "ივნისის",
+      "ივლისის",
+      "აგვისტოს",
+      "სექტემბრის",
+      "ოქტომბრის",
+      "ნოემბრის",
+      "დეკემბრის",
     ];
-    
+
     const englishMonths = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
-    
+
     return {
       georgian: `${displayYear} წლის ${georgianMonths[displayMonth]} მდგომარეობით`,
-      english: `By ${englishMonths[displayMonth]} Of ${displayYear}`
+      english: `By ${englishMonths[displayMonth]} Of ${displayYear}`,
     };
   };
 
@@ -160,7 +186,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                 </Link>
 
                 <a
-                  href="http://gis.geostat.ge/geomap/index.html?open"
+                  href={`https://gis.geostat.ge/${isEnglish ? "en" : "ge"}/business-statistics`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-[#0080BE] border-t border-l border-r last:rounded-tr-lg  hover:bg-[#fff] hover:text-[#0080BE] transition-colors text-center"

@@ -70,6 +70,7 @@ router.get("/", async (req, res) => {
       S: 19,
       T: 20,
       U: 21,
+      Z: 1690,
     };
 
     if (activity && activity.trim() !== "") {
