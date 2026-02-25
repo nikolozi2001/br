@@ -4,7 +4,9 @@ require('dotenv').config();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['X-Total-Count'],
+}));
 app.use(express.json());
 
 // Import database configuration

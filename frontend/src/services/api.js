@@ -1166,6 +1166,82 @@ export const fetchLegalUnitWeb = async (personId) => {
   }
 };
 
+// Streaming CSV export - single query, no pagination overhead
+// Returns { reader, totalCount } for streaming processing
+export const fetchExportStream = async (searchParams, signal = null) => {
+  const queryParams = new URLSearchParams();
+
+  if (searchParams.identificationNumber) {
+    queryParams.append("identificationNumber", searchParams.identificationNumber);
+  }
+  if (searchParams.organizationName) {
+    queryParams.append("organizationName", searchParams.organizationName);
+  }
+  if (searchParams.organizationalLegalForm && Array.isArray(searchParams.organizationalLegalForm) && searchParams.organizationalLegalForm.length > 0) {
+    searchParams.organizationalLegalForm.forEach(lf => queryParams.append("legalForm", lf));
+  }
+  if (searchParams.head) {
+    queryParams.append("head", searchParams.head);
+  }
+  if (searchParams.partner) {
+    queryParams.append("partner", searchParams.partner);
+  }
+  if (searchParams.ownershipForm && Array.isArray(searchParams.ownershipForm) && searchParams.ownershipForm.length > 0) {
+    const ownershipForm = searchParams.ownershipForm[0];
+    if (ownershipForm?.value) {
+      const ownershipId = parseInt(ownershipForm.value, 10);
+      if (!isNaN(ownershipId)) queryParams.append("ownershipType", ownershipId);
+    }
+  }
+  if (searchParams.isActive) {
+    queryParams.append("isActive", searchParams.isActive);
+  }
+  if (searchParams.businessForm && Array.isArray(searchParams.businessForm) && searchParams.businessForm.length > 0) {
+    const size = searchParams.businessForm[0];
+    if (size?.value) {
+      const sizeId = parseInt(size.value, 10);
+      if (!isNaN(sizeId)) queryParams.append("size", sizeId);
+    }
+  }
+  if (searchParams.activities && Array.isArray(searchParams.activities) && searchParams.activities.length > 0) {
+    searchParams.activities.forEach(activity => {
+      if (activity?.code) queryParams.append("activityCode", activity.code);
+    });
+  }
+  if (searchParams.legalAddress?.region && Array.isArray(searchParams.legalAddress.region) && searchParams.legalAddress.region.length > 0) {
+    queryParams.append("legalAddressRegion", searchParams.legalAddress.region[0]);
+  }
+  if (searchParams.legalAddress?.municipalityCity && Array.isArray(searchParams.legalAddress.municipalityCity) && searchParams.legalAddress.municipalityCity.length > 0) {
+    queryParams.append("legalAddressCity", searchParams.legalAddress.municipalityCity[0]);
+  }
+  if (searchParams.legalAddress?.address) {
+    queryParams.append("legalAddress", searchParams.legalAddress.address);
+  }
+  if (searchParams.personalAddress?.region && Array.isArray(searchParams.personalAddress.region) && searchParams.personalAddress.region.length > 0) {
+    queryParams.append("factualAddressRegion", searchParams.personalAddress.region[0]);
+  }
+  if (searchParams.personalAddress?.municipalityCity && Array.isArray(searchParams.personalAddress.municipalityCity) && searchParams.personalAddress.municipalityCity.length > 0) {
+    queryParams.append("factualAddressCity", searchParams.personalAddress.municipalityCity[0]);
+  }
+  if (searchParams.personalAddress?.address) {
+    queryParams.append("factualAddress", searchParams.personalAddress.address);
+  }
+  if (searchParams.filterWithCoordinates) {
+    queryParams.append("x", "true");
+    queryParams.append("y", "true");
+  }
+
+  const url = `${API_BASE_URL}/documents/export?${queryParams}`;
+  const response = await fetch(url, { signal: signal || undefined });
+
+  if (!response.ok) {
+    throw new Error(`Export request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const totalCount = parseInt(response.headers.get('X-Total-Count') || '0', 10);
+  return { body: response.body, totalCount };
+};
+
 // You can add more API calls here as needed
 export const API = {
   fetchLegalForms,
@@ -1173,6 +1249,7 @@ export const API = {
   fetchOwnershipTypes,
   fetchSizes,
   fetchDocuments,
+  fetchExportStream,
   fetchReport1Data,
   fetchReport2Data,
   fetchReport3Data,

@@ -35,7 +35,7 @@ const config = {
     trustServerCertificate: true,
     enableArithAbort: true,
     connectTimeout: 30000,
-    requestTimeout: 180000,  // Increased to 3 minutes for large exports
+    requestTimeout: 600000,  // 10 minutes for large streaming exports
     port: 1433,
     // Performance optimizations
     abortTransactionOnError: true,

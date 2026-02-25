@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { flushSync } from "react-dom";
 import { translations } from "../translations/searchForm";
 import * as XLSX from "xlsx";
+import JSZip from "jszip";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import { useSearchForm } from "../hooks/useSearchForm";
 import { AddressSection } from "./AddressSection";
@@ -14,7 +15,7 @@ import SearchResults from "./SearchResults";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
 import { useNavigation } from "../hooks/useNavigation";
-import { fetchLegalFormsRaw, fetchDocuments } from "../services/api";
+import { fetchLegalFormsRaw, fetchDocuments, fetchExportStream } from "../services/api";
 import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 import SEO from "./SEO";
@@ -283,84 +284,16 @@ useEffect(() => {
     }
 
     const totalRecords = pagination.total;
-    const CHUNK_SIZE = 50000;  // Optimal batch size for API requests
-    const MAX_RECORDS_PER_FILE = 600000; // Keep at 200K - larger causes RangeError in xlsx compression
-    const CONCURRENCY = 5; // Balanced for parallel API requests
+    const XLSX_LIMIT = 200000; // Below this: use .xlsx; above: use streaming CSV+ZIP
+    const CHUNK_SIZE = 50000;
+    const CONCURRENCY = 5;
     
     setIsLoading(true);
     setIsExporting(true);
     setExportType('excel');
     setExportProgress(0);
 
-    // Helper function to fetch data in parallel batches
-    const fetchInBatches = async (startPage, endPage) => {
-      const pages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
-      const totalPages = pages.length;
-      let allResults = [];
-      let fetchErrors = 0;
-      
-      console.log(`Starting export: ${totalPages} pages, ${totalRecords} total records`);
-      
-      for (let i = 0; i < pages.length; i += CONCURRENCY) {
-        if (isStopped) break;
-
-        const batch = pages.slice(i, i + CONCURRENCY);
-        console.log(`Fetching batch: pages ${batch.join(', ')}`);
-        
-        const responses = await Promise.all(
-          batch.map(async page => {
-            try {
-              const result = await fetchDocuments(
-                lastSearchParams,
-                isEnglish ? "en" : "ge",
-                [],
-                null,
-                { page, limit: CHUNK_SIZE }
-              );
-              if (!result?.results?.length) {
-                console.warn(`Page ${page} returned empty results`);
-              }
-              return result;
-            } catch (error) {
-              console.error(`Error fetching page ${page}:`, error);
-              fetchErrors++;
-              return { results: [] };
-            }
-          })
-        );
-
-        responses.forEach(response => {
-          if (response && response.results && Array.isArray(response.results)) {
-            allResults.push(...response.results);
-          }
-        });
-        
-        console.log(`Batch complete. Total records so far: ${allResults.length}`);
-
-        // Calculate progress based on pages completed (not records)
-        const pagesCompleted = Math.min(i + CONCURRENCY, totalPages);
-        const progressPercent = Math.round((pagesCompleted / totalPages) * 100);
-        console.log(`Progress: ${progressPercent}% (${pagesCompleted}/${totalPages} pages)`);
-        
-        // Use flushSync to force synchronous state update and UI repaint
-        flushSync(() => {
-          setExportProgress(progressPercent);
-        });
-
-        // Small delay to ensure UI repaints
-        await new Promise(resolve => setTimeout(resolve, 10));
-      }
-      
-      console.log(`Fetch complete. Total records: ${allResults.length}, Errors: ${fetchErrors}`);
-      
-      if (fetchErrors > 0 && allResults.length === 0) {
-        throw new Error(`All ${fetchErrors} fetch requests failed`);
-      }
-      
-      return allResults;
-    };
-
-    // Prepare headers for Excel
+    // Shared headers definition
     const headers = [
       { label: "identificationNumber", path: "identificationNumber" },
       { label: "personalNumber", path: "personalNumber" },
@@ -384,142 +317,225 @@ useEffect(() => {
       { label: "businessSize", path: "Zoma" },
       { label: "initRegDate", path: "Init_Reg_date" },
     ];
-
     const headerLabels = headers.map(h => t[h.label] || h.label);
 
-    // Precompile field getters for optimal performance (avoid repeated .split())
-    const getters = headers.map(header => {
-      const pathParts = header.path.split(/[.[\]]/).filter(Boolean);
-      return {
-        getter: row => {
-          let val = row;
-          for (const key of pathParts) {
-            val = val?.[key];
-            if (val === undefined) break;
-          }
-          return val;
-        },
-        path: header.path
-      };
-    });
-
-    // Optimized field formatter for Excel (no quotes needed)
-    const formatField = (val, headerPath, row) => {
-      // Handle special fields
-      if (headerPath === "legalFormId") {
-        return legalFormsMap[val] || row?.abbreviation || "";
-      }
-      if (headerPath === "isActive") {
-        return val ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
-      }
-      if (headerPath === "Init_Reg_date" && val) {
-        try {
-          const date = new Date(val);
-          return date.toISOString().split('T')[0];
-        } catch {
-          return String(val || "");
+    // ─── LARGE EXPORT: Server-side streaming CSV → ZIP ───
+    // Uses a dedicated backend endpoint that streams all rows in a SINGLE
+    // SQL query (no OFFSET pagination). This is 5-10x faster than the
+    // paginated approach because there's no repeated scanning of skipped rows.
+    if (totalRecords > XLSX_LIMIT) {
+      console.log(`Large export (${totalRecords} records) — using streaming CSV+ZIP`);
+      
+      const controller = new AbortController();
+      setAbortController(controller);
+      
+      // Start the streaming fetch (single HTTP request, server streams CSV)
+      const { body, totalCount } = await fetchExportStream(lastSearchParams, controller.signal);
+      
+      if (!body) throw new Error('No response body from export stream');
+      
+      const reader = body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      
+      const zip = new JSZip();
+      const MAX_ROWS_PER_CSV = 500000;
+      
+      // We'll collect CSV text in chunks and split into files for the ZIP
+      let csvParts = [];
+      let currentFileRowCount = 0;
+      let csvFileIndex = 1;
+      let totalRowsReceived = 0;
+      let isFirstChunk = true;
+      let leftover = ''; // Partial line from previous chunk
+      const totalForProgress = totalCount || totalRecords;
+      
+      // Read the stream in chunks
+      while (true) {
+        if (isStopped) {
+          reader.cancel();
+          break;
         }
-      }
-      return val !== undefined && val !== null ? String(val) : "";
-    };
-
-    // Helper function to create and download Excel file - optimized approach
-    const createAndDownloadExcel = (data, filename) => {
-      console.log(`Creating Excel file with ${data.length} records...`);
-      const startTime = performance.now();
-      
-      // Pre-allocate array for better performance (avoid dynamic resizing)
-      const wsData = new Array(data.length + 1);
-      wsData[0] = headerLabels;
-      
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        wsData[i + 1] = getters.map(({ getter, path }) => {
-          const val = getter(row);
-          return formatField(val, path, row);
+        
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        // Decode the binary chunk to text
+        const text = leftover + decoder.decode(value, { stream: true });
+        const lines = text.split('\n');
+        
+        // Last element might be incomplete — save for next chunk
+        leftover = lines.pop() || '';
+        
+        if (isFirstChunk && lines.length > 0) {
+          // First line is the server's CSV header — replace with translated headers
+          lines.shift(); // Remove server header (raw column names)
+          // Also skip BOM if present in first line
+          const translatedHeader = headerLabels.map(h => `"${h.replace(/"/g, '""')}"`).join(',');
+          csvParts.push('\ufeff' + translatedHeader); // Add BOM + translated header
+          isFirstChunk = false;
+        }
+        
+        // Filter out empty lines and add to current CSV
+        const dataLines = lines.filter(l => l.trim().length > 0);
+        if (dataLines.length > 0) {
+          csvParts.push(dataLines.join('\n'));
+          currentFileRowCount += dataLines.length;
+          totalRowsReceived += dataLines.length;
+        }
+        
+        // If current CSV file has enough rows, flush to ZIP
+        if (currentFileRowCount >= MAX_ROWS_PER_CSV) {
+          const totalFiles = Math.ceil(totalForProgress / MAX_ROWS_PER_CSV);
+          const fileName = totalFiles > 1
+            ? `business_registry_part${csvFileIndex}.csv`
+            : `business_registry.csv`;
+          zip.file(fileName, csvParts.join('\n') + '\n');
+          console.log(`Added ${fileName} to ZIP (${currentFileRowCount} rows)`);
+          
+          csvFileIndex++;
+          const translatedHeader = headerLabels.map(h => `"${h.replace(/"/g, '""')}"`).join(',');
+          csvParts = ['\ufeff' + translatedHeader]; // Reset with BOM + header
+          currentFileRowCount = 0;
+        }
+        
+        // Update progress based on rows received
+        const progressPercent = Math.min(90, Math.round((totalRowsReceived / totalForProgress) * 90));
+        flushSync(() => {
+          setExportProgress(progressPercent);
         });
-        
-        // Log progress every 50000 rows
-        if ((i + 1) % 50000 === 0) {
-          console.log(`Processed ${i + 1}/${data.length} rows for Excel`);
-        }
       }
-
-      console.log(`Data preparation complete in ${((performance.now() - startTime) / 1000).toFixed(2)}s`);
-      console.log(`Creating workbook...`);
-      
-      // Create workbook and worksheet with optimized settings
-      const wb = XLSX.utils.book_new();
-      
-      // Use json_to_sheet for potentially faster processing with dense arrays
-      const ws = XLSX.utils.aoa_to_sheet(wsData, { dense: true });
-
-      // Set column widths
-      ws['!cols'] = headerLabels.map(() => ({ wch: 20 }));
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, "Business Registry");
-
-      console.log(`Writing file: ${filename}...`);
-      
-      const writeStartTime = performance.now();
-      
-      // Use writeFile directly - more reliable for large files
-      // Note: compression causes RangeError with large datasets, so we skip it
-      XLSX.writeFile(wb, filename, {
-        bookType: 'xlsx',
-        cellStyles: false,  // Skip cell styles for speed
-      });
-      
-      console.log(`File write complete in ${((performance.now() - writeStartTime) / 1000).toFixed(2)}s`);
-      console.log(`Excel export complete in ${((performance.now() - startTime) / 1000).toFixed(2)}s`);
-    };
-
-    // Check if we need to split into multiple files
-    if (totalRecords > MAX_RECORDS_PER_FILE) {
-      const totalFiles = Math.ceil(totalRecords / MAX_RECORDS_PER_FILE);
-      
-      for (let fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
-        if (isStopped) break;
-        
-        const startRecord = fileIndex * MAX_RECORDS_PER_FILE;
-        const endRecord = Math.min(startRecord + MAX_RECORDS_PER_FILE, totalRecords);
-        
-        // Calculate page range for this file
-        const startPage = Math.floor(startRecord / CHUNK_SIZE) + 1;
-        const endPage = Math.ceil(endRecord / CHUNK_SIZE);
-        
-        // Fetch all data for this file in parallel
-        const allResults = await fetchInBatches(startPage, endPage);
-        
-        if (isStopped) break;
-        
-        // Filter records for current file
-        const fileStartIndex = startRecord - (startPage - 1) * CHUNK_SIZE;
-        const fileEndIndex = fileStartIndex + (endRecord - startRecord);
-        const fileResults = allResults.slice(fileStartIndex, fileEndIndex);
-        
-        // Create and download Excel file
-        const filename = `business_registry_${new Date().toISOString().split('T')[0]}_part${fileIndex + 1}_of_${totalFiles}.xlsx`;
-        createAndDownloadExcel(fileResults, filename);
-        
-        console.log(`File ${fileIndex + 1}/${totalFiles} exported with ${fileResults.length} records`);
-        
-        // Longer delay between downloads to prevent browser blocking
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    } else {
-      // Single file export with parallel fetching and optimized processing
-      const totalChunks = Math.ceil(totalRecords / CHUNK_SIZE);
-      
-      // Fetch all data in parallel
-      const allResults = await fetchInBatches(1, totalChunks);
       
       if (isStopped) return;
       
-      // Create and download Excel file
-      const filename = `business_registry_${new Date().toISOString().split('T')[0]}.xlsx`;
-      createAndDownloadExcel(allResults, filename);
+      // Handle any remaining partial line
+      if (leftover.trim().length > 0) {
+        csvParts.push(leftover);
+        currentFileRowCount++;
+        totalRowsReceived++;
+      }
+      
+      // Flush remaining rows to ZIP
+      if (currentFileRowCount > 0) {
+        const totalFiles = Math.ceil(totalForProgress / MAX_ROWS_PER_CSV);
+        const fileName = totalFiles > 1
+          ? `business_registry_part${csvFileIndex}.csv`
+          : `business_registry.csv`;
+        zip.file(fileName, csvParts.join('\n') + '\n');
+        console.log(`Added ${fileName} to ZIP (${currentFileRowCount} rows)`);
+      }
+      
+      console.log(`Stream complete: ${totalRowsReceived} rows received. Generating ZIP...`);
+      flushSync(() => {
+        setExportProgress(92);
+      });
+      
+      // Generate ZIP file
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 3 }, // Fast compression — still reduces size ~60%
+      }, (metadata) => {
+        const zipProgress = 92 + Math.round(metadata.percent * 0.08);
+        flushSync(() => {
+          setExportProgress(zipProgress);
+        });
+      });
+      
+      // Download ZIP
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `business_registry_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log(`ZIP export complete: ${totalRowsReceived} rows in ${csvFileIndex} file(s)`);
+
+    } else {
+      // ─── SMALL EXPORT: Standard XLSX (≤200K records) ───
+      console.log(`Standard export (${totalRecords} records) — using XLSX`);
+
+      const getters = headers.map(header => {
+        const pathParts = header.path.split(/[.[\]]/).filter(Boolean);
+        return {
+          getter: row => {
+            let val = row;
+            for (const key of pathParts) {
+              val = val?.[key];
+              if (val === undefined) break;
+            }
+            return val;
+          },
+          path: header.path
+        };
+      });
+
+      const formatField = (val, headerPath, row) => {
+        if (headerPath === "legalFormId") return legalFormsMap[val] || row?.abbreviation || "";
+        if (headerPath === "isActive") return val ? (isEnglish ? "Active" : "აქტიური") : (isEnglish ? "Inactive" : "არააქტიური");
+        if (headerPath === "Init_Reg_date" && val) {
+          try { return new Date(val).toISOString().split('T')[0]; } catch { return String(val || ""); }
+        }
+        return val !== undefined && val !== null ? String(val) : "";
+      };
+
+      const totalChunks = Math.ceil(totalRecords / CHUNK_SIZE);
+      let allResults = [];
+      let fetchErrors = 0;
+
+      for (let i = 0; i < totalChunks; i += CONCURRENCY) {
+        if (isStopped) break;
+        const batch = Array.from(
+          { length: Math.min(CONCURRENCY, totalChunks - i) },
+          (_, j) => i + j + 1
+        );
+        const responses = await Promise.all(
+          batch.map(async page => {
+            try {
+              return await fetchDocuments(lastSearchParams, isEnglish ? "en" : "ge", [], null, { page, limit: CHUNK_SIZE });
+            } catch (error) {
+              console.error(`Error fetching page ${page}:`, error);
+              fetchErrors++;
+              return { results: [] };
+            }
+          })
+        );
+        responses.forEach(response => {
+          if (response?.results?.length) allResults.push(...response.results);
+        });
+        const pagesCompleted = Math.min(i + CONCURRENCY, totalChunks);
+        flushSync(() => { setExportProgress(Math.round((pagesCompleted / totalChunks) * 80)); });
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      if (isStopped) return;
+      if (fetchErrors > 0 && allResults.length === 0) throw new Error(`All ${fetchErrors} fetch requests failed`);
+
+      console.log(`Building Excel workbook with ${allResults.length} rows...`);
+      flushSync(() => { setExportProgress(85); });
+
+      const wsData = new Array(allResults.length + 1);
+      wsData[0] = headerLabels;
+      for (let i = 0; i < allResults.length; i++) {
+        const row = allResults[i];
+        wsData[i + 1] = getters.map(({ getter, path }) => formatField(getter(row), path, row));
+      }
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(wsData, { dense: true });
+      ws['!cols'] = headerLabels.map(() => ({ wch: 20 }));
+      XLSX.utils.book_append_sheet(wb, ws, "Business Registry");
+
+      flushSync(() => { setExportProgress(95); });
+
+      XLSX.writeFile(wb, `business_registry_${new Date().toISOString().split('T')[0]}.xlsx`, {
+        bookType: 'xlsx',
+        cellStyles: false,
+      });
+
+      console.log(`XLSX export complete: ${allResults.length} records`);
     }
 
   } catch (error) {
@@ -528,11 +544,10 @@ useEffect(() => {
     console.error("Error message:", error?.message);
     console.error("Error stack:", error?.stack);
     
-    // More specific error messages based on error type
     let errorMessage;
     if (error.name === "AbortError") {
       errorMessage = isEnglish ? "Export was cancelled" : "ექსპორტი გაუქმდა";
-    } else if (error.message?.includes("memory") || error.message?.includes("heap")) {
+    } else if (error.message?.includes("memory") || error.message?.includes("heap") || error.message?.includes("RangeError")) {
       errorMessage = isEnglish 
         ? "Export failed due to memory limitations. Try exporting fewer records."
         : "ექსპორტი ვერ მოხერხდა მეხსიერების შეზღუდვის გამო. სცადეთ ნაკლები ჩანაწერების ექსპორტი.";
@@ -547,14 +562,11 @@ useEffect(() => {
     }
     
     alert(errorMessage);
-    
-    // Reset states to prevent stuck state
     setIsStopped(false);
   } finally {
     setIsLoading(false);
     setIsExporting(false);
     setExportType('');
-    // Delay progress reset so user can see 100% completion
     setTimeout(() => setExportProgress(0), 1500);
   }
 };

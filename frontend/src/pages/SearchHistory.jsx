@@ -10,7 +10,6 @@ import React, {
 import { useNavigate, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 import "../styles/scrollbar.css";
-import "../styles/searchHistory.scss";
 import {
   API,
   fetchDocuments,
