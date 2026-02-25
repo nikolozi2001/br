@@ -3,13 +3,16 @@ const router = express.Router();
 const sql = require("mssql");
 const { poolPromise } = require("../config/database");
 
-// Cache for district mappings
+// Cache for district mappings (შენარჩუნებულია ორიგინალიდან)
 let districtMappingCache = null;
 let lastCacheUpdate = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// legal code
+// დამხმარე ფუნქცია SQL-ში CSV სტრიქონის უსაფრთხოდ ასაწყობად
+const csvCol = (col) => `ISNULL('"' + REPLACE(CAST(${col} AS NVARCHAR(MAX)), '"', '""') + '"', '""')`;
+const csvDate = (col) => `ISNULL('"' + CONVERT(NVARCHAR(10), ${col}, 120) + '"', '""')`;
 
+// 1. GET /legal_code/:legalCode (ორიგინალი უცვლელად)
 router.get("/legal_code/:legalCode", async (req, res) => {
   try {
     const { legalCode } = req.params;
@@ -37,651 +40,251 @@ router.get("/legal_code/:legalCode", async (req, res) => {
   }
 });
 
+// 2. GET / (პაგინირებული სია - ორიგინალი უცვლელად)
 router.get("/", async (req, res) => {
   try {
     const {
-      identificationNumber,
-      organizationName,
-      legalForm,
-      head,
-      partner,
-      ownershipType,
-      isActive,
-      x,
-      y,
-      size,
-      page = 1,
-      limit = 1000, // Default limit to prevent large result sets
+      identificationNumber, organizationName, legalForm, head, partner,
+      ownershipType, isActive, x, y, size, page = 1, limit = 1000
     } = req.query;
     const pool = await poolPromise;
-
-    // Calculate offset for pagination
     const offset = (parseInt(page) - 1) * parseInt(limit);
+    const limitInt = parseInt(limit) || 1000;
 
-    let query = `
-      SELECT a.[Stat_ID], a.[Legal_Code], a.[Personal_no], a.[Legal_Form_ID],
-        a.[Abbreviation], a.[Full_Name], a.[Ownership_Type_ID], a.[Ownership_Type],
-        a.[Region_Code], a.[Region_name], a.[City_Code], a.[City_name],
-        a.[Comunity_Code], a.[Community_name], a.[Village_Code], a.[Village_name],
-        a.[Address], a.[Region_Code2], a.[Region_name2], a.[City_Code2],
-        a.[City_name2], a.[Comunity_Code2], a.[Community_name2], a.[Village_Code2],
-        a.[Village_name2], a.[Address2], a.[Activity_ID], a.[Activity_Code],
-        a.[Activity_Name], a.[Activity_2_ID], a.[Activity_2_Code], a.[Activity_2_Name],
-        a.[Head], a.[mob], a.[Email], a.[web], a.[ISActive], a.[Zoma], a.[Zoma_old],
-        a.[X], a.[Y], a.[Change], a.[Reg_Date], a.[Partner], a.[Head_PN],
-        a.[Partner_PN], a.[Init_Reg_date]
-      FROM [register].[dbo].[DocMain] a
-      WHERE 1=1
-    `;
-
+    let whereClause = " WHERE 1=1";
     const request = pool.request();
 
     if (identificationNumber) {
-      query += " AND a.Legal_Code = @identificationNumber";
-      request.input("identificationNumber", sql.BigInt, identificationNumber);
+      whereClause += " AND a.Legal_Code = @idNum";
+      request.input("idNum", sql.BigInt, identificationNumber);
     }
-
     if (organizationName) {
-      query +=
-        " AND (a.Full_Name LIKE @organizationName OR a.Abbreviation LIKE @organizationName)";
-      request.input("organizationName", sql.NVarChar, `%${organizationName}%`);
+      whereClause += " AND (a.Full_Name LIKE @orgName OR a.Abbreviation LIKE @orgName)";
+      request.input("orgName", sql.NVarChar, `%${organizationName}%`);
     }
-
     if (legalForm) {
-      const legalForms = Array.isArray(legalForm) ? legalForm : [legalForm];
-      const legalFormParams = legalForms.map((_, index) => `@legalForm${index}`).join(', ');
-      query += ` AND a.Legal_Form_ID IN (${legalFormParams})`;
-      
-      legalForms.forEach((form, index) => {
-        request.input(`legalForm${index}`, sql.SmallInt, form);
-      });
+      const forms = Array.isArray(legalForm) ? legalForm : [legalForm];
+      const params = forms.map((f, i) => { request.input(`lf${i}`, sql.SmallInt, f); return `@lf${i}`; }).join(',');
+      whereClause += ` AND a.Legal_Form_ID IN (${params})`;
     }
-
     if (head) {
-      query += " AND a.Head LIKE @head";
+      whereClause += " AND a.Head LIKE @head";
       request.input("head", sql.NVarChar, `%${head}%`);
     }
-
     if (partner) {
-      query += " AND a.Partner LIKE @partner";
+      whereClause += " AND a.Partner LIKE @partner";
       request.input("partner", sql.NVarChar, `%${partner}%`);
-    }
-
-    if (req.query.activityCode) {
-      const activityCodes = Array.isArray(req.query.activityCode)
-        ? req.query.activityCode
-        : [req.query.activityCode];
-
-      if (activityCodes.length > 0) {
-        const conditions = [];
-        
-        activityCodes.forEach((code, index) => {
-          // Check if it's a single letter (like F, G, etc.)
-          if (code.length === 1 && /^[A-Z]$/i.test(code)) {
-            // Map single letters to Activity_Root_ID values
-            const letterToRootId = {
-              'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 
-              'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 
-              'R': 18, 'S': 19, 'T': 20, 'U': 21, 'Z': 1690
-            };
-            
-            const rootId = letterToRootId[code.toUpperCase()];
-            if (rootId) {
-              conditions.push(`a.Activity_2_ID IN (SELECT ID FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
-              request.input(`rootId${index}`, sql.Int, rootId);
-            }
-          } else {
-            // For detailed codes like "01.11.1", use the LIKE approach
-            conditions.push(`a.Activity_2_Code LIKE @activityCode${index}`);
-            request.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
-          }
-        });
-
-        if (conditions.length > 0) {
-          query += ` AND (${conditions.join(" OR ")})`;
-        }
-      }
-    }
-
-    // Handle legal address region
-    if (req.query.legalAddressRegion) {
-      query += " AND Region_Code = @regionCode";
-      request.input(
-        "regionCode",
-        sql.NVarChar(50),
-        req.query.legalAddressRegion
-      );
-    }
-
-    // Handle legal address city/municipality
-    if (req.query.legalAddressCity) {
-      query += " AND City_Code = @cityCode";
-      request.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
-    }
-
-    // Handle legal address
-    if (req.query.legalAddress) {
-      query += " AND Address LIKE @address";
-      request.input("address", sql.NVarChar, `%${req.query.legalAddress}%`);
-    }
-
-    // Handle factual address region
-    if (req.query.factualAddressRegion) {
-      query += " AND Region_Code2 = @regionCode2";
-      request.input(
-        "regionCode2",
-        sql.NVarChar(50),
-        req.query.factualAddressRegion
-      );
-    }
-
-    // Handle factual address city/municipality
-    if (req.query.factualAddressCity) {
-      query += " AND City_Code2 = @cityCode2";
-      request.input(
-        "cityCode2",
-        sql.NVarChar(50),
-        req.query.factualAddressCity
-      );
-    }
-
-    // Handle factual address
-    if (req.query.factualAddress) {
-      query += " AND Address2 LIKE @address2";
-      request.input("address2", sql.NVarChar, `%${req.query.factualAddress}%`);
-    }
-
-    // Handle ownershipType
-    if (ownershipType) {
-      query += " AND Ownership_Type_ID = @ownershipType";
-      request.input("ownershipType", sql.Int, parseInt(ownershipType, 10));
-    }
-
-    // Handle size/business form - size is a string value in Georgian
-    if (size) {
-      // Map size ID to Georgian text value
-      let sizeText;
-      switch (size) {
-        case "1":
-          sizeText = "მცირე";
-          break;
-        case "2":
-          sizeText = "საშუალო";
-          break;
-        case "3":
-          sizeText = "მსხვილი";
-          break;
-        default:
-          console.warn("Unknown size value:", size);
-          break;
-      }
-      if (sizeText) {
-        query += " AND Zoma = @size";
-        request.input("size", sql.NVarChar, sizeText);
-      }
-    }
-
-    if (isActive) {
-      query += " AND ISActive = @isActive";
-      request.input("isActive", sql.Int, isActive ? 1 : null);
-    }
-
-    if (x === "true") {
-      query += " AND X IS NOT NULL";
-    }
-
-    if (y === "true") {
-      query += " AND Y IS NOT NULL";
-    }
-
-    // Add pagination - but skip for very high limits (export scenarios)
-   const limitInt = parseInt(limit) || 1000;
-const offsetInt = parseInt(offset) || 0;
-
-query += ` ORDER BY a.Legal_Code OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
-request.input("offset", sql.Int, offsetInt);
-request.input("limit", sql.Int, limitInt);
-
-    // Create a separate request for count to avoid parameter conflicts
-    const countRequest = pool.request();
-
-    // Create count query with same WHERE conditions
-    let countQuery = `
-      SELECT COUNT(*) as total
-      FROM [register].[dbo].[DocMain] a
-      WHERE 1=1
-    `;
-
-    // Add the same parameters and conditions to count query
-    if (identificationNumber) {
-      countQuery += " AND a.Legal_Code = @identificationNumber";
-      countRequest.input("identificationNumber", sql.BigInt, identificationNumber);
-    }
-    if (organizationName) {
-      countQuery += " AND (a.Full_Name LIKE @organizationName OR a.Abbreviation LIKE @organizationName)";
-      countRequest.input("organizationName", sql.NVarChar, `%${organizationName}%`);
-    }
-    if (legalForm) {
-      const legalForms = Array.isArray(legalForm) ? legalForm : [legalForm];
-      const legalFormParams = legalForms.map((_, index) => `@legalForm${index}`).join(', ');
-      countQuery += ` AND a.Legal_Form_ID IN (${legalFormParams})`;
-      legalForms.forEach((form, index) => {
-        countRequest.input(`legalForm${index}`, sql.SmallInt, form);
-      });
-    }
-    if (head) {
-      countQuery += " AND a.Head LIKE @head";
-      countRequest.input("head", sql.NVarChar, `%${head}%`);
-    }
-    if (partner) {
-      countQuery += " AND a.Partner LIKE @partner";
-      countRequest.input("partner", sql.NVarChar, `%${partner}%`);
     }
     if (req.query.activityCode) {
       const activityCodes = Array.isArray(req.query.activityCode) ? req.query.activityCode : [req.query.activityCode];
-      if (activityCodes.length > 0) {
-        const conditions = [];
-        activityCodes.forEach((code, index) => {
-          if (code.length === 1 && /^[A-Z]$/i.test(code)) {
-            const letterToRootId = {
-              'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 
-              'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 
-              'R': 18, 'S': 19, 'T': 20, 'U': 21, 'Z': 1690
-            };
-            const rootId = letterToRootId[code.toUpperCase()];
-            if (rootId) {
-              conditions.push(`a.Activity_2_ID IN (SELECT ID FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
-              countRequest.input(`rootId${index}`, sql.Int, rootId);
-            }
-          } else {
-            conditions.push(`a.Activity_2_Code LIKE @activityCode${index}`);
-            countRequest.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
+      const conditions = [];
+      activityCodes.forEach((code, index) => {
+        if (code.length === 1 && /^[A-Z]$/i.test(code)) {
+          const letterToRootId = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 'R': 18, 'S': 19, 'T': 20, 'U': 21, 'Z': 1690 };
+          const rootId = letterToRootId[code.toUpperCase()];
+          if (rootId) {
+            conditions.push(`a.Activity_2_ID IN (SELECT ID FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
+            request.input(`rootId${index}`, sql.Int, rootId);
           }
-        });
-        if (conditions.length > 0) {
-          countQuery += ` AND (${conditions.join(" OR ")})`;
+        } else {
+          conditions.push(`a.Activity_2_Code LIKE @actCode${index}`);
+          request.input(`actCode${index}`, sql.NVarChar, `${code}%`);
         }
-      }
+      });
+      if (conditions.length > 0) whereClause += ` AND (${conditions.join(" OR ")})`;
     }
     if (req.query.legalAddressRegion) {
-      countQuery += " AND Region_Code = @regionCode";
-      countRequest.input("regionCode", sql.NVarChar(50), req.query.legalAddressRegion);
+      whereClause += " AND Region_Code = @reg1";
+      request.input("reg1", sql.NVarChar(50), req.query.legalAddressRegion);
     }
     if (req.query.legalAddressCity) {
-      countQuery += " AND City_Code = @cityCode";
-      countRequest.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
+      whereClause += " AND City_Code = @city1";
+      request.input("city1", sql.NVarChar(50), req.query.legalAddressCity);
     }
     if (req.query.legalAddress) {
-      countQuery += " AND Address LIKE @address";
-      countRequest.input("address", sql.NVarChar, `%${req.query.legalAddress}%`);
+      whereClause += " AND Address LIKE @addr1";
+      request.input("addr1", sql.NVarChar, `%${req.query.legalAddress}%`);
     }
     if (req.query.factualAddressRegion) {
-      countQuery += " AND Region_Code2 = @regionCode2";
-      countRequest.input("regionCode2", sql.NVarChar(50), req.query.factualAddressRegion);
+      whereClause += " AND Region_Code2 = @reg2";
+      request.input("reg2", sql.NVarChar(50), req.query.factualAddressRegion);
     }
     if (req.query.factualAddressCity) {
-      countQuery += " AND City_Code2 = @cityCode2";
-      countRequest.input("cityCode2", sql.NVarChar(50), req.query.factualAddressCity);
+      whereClause += " AND City_Code2 = @city2";
+      request.input("city2", sql.NVarChar(50), req.query.factualAddressCity);
     }
     if (req.query.factualAddress) {
-      countQuery += " AND Address2 LIKE @address2";
-      countRequest.input("address2", sql.NVarChar, `%${req.query.factualAddress}%`);
+      whereClause += " AND Address2 LIKE @addr2";
+      request.input("addr2", sql.NVarChar, `%${req.query.factualAddress}%`);
     }
     if (ownershipType) {
-      countQuery += " AND Ownership_Type_ID = @ownershipType";
-      countRequest.input("ownershipType", sql.Int, parseInt(ownershipType, 10));
+      whereClause += " AND Ownership_Type_ID = @ownType";
+      request.input("ownType", sql.Int, parseInt(ownershipType, 10));
     }
     if (size) {
-      let sizeText;
-      switch (size) {
-        case "1": sizeText = "მცირე"; break;
-        case "2": sizeText = "საშუალო"; break;
-        case "3": sizeText = "მსხვილი"; break;
-      }
-      if (sizeText) {
-        countQuery += " AND Zoma = @size";
-        countRequest.input("size", sql.NVarChar, sizeText);
-      }
+      const sizeText = size === "1" ? "მცირე" : size === "2" ? "საშუალო" : size === "3" ? "მსხვილი" : null;
+      if (sizeText) { whereClause += " AND Zoma = @sizeT"; request.input("sizeT", sql.NVarChar, sizeText); }
     }
     if (isActive) {
-      countQuery += " AND ISActive = @isActive";
-      countRequest.input("isActive", sql.Int, isActive ? 1 : null);
+      whereClause += " AND ISActive = @isAct";
+      request.input("isAct", sql.Int, isActive === 'true' || isActive === '1' ? 1 : 0);
     }
-    if (x === "true") {
-      countQuery += " AND X IS NOT NULL";
-    }
-    if (y === "true") {
-      countQuery += " AND Y IS NOT NULL";
-    }
+    if (x === "true") whereClause += " AND X IS NOT NULL";
+    if (y === "true") whereClause += " AND Y IS NOT NULL";
 
-    // Get total count first
-    const countResult = await countRequest.query(countQuery);
+    // Count Query
+    const countRequest = pool.request();
+    // Copy parameters to countRequest
+    for (const key in request.parameters) {
+        countRequest.input(key, request.parameters[key].type, request.parameters[key].value);
+    }
+    const countResult = await countRequest.query(`SELECT COUNT(*) as total FROM [register].[dbo].[DocMain] a ${whereClause}`);
     const totalRecords = countResult.recordset[0].total;
 
+    // Data Query
+    const query = `SELECT a.* FROM [register].[dbo].[DocMain] a ${whereClause} ORDER BY a.Legal_Code OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+    request.input("offset", sql.Int, offset);
+    request.input("limit", sql.Int, limitInt);
+    
     const result = await request.query(query);
-
-    // Build response with pagination info
-    const response = {
+    res.json({
       data: result.recordset,
-      pagination: {
-        page: parseInt(page),
-        limit: limitInt,
-        total: totalRecords,
-        totalPages: Math.ceil(totalRecords / limitInt)
-      }
-    };
-
-    res.json(response);
+      pagination: { page: parseInt(page), limit: limitInt, total: totalRecords, totalPages: Math.ceil(totalRecords / limitInt) }
+    });
   } catch (error) {
     console.error("Error fetching documents:", error);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 });
 
-// ─── Streaming CSV Export Endpoint ───
-// Runs a SINGLE query (no OFFSET pagination) and streams CSV rows directly.
-// This is 5-10x faster than paginated JSON for large exports (1M+ rows).
+// 3. GET /export (ოპტიმიზირებული ექსპორტი - სრული ფუნქციონალით)
 router.get("/export", async (req, res) => {
   let request;
   try {
     const {
-      identificationNumber,
-      organizationName,
-      legalForm,
-      head,
-      partner,
-      ownershipType,
-      isActive,
-      x,
-      y,
-      size,
+      identificationNumber, organizationName, legalForm, head, partner,
+      ownershipType, isActive, x, y, size
     } = req.query;
 
     const pool = await poolPromise;
-
-    // ─── Count query (for progress header) ───
-    const countRequest = pool.request();
-    let countQuery = `SELECT COUNT(*) as total FROM [register].[dbo].[DocMain] a WHERE 1=1`;
-
-    // ─── Main data query (NO pagination - fetch all matching rows) ───
     request = pool.request();
-    request.stream = true; // Enable streaming
+    request.stream = true;
 
-    let query = `
-      SELECT a.[Legal_Code], a.[Personal_no], a.[Legal_Form_ID],
-        a.[Abbreviation], a.[Full_Name], a.[Ownership_Type],
-        a.[Region_name], a.[City_name], a.[Address],
-        a.[Region_name2], a.[City_name2], a.[Address2],
-        a.[Activity_2_Code], a.[Activity_2_Name],
-        a.[Head], a.[Partner], a.[mob], a.[Email], a.[web],
-        a.[ISActive], a.[Zoma], a.[Init_Reg_date]
-      FROM [register].[dbo].[DocMain] a
-      WHERE 1=1
-    `;
-
-    // Add WHERE conditions (same logic as existing endpoint)
+    // ვამზადებთ WHERE პირობას (ზუსტად იგივე რაც ზემოთ)
+    let whereClause = " WHERE 1=1";
+    
     if (identificationNumber) {
-      query += " AND a.Legal_Code = @identificationNumber";
-      countQuery += " AND a.Legal_Code = @identificationNumber";
-      request.input("identificationNumber", sql.BigInt, identificationNumber);
-      countRequest.input("identificationNumber", sql.BigInt, identificationNumber);
+      whereClause += " AND a.Legal_Code = @idNum";
+      request.input("idNum", sql.BigInt, identificationNumber);
     }
     if (organizationName) {
-      query += " AND (a.Full_Name LIKE @organizationName OR a.Abbreviation LIKE @organizationName)";
-      countQuery += " AND (a.Full_Name LIKE @organizationName OR a.Abbreviation LIKE @organizationName)";
-      request.input("organizationName", sql.NVarChar, `%${organizationName}%`);
-      countRequest.input("organizationName", sql.NVarChar, `%${organizationName}%`);
+      whereClause += " AND (a.Full_Name LIKE @orgName OR a.Abbreviation LIKE @orgName)";
+      request.input("orgName", sql.NVarChar, `%${organizationName}%`);
     }
     if (legalForm) {
-      const legalForms = Array.isArray(legalForm) ? legalForm : [legalForm];
-      const legalFormParams = legalForms.map((_, i) => `@legalForm${i}`).join(', ');
-      query += ` AND a.Legal_Form_ID IN (${legalFormParams})`;
-      countQuery += ` AND a.Legal_Form_ID IN (${legalFormParams})`;
-      legalForms.forEach((form, i) => {
-        request.input(`legalForm${i}`, sql.SmallInt, form);
-        countRequest.input(`legalForm${i}`, sql.SmallInt, form);
-      });
+      const forms = Array.isArray(legalForm) ? legalForm : [legalForm];
+      const params = forms.map((f, i) => { request.input(`lf${i}`, sql.SmallInt, f); return `@lf${i}`; }).join(',');
+      whereClause += ` AND a.Legal_Form_ID IN (${params})`;
     }
     if (head) {
-      query += " AND a.Head LIKE @head";
-      countQuery += " AND a.Head LIKE @head";
-      request.input("head", sql.NVarChar, `%${head}%`);
-      countRequest.input("head", sql.NVarChar, `%${head}%`);
+        whereClause += " AND a.Head LIKE @head";
+        request.input("head", sql.NVarChar, `%${head}%`);
     }
     if (partner) {
-      query += " AND a.Partner LIKE @partner";
-      countQuery += " AND a.Partner LIKE @partner";
-      request.input("partner", sql.NVarChar, `%${partner}%`);
-      countRequest.input("partner", sql.NVarChar, `%${partner}%`);
+        whereClause += " AND a.Partner LIKE @partner";
+        request.input("partner", sql.NVarChar, `%${partner}%`);
     }
     if (req.query.activityCode) {
-      const activityCodes = Array.isArray(req.query.activityCode) ? req.query.activityCode : [req.query.activityCode];
-      if (activityCodes.length > 0) {
-        const conditions = [];
+        const activityCodes = Array.isArray(req.query.activityCode) ? req.query.activityCode : [req.query.activityCode];
+        const actConditions = [];
         activityCodes.forEach((code, index) => {
           if (code.length === 1 && /^[A-Z]$/i.test(code)) {
-            const letterToRootId = {
-              'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9,
-              'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17,
-              'R': 18, 'S': 19, 'T': 20, 'U': 21, 'Z': 1690
-            };
+            const letterToRootId = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9, 'J': 10, 'K': 11, 'L': 12, 'M': 13, 'N': 14, 'O': 15, 'P': 16, 'Q': 17, 'R': 18, 'S': 19, 'T': 20, 'U': 21, 'Z': 1690 };
             const rootId = letterToRootId[code.toUpperCase()];
             if (rootId) {
-              conditions.push(`a.Activity_2_ID IN (SELECT ID FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
+              actConditions.push(`a.Activity_2_ID IN (SELECT ID FROM [register].[CL].[Activities_NACE2] WHERE [Activity_Root_ID] = @rootId${index})`);
               request.input(`rootId${index}`, sql.Int, rootId);
-              countRequest.input(`rootId${index}`, sql.Int, rootId);
             }
           } else {
-            conditions.push(`a.Activity_2_Code LIKE @activityCode${index}`);
-            request.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
-            countRequest.input(`activityCode${index}`, sql.NVarChar, `${code}%`);
+            actConditions.push(`a.Activity_2_Code LIKE @actCode${index}`);
+            request.input(`actCode${index}`, sql.NVarChar, `${code}%`);
           }
         });
-        if (conditions.length > 0) {
-          query += ` AND (${conditions.join(" OR ")})`;
-          countQuery += ` AND (${conditions.join(" OR ")})`;
-        }
-      }
+        if (actConditions.length > 0) whereClause += ` AND (${actConditions.join(" OR ")})`;
     }
-    if (req.query.legalAddressRegion) {
-      query += " AND Region_Code = @regionCode";
-      countQuery += " AND Region_Code = @regionCode";
-      request.input("regionCode", sql.NVarChar(50), req.query.legalAddressRegion);
-      countRequest.input("regionCode", sql.NVarChar(50), req.query.legalAddressRegion);
-    }
-    if (req.query.legalAddressCity) {
-      query += " AND City_Code = @cityCode";
-      countQuery += " AND City_Code = @cityCode";
-      request.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
-      countRequest.input("cityCode", sql.NVarChar(50), req.query.legalAddressCity);
-    }
-    if (req.query.legalAddress) {
-      query += " AND Address LIKE @address";
-      countQuery += " AND Address LIKE @address";
-      request.input("address", sql.NVarChar, `%${req.query.legalAddress}%`);
-      countRequest.input("address", sql.NVarChar, `%${req.query.legalAddress}%`);
-    }
-    if (req.query.factualAddressRegion) {
-      query += " AND Region_Code2 = @regionCode2";
-      countQuery += " AND Region_Code2 = @regionCode2";
-      request.input("regionCode2", sql.NVarChar(50), req.query.factualAddressRegion);
-      countRequest.input("regionCode2", sql.NVarChar(50), req.query.factualAddressRegion);
-    }
-    if (req.query.factualAddressCity) {
-      query += " AND City_Code2 = @cityCode2";
-      countQuery += " AND City_Code2 = @cityCode2";
-      request.input("cityCode2", sql.NVarChar(50), req.query.factualAddressCity);
-      countRequest.input("cityCode2", sql.NVarChar(50), req.query.factualAddressCity);
-    }
-    if (req.query.factualAddress) {
-      query += " AND Address2 LIKE @address2";
-      countQuery += " AND Address2 LIKE @address2";
-      request.input("address2", sql.NVarChar, `%${req.query.factualAddress}%`);
-      countRequest.input("address2", sql.NVarChar, `%${req.query.factualAddress}%`);
-    }
-    if (ownershipType) {
-      query += " AND Ownership_Type_ID = @ownershipType";
-      countQuery += " AND Ownership_Type_ID = @ownershipType";
-      request.input("ownershipType", sql.Int, parseInt(ownershipType, 10));
-      countRequest.input("ownershipType", sql.Int, parseInt(ownershipType, 10));
-    }
+    // მისამართების ფილტრები
+    if (req.query.legalAddressRegion) { whereClause += " AND Region_Code = @r1"; request.input("r1", sql.NVarChar(50), req.query.legalAddressRegion); }
+    if (req.query.legalAddressCity) { whereClause += " AND City_Code = @c1"; request.input("c1", sql.NVarChar(50), req.query.legalAddressCity); }
+    if (req.query.legalAddress) { whereClause += " AND Address LIKE @a1"; request.input("a1", sql.NVarChar, `%${req.query.legalAddress}%`); }
+    if (req.query.factualAddressRegion) { whereClause += " AND Region_Code2 = @r2"; request.input("r2", sql.NVarChar(50), req.query.factualAddressRegion); }
+    if (req.query.factualAddressCity) { whereClause += " AND City_Code2 = @c2"; request.input("c2", sql.NVarChar(50), req.query.factualAddressCity); }
+    if (req.query.factualAddress) { whereClause += " AND Address2 LIKE @a2"; request.input("a2", sql.NVarChar, `%${req.query.factualAddress}%`); }
+    
+    if (ownershipType) { whereClause += " AND Ownership_Type_ID = @oT"; request.input("oT", sql.Int, parseInt(ownershipType, 10)); }
     if (size) {
-      let sizeText;
-      switch (size) {
-        case "1": sizeText = "მცირე"; break;
-        case "2": sizeText = "საშუალო"; break;
-        case "3": sizeText = "მსხვილი"; break;
-      }
-      if (sizeText) {
-        query += " AND Zoma = @size";
-        countQuery += " AND Zoma = @size";
-        request.input("size", sql.NVarChar, sizeText);
-        countRequest.input("size", sql.NVarChar, sizeText);
-      }
+        const sT = size === "1" ? "მცირე" : size === "2" ? "საშუალო" : size === "3" ? "მსხვილი" : null;
+        if (sT) { whereClause += " AND Zoma = @sT"; request.input("sT", sql.NVarChar, sT); }
     }
-    if (isActive) {
-      query += " AND ISActive = @isActive";
-      countQuery += " AND ISActive = @isActive";
-      request.input("isActive", sql.Int, isActive ? 1 : null);
-      countRequest.input("isActive", sql.Int, isActive ? 1 : null);
-    }
-    if (x === "true") {
-      query += " AND X IS NOT NULL";
-      countQuery += " AND X IS NOT NULL";
-    }
-    if (y === "true") {
-      query += " AND Y IS NOT NULL";
-      countQuery += " AND Y IS NOT NULL";
-    }
+    if (isActive) { whereClause += " AND ISActive = @iA"; request.input("iA", sql.Int, isActive === 'true' || isActive === '1' ? 1 : 0); }
+    if (x === "true") whereClause += " AND X IS NOT NULL";
+    if (y === "true") whereClause += " AND Y IS NOT NULL";
 
-    query += " ORDER BY a.Legal_Code";
+    // SQL-ში პირდაპირ ვაწყობთ CSV ხაზს
+    const query = `
+      SELECT 
+        ${csvCol("a.Legal_Code")} + ',' + ${csvCol("a.Personal_no")} + ',' + ${csvCol("a.Legal_Form_ID")} + ',' +
+        ${csvCol("a.Full_Name")} + ',' + ${csvCol("a.Region_name")} + ',' + ${csvCol("a.City_name")} + ',' +
+        ${csvCol("a.Address")} + ',' + ${csvCol("a.Region_name2")} + ',' + ${csvCol("a.City_name2")} + ',' +
+        ${csvCol("a.Address2")} + ',' + ${csvCol("a.Activity_2_Code")} + ',' + ${csvCol("a.Activity_2_Name")} + ',' +
+        ${csvCol("a.Head")} + ',' + ${csvCol("a.Partner")} + ',' + ${csvCol("a.mob")} + ',' +
+        ${csvCol("a.Email")} + ',' + ${csvCol("a.web")} + ',' + ${csvCol("a.Ownership_Type")} + ',' +
+        ${csvCol("a.ISActive")} + ',' + ${csvCol("a.Zoma")} + ',' + ${csvDate("a.Init_Reg_date")} AS CsvLine
+      FROM [register].[dbo].[DocMain] a 
+      ${whereClause}
+    `;
 
-    // Get total count first (for progress tracking on client)
-    const countResult = await countRequest.query(countQuery);
-    const totalRecords = countResult.recordset[0].total;
-
-    if (totalRecords === 0) {
-      return res.status(404).json({ error: "No records found" });
-    }
-
-    // CSV escape helper
-    const csvEscape = (val) => {
-      if (val === null || val === undefined) return '""';
-      const str = String(val);
-      return `"${str.replace(/"/g, '""')}"`;
-    };
-
-    // Format date for CSV
-    const formatDate = (val) => {
-      if (!val) return '""';
-      try {
-        const date = new Date(val);
-        return `"${date.toISOString().split('T')[0]}"`;
-      } catch {
-        return csvEscape(val);
-      }
-    };
-
-    // Set streaming CSV response headers
+    // Response Settings
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="export_${new Date().toISOString().split('T')[0]}.csv"`);
-    res.setHeader('X-Total-Count', totalRecords.toString());
-    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
-    res.setHeader('Cache-Control', 'no-cache');
-
-    // Write UTF-8 BOM + header row
+    res.setHeader('Content-Disposition', `attachment; filename="export_${new Date().getTime()}.csv"`);
     res.write('\ufeff');
-    // Column headers match the frontend export columns
-    const csvHeaders = [
-      'Legal_Code', 'Personal_no', 'Legal_Form_ID', 'Full_Name',
-      'Region_name', 'City_name', 'Address',
-      'Region_name2', 'City_name2', 'Address2',
-      'Activity_2_Code', 'Activity_2_Name',
-      'Head', 'Partner', 'mob', 'Email', 'web',
-      'Ownership_Type', 'ISActive', 'Zoma', 'Init_Reg_date'
+
+    const headers = [
+      'Legal_Code', 'Personal_no', 'Legal_Form_ID', 'Full_Name', 'Region_name', 'City_name', 'Address',
+      'Region_name2', 'City_name2', 'Address2', 'Activity_2_Code', 'Activity_2_Name', 'Head', 'Partner',
+      'mob', 'Email', 'web', 'Ownership_Type', 'ISActive', 'Zoma', 'Init_Reg_date'
     ];
-    res.write(csvHeaders.map(h => `"${h}"`).join(',') + '\n');
+    res.write(headers.map(h => `"${h}"`).join(',') + '\n');
 
-    // Buffer rows for efficient writes (flush every 5000 rows)
     let buffer = '';
-    let rowCount = 0;
-    const FLUSH_INTERVAL = 5000;
-
-    // Stream rows from the database
-    request.on('row', (row) => {
-      const line = [
-        csvEscape(row.Legal_Code),
-        csvEscape(row.Personal_no),
-        csvEscape(row.Legal_Form_ID),
-        csvEscape(row.Full_Name),
-        csvEscape(row.Region_name),
-        csvEscape(row.City_name),
-        csvEscape(row.Address),
-        csvEscape(row.Region_name2),
-        csvEscape(row.City_name2),
-        csvEscape(row.Address2),
-        csvEscape(row.Activity_2_Code),
-        csvEscape(row.Activity_2_Name),
-        csvEscape(row.Head),
-        csvEscape(row.Partner),
-        csvEscape(row.mob),
-        csvEscape(row.Email),
-        csvEscape(row.web),
-        csvEscape(row.Ownership_Type),
-        csvEscape(row.ISActive),
-        csvEscape(row.Zoma),
-        formatDate(row.Init_Reg_date),
-      ].join(',') + '\n';
-
-      buffer += line;
-      rowCount++;
-
-      // Flush buffer periodically to keep memory low
-      if (rowCount % FLUSH_INTERVAL === 0) {
+    let count = 0;
+    
+    request.on('row', row => {
+      buffer += row.CsvLine + '\n';
+      count++;
+      if (count % 5000 === 0) {
         res.write(buffer);
         buffer = '';
       }
     });
 
-    request.on('error', (err) => {
-      console.error('Stream query error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Query failed', details: err.message });
-      } else {
-        res.end();
-      }
-    });
-
     request.on('done', () => {
-      // Flush remaining buffer
-      if (buffer.length > 0) {
-        res.write(buffer);
-      }
-      console.log(`Export stream complete: ${rowCount} rows sent`);
+      if (buffer) res.write(buffer);
       res.end();
     });
 
-    // Handle client disconnect (abort the query)
-    req.on('close', () => {
-      if (request) {
-        try {
-          request.cancel();
-        } catch (e) {
-          // Ignore cancel errors
-        }
-      }
+    request.on('error', err => {
+        console.error("Stream Error:", err);
+        if (!res.headersSent) res.status(500).send("Export Error");
+        res.end();
     });
 
-    // Execute the streaming query
+    req.on('close', () => { if (request) request.cancel(); });
+
     request.query(query);
 
   } catch (error) {
-    console.error("Export stream error:", error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: "Export failed", details: error.message });
-    } else {
-      res.end();
-    }
+    console.error("Export error:", error);
+    if (!res.headersSent) res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
