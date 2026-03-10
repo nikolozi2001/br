@@ -230,16 +230,19 @@ router.get("/export", async (req, res) => {
     if (y === "true") whereClause += " AND Y IS NOT NULL";
 
     // SQL-ში პირდაპირ ვაწყობთ CSV ხაზს
+    // JOIN Legal_Forms table to get the name instead of ID,
+    // and use CASE for ISActive to get აქტიური/არააქტიური
     const query = `
       SELECT 
-        ${csvCol("a.Legal_Code")} + ',' + ${csvCol("a.Personal_no")} + ',' + ${csvCol("a.Legal_Form_ID")} + ',' +
+        ${csvCol("a.Legal_Code")} + ',' + ${csvCol("a.Personal_no")} + ',' + ${csvCol("lf.Legal_Form")} + ',' +
         ${csvCol("a.Full_Name")} + ',' + ${csvCol("a.Region_name")} + ',' + ${csvCol("a.City_name")} + ',' +
         ${csvCol("a.Address")} + ',' + ${csvCol("a.Region_name2")} + ',' + ${csvCol("a.City_name2")} + ',' +
         ${csvCol("a.Address2")} + ',' + ${csvCol("a.Activity_2_Code")} + ',' + ${csvCol("a.Activity_2_Name")} + ',' +
         ${csvCol("a.Head")} + ',' + ${csvCol("a.Partner")} + ',' + ${csvCol("a.mob")} + ',' +
         ${csvCol("a.Email")} + ',' + ${csvCol("a.web")} + ',' + ${csvCol("a.Ownership_Type")} + ',' +
-        ${csvCol("a.ISActive")} + ',' + ${csvCol("a.Zoma")} + ',' + ${csvDate("a.Init_Reg_date")} AS CsvLine
-      FROM [register].[dbo].[DocMain] a 
+        ${csvCol("CASE WHEN a.ISActive = 1 THEN N'აქტიური' ELSE N'არააქტიური' END")} + ',' + ${csvCol("a.Zoma")} + ',' + ${csvDate("a.Init_Reg_date")} AS CsvLine
+      FROM [register].[dbo].[DocMain] a
+      LEFT JOIN [register].[CL].[Legal_Forms] lf ON lf.ID = a.Legal_Form_ID
       ${whereClause}
     `;
 
