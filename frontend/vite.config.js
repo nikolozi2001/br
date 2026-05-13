@@ -15,5 +15,18 @@ export default defineConfig({
         secure: false,
       }
     }
-  }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':  ['react', 'react-dom', 'react-router-dom'],
+          'vendor-charts': ['echarts', 'echarts-for-react'],
+          'vendor-map':    ['leaflet', 'react-leaflet'],
+          'vendor-excel':  ['xlsx', 'exceljs', 'jszip'],
+          'vendor-ui':     ['react-select', 'lucide-react', 'react-hot-toast'],
+        },
+      },
+    },
+  },
 })

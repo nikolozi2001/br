@@ -1,7 +1,6 @@
 // Enhanced chart export utilities
-import * as XLSX from 'xlsx';
 
-export const exportToExcel = (data, filename, sheetName = 'Chart Data') => {
+export const exportToExcel = async (data, filename, sheetName = 'Chart Data') => {
   try {
     // Add array validation
     if (!Array.isArray(data)) {
@@ -9,6 +8,7 @@ export const exportToExcel = (data, filename, sheetName = 'Chart Data') => {
       return false;
     }
 
+    const XLSX = await import('xlsx');
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(data);
     

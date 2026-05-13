@@ -20,8 +20,6 @@ import {
   fetchAddressWeb,
   fetchFullNameWeb,
 } from "../services/api";
-import * as XLSX from "xlsx";
-import ExcelJS from "exceljs";
 import {
   Download,
   ChevronDown,
@@ -696,6 +694,7 @@ function SearchHistory({ isEnglish }) {
 
   const exportToExcel = useCallback(async () => {
     try {
+      const { default: ExcelJS } = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
 
       // First worksheet for company info

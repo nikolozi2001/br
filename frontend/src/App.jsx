@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,11 +10,12 @@ import { HelmetProvider } from "react-helmet-async";
 import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
 import SearchForm from "./components/SearchForm";
-import SearchHistory from "./pages/SearchHistory";
-import Reports from "./components/Reports";
-import ReportsResults from "./components/ReportsResults";
-import Charts from "./components/Charts";
 import Footer from "./components/Footer";
+
+const SearchHistory  = lazy(() => import("./pages/SearchHistory"));
+const Reports        = lazy(() => import("./components/Reports"));
+const ReportsResults = lazy(() => import("./components/ReportsResults"));
+const Charts         = lazy(() => import("./components/Charts"));
 import SEO from "./components/SEO";
 import useDocumentTitle from "./hooks/useDocumentTitle";
 import NavigationProvider from "./contexts/NavigationContext.jsx";
@@ -82,23 +83,16 @@ function AppContent() {
         onLanguageChange={handleLanguageChange}
       />
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<SearchForm isEnglish={isEnglish} />} />
-          <Route
-            path="/search-history"
-            element={<SearchHistory isEnglish={isEnglish} />}
-          />
-          <Route
-            path="/reports"
-            element={<Reports isEnglish={isEnglish} />}
-          />
-          <Route
-            path="/reports/:reportId"
-            element={<ReportsResults isEnglish={isEnglish} />}
-          />
-          <Route path="/charts" element={<Charts isEnglish={isEnglish} />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<div className="flex justify-center items-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0080BE]"></div></div>}>
+          <Routes>
+            <Route path="/" element={<SearchForm isEnglish={isEnglish} />} />
+            <Route path="/search-history" element={<SearchHistory isEnglish={isEnglish} />} />
+            <Route path="/reports" element={<Reports isEnglish={isEnglish} />} />
+            <Route path="/reports/:reportId" element={<ReportsResults isEnglish={isEnglish} />} />
+            <Route path="/charts" element={<Charts isEnglish={isEnglish} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </main>
       <Footer isEnglish={isEnglish} />
     </div>

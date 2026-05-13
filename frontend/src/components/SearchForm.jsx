@@ -3,8 +3,6 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { translations } from "../translations/searchForm";
-import * as XLSX from "xlsx";
-import JSZip from "jszip";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import { useSearchForm } from "../hooks/useSearchForm";
 import { AddressSection } from "./AddressSection";
@@ -306,6 +304,11 @@ useEffect(() => {
 
     const totalRecords = pagination.total;
     const XLSX_LIMIT = 200000; // Below this: use .xlsx; above: use streaming CSV+ZIP
+    const [XLSXmod, { default: JSZip }] = await Promise.all([
+      import("xlsx"),
+      import("jszip"),
+    ]);
+    const XLSX = XLSXmod;
     const CHUNK_SIZE = 50000;
     const CONCURRENCY = 5;
     
