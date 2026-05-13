@@ -9,9 +9,9 @@ import {
 import { HelmetProvider } from "react-helmet-async";
 import Header from "./components/Header";
 import TopNavigation from "./components/TopNavigation";
-import SearchForm from "./components/SearchForm";
 import Footer from "./components/Footer";
 
+const SearchForm    = lazy(() => import("./components/SearchForm"));
 const SearchHistory  = lazy(() => import("./pages/SearchHistory"));
 const Reports        = lazy(() => import("./components/Reports"));
 const ReportsResults = lazy(() => import("./components/ReportsResults"));

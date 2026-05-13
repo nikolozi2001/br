@@ -113,7 +113,7 @@ const PersonDetailsModal = ({
         <div className="flex-1 flex flex-col overflow-hidden">
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <img src={loaderIcon} alt="Loading..." className="w-12 h-12" />
+              <img src={loaderIcon} alt="Loading..." width="48" height="48" className="w-12 h-12" />
               <span className="ml-3 text-gray-600 font-bpg-nino">
                 {isEnglish ? "Loading..." : "იტვირთება..."}
               </span>

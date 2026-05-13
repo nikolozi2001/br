@@ -6,7 +6,7 @@ import loaderIcon from "../../assets/images/equalizer.svg";
 const LoadingSpinner = memo(({ message }) => (
   <div className="bg-white rounded-lg shadow-lg p-8">
     <div className="flex justify-center items-center">
-      <img src={loaderIcon} alt="Loading..." className="w-12 h-12" />
+      <img src={loaderIcon} alt="Loading..." width="48" height="48" className="w-12 h-12" />
       <span className="ml-3 text-gray-600 font-bpg-nino">{message}</span>
     </div>
   </div>

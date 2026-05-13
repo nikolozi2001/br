@@ -1052,6 +1052,8 @@ useEffect(() => {
                           <img
                             src={loaderIcon}
                             alt="Loading..."
+                            width="48"
+                            height="48"
                             className="w-12 h-12 animate-pulse"
                           />
                           <p className="text-gray-600 font-bpg-nino text-sm">

@@ -227,7 +227,10 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                     <img
                       src={isEnglish ? georgianFlag : britishFlag}
                       alt={isEnglish ? "Georgian" : "English"}
+                      width="24"
+                      height="16"
                       className="w-6 h-auto"
+                      decoding="async"
                     />
                   </button>
 

@@ -2,21 +2,6 @@
 <html lang="ka">
 <head>
   <link rel="preload" href="/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.woff2" as="font" type="font/woff2" crossorigin>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-
-    window.addEventListener('load', () => {
-      const gtagScript = document.createElement('script');
-      gtagScript.async = true;
-      gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-3PD81RRQ54';
-      document.head.appendChild(gtagScript);
-
-      gtag('js', new Date());
-      gtag('config', 'G-3PD81RRQ54');
-    });
-  </script>
-
   <meta charset="UTF-8" />
 
   <!-- Favicon -->
@@ -30,7 +15,6 @@
   <meta name="description" content="სტატისტიკური ბიზნეს რეგისტრი - Statistical Business Register" />
   <meta name="theme-color" content="#2563eb" />
 
-  <link rel="stylesheet" href="src/index.css">
 </head>
 
 <body>
@@ -43,5 +27,25 @@
 
   <!-- ✅ keep module script last -->
   <script type="module" src="/src/main.jsx"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+
+    const initAnalytics = () => {
+      const gtagScript = document.createElement('script');
+      gtagScript.async = true;
+      gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-3PD81RRQ54';
+      document.head.appendChild(gtagScript);
+
+      gtag('js', new Date());
+      gtag('config', 'G-3PD81RRQ54');
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(initAnalytics);
+    } else {
+      setTimeout(initAnalytics, 1200);
+    }
+  </script>
 </body>
 </html>

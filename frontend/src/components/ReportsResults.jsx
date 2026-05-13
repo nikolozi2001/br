@@ -1260,7 +1260,7 @@ function ReportsResults({ isEnglish }) {
     return (
       <div className="w-full min-h-[calc(100vh-200px)] flex items-center justify-center">
         <div className="geostat-loader">
-          <img src={loaderIcon} alt="Loading..." className="w-25 h-25" />
+          <img src={loaderIcon} alt="Loading..." width="100" height="100" className="w-25 h-25" />
         </div>
       </div>
     );
