@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\nqachibaia\\\\Desktop\\\\br\\\\backend\\\\src\\\\\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName)",
-      "PowerShell(netstat -ano)"
+      "PowerShell(netstat -ano)",
+      "Bash(xargs wc -l)"
     ]
   }
 }
