@@ -57,7 +57,11 @@ export function BasicInfoSection({
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="sr-only">
+          <label htmlFor="identificationNumber">{t.identificationNumber}</label>
+        </div>
         <input
+          id="identificationNumber"
           type="text"
           placeholder={t.identificationNumber}
           name="identificationNumber"
@@ -65,7 +69,11 @@ export function BasicInfoSection({
           onChange={handleInputChange}
           className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
         />
+        <div className="sr-only">
+          <label htmlFor="organizationName">{t.organizationName}</label>
+        </div>
         <input
+          id="organizationName"
           type="text"
           placeholder={t.organizationName}
           name="organizationName"
@@ -83,7 +91,11 @@ export function BasicInfoSection({
           className="sm:col-span-2"
           isMulti
         />
+        <div className="sr-only">
+          <label htmlFor="head">{t.head}</label>
+        </div>
         <input
+          id="head"
           type="text"
           placeholder={t.head}
           name="head"
@@ -91,7 +103,11 @@ export function BasicInfoSection({
           onChange={handleInputChange}
           className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
         />
+        <div className="sr-only">
+          <label htmlFor="partner">{t.partner}</label>
+        </div>
         <input
+          id="partner"
           type="text"
           placeholder={t.partner}
           name="partner"

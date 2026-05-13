@@ -210,6 +210,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1"
+                    aria-label={isEnglish ? "Share on Facebook" : "გაზიარება Facebook-ზე"}
                   >
                     <Facebook className="w-5 h-5" aria-hidden="true" />
                   </a>
@@ -234,6 +235,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                   <button
                     className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1 cursor-pointer"
                     onClick={handleModalOpen}
+                    aria-label={isEnglish ? "About Business Register" : "ბიზნეს რეგისტრის შესახებ"}
                   >
                     <Info className="w-5 h-5" aria-hidden="true" />
                   </button>
