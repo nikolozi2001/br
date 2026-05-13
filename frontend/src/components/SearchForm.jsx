@@ -1,5 +1,6 @@
 import "../styles/SearchForm.scss";
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { translations } from "../translations/searchForm";
 import * as XLSX from "xlsx";
@@ -23,6 +24,7 @@ import SEO from "./SEO";
 function SearchForm({ isEnglish }) {
   // Set page-specific title
   useDocumentTitle(isEnglish, getPageTitle("home", isEnglish));
+  const location = useLocation();
 
   const t = translations[isEnglish ? "en" : "ge"];
   const [isFlipped, setIsFlipped] = useState(false);
@@ -168,6 +170,22 @@ useEffect(() => {
   }
 }, [formData.identificationNumber, showResults, isEnglish]); // keep deps minimal
 
+  // Restore search state when returning from search-history
+  useEffect(() => {
+    if (location.state?.restoreSearch) {
+      const saved = sessionStorage.getItem('br_search_state');
+      if (saved) {
+        try {
+          const { results, formData: savedFormData, pagination: savedPagination } = JSON.parse(saved);
+          setFormData(savedFormData);
+          setSearchResults(results);
+          setPagination(savedPagination);
+          setShowResults(true);
+        } catch {}
+        sessionStorage.removeItem('br_search_state');
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBackToSearch = () => {
     setShowResults(false);

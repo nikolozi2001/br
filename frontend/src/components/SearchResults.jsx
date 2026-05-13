@@ -125,6 +125,7 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
   };
 
   const handleIdentificationNumberClick = (identificationNumber) => {
+    sessionStorage.setItem('br_search_state', JSON.stringify({ results, formData, pagination }));
     navigate(`/search-history?id=${identificationNumber}`);
   };
 

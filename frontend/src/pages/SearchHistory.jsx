@@ -969,8 +969,8 @@ function SearchHistory({ isEnglish }) {
 
   // Memoize navigation function to prevent recreation
   const handleBackNavigation = useCallback(() => {
-    navigate(`/?identificationNumber=${identificationNumber}`);
-  }, [navigate, identificationNumber]);
+    navigate('/', { state: { restoreSearch: true } });
+  }, [navigate]);
 
   // Handle person modal functions
   const handlePersonClick = useCallback((personId, personName) => {
