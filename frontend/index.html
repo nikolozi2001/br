@@ -12,36 +12,6 @@
 
   <meta charset="UTF-8" />
 
-  <!-- ✅ Versioned index redirect (must be BEFORE module script loads) -->
-  <script>
-    (function () {
-      // Change this value on every deployment (or inject automatically)
-      var BUILD = "2026-02-10_1";
-
-      try {
-        var url = new URL(window.location.href);
-
-        // prevent loops
-        if (url.searchParams.get("__v") === BUILD) return;
-
-        fetch("/index.html?probe=" + Date.now(), { cache: "no-store" })
-          .then(function (r) { return r.text(); })
-          .then(function (html) {
-            var m = html.match(/\/assets\/index-[^"]+\.js/);
-            var current = m ? m[0] : null;
-
-            // In dev your script is /src/main.jsx, in prod it will be /assets/index-xxxx.js
-            // So if current build is hashed and we are not on that, reload.
-            if (current) {
-              url.searchParams.set("__v", BUILD);
-              window.location.replace(url.toString());
-            }
-          })
-          .catch(function(){});
-      } catch(e) {}
-    })();
-  </script>
-
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
