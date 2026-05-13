@@ -5,7 +5,7 @@ export function FormActions({ t, onReset, onStop, isLoading }) {
         <button
           type="submit"
           disabled={isLoading}
-          className="flex items-center justify-center px-4 py-2 font-bold text-[#0080BE] border border-[#0080BE] hover:bg-[#0080BE] hover:text-white transition-colors rounded-t sm:rounded-t-none sm:rounded-l cursor-pointer text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center justify-center px-4 py-2 font-bold text-[#005A8C] border border-[#005A8C] hover:bg-[#005A8C] hover:text-white transition-colors rounded-t sm:rounded-t-none sm:rounded-l cursor-pointer text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <span className="flex items-center">

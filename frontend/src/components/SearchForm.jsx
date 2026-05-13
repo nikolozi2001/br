@@ -1019,7 +1019,7 @@ useEffect(() => {
             <div className="flipper">
               <div
                 className={`border border-[#0080BE] rounded-[0_5px_5px_5px] ${
-                  isLoading ? "" : "bg-[#fafafa]"
+                  isLoading ? "" : "bg-white"
                 }`}
               >
                 {isLoading ? (
@@ -1222,6 +1222,7 @@ useEffect(() => {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <AddressSection
                               title={t.legalAddress}
+                              idPrefix="legal-address"
                               formData={formData.legalAddress}
                               handleInputChange={(e) =>
                                 handleInputChange(e, "legalAddress", "address")
@@ -1255,6 +1256,7 @@ useEffect(() => {
 
                             <AddressSection
                               title={t.factualAddress}
+                              idPrefix="factual-address"
                               formData={formData.personalAddress}
                               handleInputChange={(e) =>
                                 handleInputChange(

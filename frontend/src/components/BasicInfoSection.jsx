@@ -67,7 +67,7 @@ export function BasicInfoSection({
           name="identificationNumber"
           value={formData.identificationNumber}
           onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE] placeholder:text-gray-600 text-gray-800"
         />
         <div className="sr-only">
           <label htmlFor="organizationName">{t.organizationName}</label>
@@ -79,11 +79,17 @@ export function BasicInfoSection({
           name="organizationName"
           value={formData.organizationName}
           onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE] placeholder:text-gray-600 text-gray-800"
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <label className="sr-only" htmlFor="organizationalLegalForm">
+          {t.organizationalLegalForm}
+        </label>
         <CustomSelect
+          inputId="organizationalLegalForm"
+          name="organizationalLegalForm"
+          ariaLabel={t.organizationalLegalForm}
           placeholder={t.organizationalLegalForm}
           value={currentValue}
           onChange={handleSelectChange}
@@ -101,7 +107,7 @@ export function BasicInfoSection({
           name="head"
           value={formData.head}
           onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE] placeholder:text-gray-600 text-gray-800"
         />
         <div className="sr-only">
           <label htmlFor="partner">{t.partner}</label>
@@ -113,7 +119,7 @@ export function BasicInfoSection({
           name="partner"
           value={formData.partner}
           onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE]"
+          className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#0080BE] focus:outline-none bg-white hover:border-[#0080BE] placeholder:text-gray-600 text-gray-800"
         />
       </div>
     </>

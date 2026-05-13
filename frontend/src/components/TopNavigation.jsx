@@ -270,7 +270,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                 </h5>
                 <button
                   type="button"
-                  className="text-gray-400 hover:text-gray-500 transition-colors text-2xl leading-none pb-1 cursor-pointer"
+                  className="text-gray-600 hover:text-gray-800 transition-colors text-2xl leading-none pb-1 cursor-pointer"
                   onClick={handleModalClose}
                   aria-label="Close modal"
                 >

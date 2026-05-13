@@ -46,7 +46,11 @@ export function AdditionalInfoSection({ formData, handleInputChange, t, isEnglis
         <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
           {t.ownershipForm}
         </h3>
+        <div className="sr-only">
+          <label htmlFor="ownershipForm">{t.ownershipForm}</label>
+        </div>
         <CustomSelect
+          inputId="ownershipForm"
           placeholder={t.ownershipForm}
           value={formData.ownershipForm}
           onChange={handleOwnershipChange}
@@ -58,7 +62,11 @@ export function AdditionalInfoSection({ formData, handleInputChange, t, isEnglis
         <h3 className="text-base sm:text-lg font-bold font-bpg-nino text-center">
           {t.businessSize}
         </h3>
+        <div className="sr-only">
+          <label htmlFor="businessForm">{t.businessSize}</label>
+        </div>
         <CustomSelect
+          inputId="businessForm"
           placeholder={t.businessSize}
           value={formData.businessForm}
           onChange={handleSizeChange}

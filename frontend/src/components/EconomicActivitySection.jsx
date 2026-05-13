@@ -84,7 +84,11 @@ export function EconomicActivitySection({
       </h3>{" "}
       <div className="grid grid-cols-10 gap-3 sm:gap-4">
         <div className="col-span-3">
+          <label className="sr-only" htmlFor="activityCodeSelect">{t.activityCode}</label>
           <CustomSelect
+            inputId="activityCodeSelect"
+            name="activityCodeSelect"
+            ariaLabel={t.activityCode}
             placeholder={t.activityCode}
             value={selectedActivityCodes}
             onChange={handleActivityCodeChange}
@@ -95,7 +99,11 @@ export function EconomicActivitySection({
           />
         </div>
         <div className="col-span-7">
+          <label className="sr-only" htmlFor="activityDescriptionSelect">{t.activityDescription}</label>
           <CustomSelect
+            inputId="activityDescriptionSelect"
+            name="activityDescriptionSelect"
+            ariaLabel={t.activityDescription}
             placeholder={t.activityDescription}
             value={selectedActivitiesWithNames}
             onChange={handleActivitiesChange}

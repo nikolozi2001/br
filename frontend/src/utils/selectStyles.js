@@ -8,6 +8,18 @@ export const selectStyles = {
     boxShadow: "none",
     padding: "1px",
   }),
+  singleValue: (base) => ({
+    ...base,
+    color: "#1F2937",
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "#4B5563",
+  }),
+  input: (base) => ({
+    ...base,
+    color: "#1F2937",
+  }),
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected

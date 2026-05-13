@@ -8,10 +8,18 @@ function CustomSelect({
   options, 
   isMulti = false,
   isClearable = true,
-  className = ""
+  className = "",
+  inputId,
+  ariaLabel,
+  name,
+  instanceId
 }) {
   return (
     <Select
+      inputId={inputId}
+      instanceId={instanceId || inputId}
+      name={name}
+      aria-label={ariaLabel || placeholder}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
