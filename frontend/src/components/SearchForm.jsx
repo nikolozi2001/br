@@ -110,6 +110,7 @@ function SearchForm({ isEnglish }) {
         }],
       }));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
 
   // Auto-search when formData is updated from URL parameters
@@ -168,6 +169,7 @@ useEffect(() => {
     // Cleanup if user navigates away fast / component unmounts
     return () => controller.abort();
   }
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [formData.identificationNumber, showResults, isEnglish]); // keep deps minimal
 
   // Restore search state when returning from search-history
@@ -181,11 +183,12 @@ useEffect(() => {
           setSearchResults(results);
           setPagination(savedPagination);
           setShowResults(true);
-        } catch {}
+        } catch { /* ignore JSON parse errors */ }
         sessionStorage.removeItem('br_search_state');
       }
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleBackToSearch = () => {
     setShowResults(false);
