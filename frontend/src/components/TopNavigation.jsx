@@ -157,9 +157,9 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                   to="/"
                   className={`font-bpg-nino font-bold px-6 py-[6px] text-sm ${
                     location.pathname === "/"
-                      ? "bg-white text-[#0080BE]"
-                      : "bg-[#0080BE] text-white hover:bg-[#fff] hover:text-[#0080BE]"
-                  } border-t border-l border-[#0080BE] first:rounded-tl-lg transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE] cursor-pointer`}
+                      ? "bg-white text-[#0070aa]"
+                      : "bg-[#0070aa] text-white hover:bg-[#fff] hover:text-[#0070aa]"
+                  } border-t border-l border-[#0070aa] first:rounded-tl-lg transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0070aa] cursor-pointer`}
                 >
                   {currentLanguage.navigation.main}
                 </Link>
@@ -168,9 +168,9 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                   to="/reports"
                   className={`font-bpg-nino font-bold px-6 py-[6px] text-sm ${
                     location.pathname === "/reports"
-                      ? "bg-white text-[#0080BE]"
-                      : "bg-[#0080BE] text-white hover:bg-[#fff] hover:text-[#0080BE]"
-                  } border-t border-l border-r border-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE] cursor-pointer`}
+                      ? "bg-white text-[#0070aa]"
+                      : "bg-[#0070aa] text-white hover:bg-[#fff] hover:text-[#0070aa]"
+                  } border-t border-l border-r border-[#0070aa] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0070aa] cursor-pointer`}
                 >
                   {currentLanguage.navigation.reports}
                 </Link>
@@ -179,9 +179,9 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                   to="/charts"
                   className={`font-bpg-nino font-bold px-6 py-[6px] text-sm ${
                     location.pathname === "/charts"
-                      ? "bg-white text-[#0080BE]"
-                      : "bg-[#0080BE] text-white hover:bg-[#fff] hover:text-[#0080BE]"
-                  } border-t border-l border-r border-[#0080BE] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0080BE] cursor-pointer`}
+                      ? "bg-white text-[#0070aa]"
+                      : "bg-[#0070aa] text-white hover:bg-[#fff] hover:text-[#0070aa]"
+                  } border-t border-l border-r border-[#0070aa] transition-colors relative after:absolute after:top-0 after:right-0 after:h-full after:bg-[#0070aa] cursor-pointer`}
                 >
                   {currentLanguage.navigation.charts}
                 </Link>
@@ -190,7 +190,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                   href={`https://gis.geostat.ge/${isEnglish ? "en" : "ge"}/business-statistics`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0080BE] text-white border-[#0080BE] border-t border-l border-r last:rounded-tr-lg  hover:bg-[#fff] hover:text-[#0080BE] transition-colors text-center"
+                  className="font-bpg-nino font-bold px-6 py-[6px] text-sm bg-[#0070aa] text-white border-[#0070aa] border-t border-l border-r last:rounded-tr-lg  hover:bg-[#fff] hover:text-[#0070aa] transition-colors text-center"
                 >
                   {currentLanguage.navigation.gis}
                 </a>
@@ -209,8 +209,10 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                     href="https://www.facebook.com/sharer/sharer.php?u=http://br.geostat.ge/register_geo/index.php"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1"
-                    aria-label={isEnglish ? "Share on Facebook" : "გაზიარება Facebook-ზე"}
+                    className="text-[#0070aa] hover:text-[#005580] transition-colors p-1"
+                    aria-label={
+                      isEnglish ? "Share on Facebook" : "გაზიარება Facebook-ზე"
+                    }
                   >
                     <Facebook className="w-5 h-5" aria-hidden="true" />
                   </a>
@@ -236,9 +238,13 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
 
                   {/* Info Button */}
                   <button
-                    className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1 cursor-pointer"
+                    className="text-[#0070aa] hover:text-[#005580] transition-colors p-1 cursor-pointer"
                     onClick={handleModalOpen}
-                    aria-label={isEnglish ? "About Business Register" : "ბიზნეს რეგისტრის შესახებ"}
+                    aria-label={
+                      isEnglish
+                        ? "About Business Register"
+                        : "ბიზნეს რეგისტრის შესახებ"
+                    }
                   >
                     <Info className="w-5 h-5" aria-hidden="true" />
                   </button>
