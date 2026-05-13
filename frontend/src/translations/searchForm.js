@@ -40,7 +40,7 @@ export const translations = {
 3) აქვს მოგება ან ზარალი (მოგების დეკლარაცია);
 4) გადაიხადა ნებისმიერი სახის გადასახადი, გარდა მხოლოდ ქონების გადასახადისა`,
     exportToExcel: "ექსპორტი Excel-ში",
-    exportToAccess: "ექსპორტი Access-ში",
+    exportToAccess: "ექსპორტი CSV-ში",
     perPage: "ჩანაწერი",
     showing: "ნაჩვენებია",
     of: "დან",

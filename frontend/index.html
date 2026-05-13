@@ -1,13 +1,20 @@
 <!doctype html>
 <html lang="ka">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3PD81RRQ54"></script>
+  <link rel="preload" href="/fonts/bpg-nino-mtavruli/fonts/bpg-nino-mtavruli-webfont.woff2" as="font" type="font/woff2" crossorigin>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-3PD81RRQ54');
+
+    window.addEventListener('load', () => {
+      const gtagScript = document.createElement('script');
+      gtagScript.async = true;
+      gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-3PD81RRQ54';
+      document.head.appendChild(gtagScript);
+
+      gtag('js', new Date());
+      gtag('config', 'G-3PD81RRQ54');
+    });
   </script>
 
   <meta charset="UTF-8" />
@@ -23,12 +30,7 @@
   <meta name="description" content="სტატისტიკური ბიზნეს რეგისტრი - Statistical Business Register" />
   <meta name="theme-color" content="#2563eb" />
 
-  <!-- Preconnect for performance -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
-
   <link rel="stylesheet" href="src/index.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>

@@ -1,5 +1,5 @@
 import "../styles/SearchForm.scss";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { translations } from "../translations/searchForm";
@@ -10,14 +10,14 @@ import { BasicInfoSection } from "./BasicInfoSection";
 import { EconomicActivitySection } from "./EconomicActivitySection";
 import { AdditionalInfoSection } from "./AdditionalInfoSection";
 import { FormActions } from "./FormActions";
-import SearchResults from "./SearchResults";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { getPageTitle } from "../utils/pageTitles";
 import { useNavigation } from "../hooks/useNavigation";
 import { fetchLegalFormsRaw, fetchDocuments, fetchExportStream } from "../services/api";
-import georgianFont from "../fonts/NotoSansGeorgian_ExtraCondensed-Bold.ttf";
 import loaderIcon from "../assets/images/equalizer.svg";
 import SEO from "./SEO";
+
+const SearchResults = lazy(() => import("./SearchResults"));
 
 function SearchForm({ isEnglish }) {
   // Set page-specific title
@@ -1093,7 +1093,6 @@ useEffect(() => {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={printResults}
-                              style={{ fontFamily: georgianFont }}
                               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-indigo-600 cursor-pointer"
                               disabled={!searchResults?.length || isLoading}
                             >
@@ -1114,7 +1113,6 @@ useEffect(() => {
                             </button>
                             <button
                               onClick={exportToExcel}
-                              style={{ fontFamily: georgianFont }}
                               className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer"
                               disabled={!searchResults?.length || isLoading}
                             >
@@ -1135,7 +1133,6 @@ useEffect(() => {
                             </button>
                             <button
                               onClick={exportToAccess}
-                              style={{ fontFamily: georgianFont }}
                               className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-all duration-200 text-sm font-medium group shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:hover:bg-red-600 cursor-pointer"
                               disabled={!searchResults?.length || isLoading}
                             >
@@ -1191,14 +1188,16 @@ useEffect(() => {
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0080BE]"></div>
                           </div>
                         ) : (
-                          <SearchResults
-                            results={searchResults}
-                            pagination={pagination}
-                            isEnglish={isEnglish}
-                            formData={formData}
-                            handleInputChange={handleInputChange}
-                            legalFormsMap={legalFormsMap}
-                          />
+                          <Suspense fallback={<div className="flex justify-center items-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0080BE]"></div></div>}>
+                            <SearchResults
+                              results={searchResults}
+                              pagination={pagination}
+                              isEnglish={isEnglish}
+                              formData={formData}
+                              handleInputChange={handleInputChange}
+                              legalFormsMap={legalFormsMap}
+                            />
+                          </Suspense>
                         )}
                       </div>
                     ) : (

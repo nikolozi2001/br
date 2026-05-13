@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Facebook, Info } from "lucide-react";
 import britishFlag from "/src/assets/images/british-flag.png";
 import georgianFlag from "/src/assets/images/georgian-flag.svg";
 
@@ -210,7 +211,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                     rel="noopener noreferrer"
                     className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1"
                   >
-                    <i className="fab fa-facebook text-xl"></i>
+                    <Facebook className="w-5 h-5" aria-hidden="true" />
                   </a>
 
                   {/* Language Switch */}
@@ -234,7 +235,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                     className="text-[#0080BE] hover:text-[#0070aa] transition-colors p-1 cursor-pointer"
                     onClick={handleModalOpen}
                   >
-                    <i className="fas fa-info-circle text-xl"></i>
+                    <Info className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
