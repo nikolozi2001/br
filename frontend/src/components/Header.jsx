@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import sakstatLogoGe from "/src/assets/images/sakstat-logo.svg";
 import sakstatLogoEn from "/src/assets/images/sakstat-logo-en.png";
-import sakstatLogoEnWebp from "/src/assets/images/sakstat-logo-en.webp";
 
 const Header = ({ isEnglish }) => {
   const navigate = useNavigate();
@@ -23,7 +22,6 @@ const Header = ({ isEnglish }) => {
     english: {
       logo: {
         src: sakstatLogoEn,
-        webp: sakstatLogoEnWebp,
         alt: "Geostat Logo",
       },
       title: "National Statistics Office of Georgia",
@@ -41,17 +39,14 @@ const Header = ({ isEnglish }) => {
       >
         {/* Logo */}
         {isEnglish ? (
-          <picture>
-            <source srcSet={currentLanguage.logo.webp} type="image/webp" />
-            <img
-              src={currentLanguage.logo.src}
-              alt={currentLanguage.logo.alt}
-              width="253"
-              height="56"
-              className="h-12 sm:h-14 w-auto"
-              decoding="async"
-            />
-          </picture>
+          <img
+            src={currentLanguage.logo.src}
+            alt={currentLanguage.logo.alt}
+            width="253"
+            height="56"
+            className="h-12 sm:h-14 w-auto"
+            decoding="async"
+          />
         ) : (
           <img
             src={currentLanguage.logo.src}
