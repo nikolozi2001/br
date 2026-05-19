@@ -287,6 +287,84 @@ function KpiCard({ icon, label, value, color = 'text-slate-100', sub }) {
   );
 }
 
+// ─── History helper ───────────────────────────────────────────────────────────
+const MAX_HISTORY = 360;
+function addHistoryPoint(prev, data) {
+  const last = prev[prev.length - 1];
+  const rpm = last != null
+    ? Math.max(0, data.requests.total - last.totalReqs) * 12
+    : 0;
+  const point = {
+    heap:      data.server.memory.heapUsed,
+    heapPct:   parseFloat(((data.server.memory.heapUsed / data.server.memory.heapTotal) * 100).toFixed(1)),
+    rpm,
+    totalReqs: data.requests.total,
+  };
+  const arr = [...prev, point];
+  return arr.length > MAX_HISTORY ? arr.slice(-MAX_HISTORY) : arr;
+}
+
+// ─── Sparkline ────────────────────────────────────────────────────────────────
+function Sparkline({ data, color = '#3b82f6', unit = '' }) {
+  if (data.length < 2) return (
+    <div className="h-10 flex items-center justify-center text-xs text-slate-600">მონაცემი გროვდება...</div>
+  );
+  const W = 400, H = 40;
+  const max = Math.max(...data, 0.001);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const toX = i => (i / (data.length - 1)) * W;
+  const toY = v => H - 2 - ((v - min) / range) * (H - 6);
+  const pts = data.map((v, i) => `${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ');
+  const area = `0,${H} ${pts} ${W},${H}`;
+  const last = data[data.length - 1];
+  return (
+    <div>
+      <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+        <span>{min.toFixed(1)}{unit}</span>
+        <span className="font-semibold text-slate-200">{last.toFixed(1)}{unit}</span>
+        <span>{max.toFixed(1)}{unit}</span>
+      </div>
+      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+        <polygon points={area} fill={color} fillOpacity="0.12" />
+        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
+  );
+}
+
+// ─── AlertBar ─────────────────────────────────────────────────────────────────
+// heapTotal-ზე ratio ცრუ alert-ს იძლევა — V8 heapTotal-ს პატარადან იწყებს და
+// საჭიროებისამებრ ზრდის (--max-old-space-size=8192). ამიტომ absolute MB-ს ვამოწმებთ.
+function AlertBar({ stats }) {
+  if (!stats) return null;
+  const heapMB   = stats.server.memory.heapUsed;
+  const rssMB    = stats.server.memory.rss;
+  const errRate  = parseFloat(stats.queries.errorRate) || 0;
+  const alerts   = [];
+  if (heapMB > 4096)       alerts.push({ lvl: 'error', msg: `Heap ${heapMB} MB — მეხსიერება კრიტიკულ ზღვარს მიუახლოვდა (>4 GB)` });
+  else if (heapMB > 2048)  alerts.push({ lvl: 'warn',  msg: `Heap ${heapMB} MB — მეხსიერება მაღალია (>2 GB)` });
+  if (rssMB > 6144)        alerts.push({ lvl: 'error', msg: `RSS ${rssMB} MB — პროცესი ბევრ მეხსიერებას მოიხმარს` });
+  if (stats.database.status !== 'healthy') alerts.push({ lvl: 'error', msg: 'მონაცემთა ბაზასთან კავშირი გაწყვეტილია' });
+  if (errRate > 5)         alerts.push({ lvl: 'error', msg: `Query Error Rate ${stats.queries.errorRate} — ბაზის შეცდომები გაიზარდა` });
+  else if (errRate > 1)    alerts.push({ lvl: 'warn',  msg: `Query Error Rate ${stats.queries.errorRate}` });
+  if (!alerts.length) return null;
+  return (
+    <div className="space-y-2">
+      {alerts.map((a, i) => (
+        <div key={i} className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm border ${
+          a.lvl === 'error'
+            ? 'bg-red-900/30 border-red-700/50 text-red-300'
+            : 'bg-amber-900/30 border-amber-700/50 text-amber-300'
+        }`}>
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          {a.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Copy button ──────────────────────────────────────────────────────────────
 function CopyBtn({ text }) {
   const [copied, setCopied] = useState(false);
@@ -425,10 +503,13 @@ function Loader() {
   return <div className="flex items-center justify-center h-48 text-slate-500 text-sm">იტვირთება...</div>;
 }
 
-function PageOverview({ stats, online }) {
+function PageOverview({ stats, online, history }) {
   const d = stats;
+  const heapHistory = history.map(p => p.heapPct);
+  const rpmHistory  = history.map(p => p.rpm);
   return (
     <div className="space-y-6">
+      <AlertBar stats={stats} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KpiCard icon="⚡" label="API სტატუსი" value={online ? 'Online' : 'Offline'} color={online ? 'text-emerald-400' : 'text-red-400'} />
         <KpiCard icon="🗄️" label="მონაცემთა ბაზა" value={d ? (d.database.status === 'healthy' ? 'Connected' : 'Error') : null} color={d?.database?.status === 'healthy' ? 'text-emerald-400' : 'text-red-400'} />
@@ -459,6 +540,14 @@ function PageOverview({ stats, online }) {
           </Card>
         </div>
       )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <Card title="Heap % — ბოლო 30 წთ" icon={Activity}>
+          <Sparkline data={heapHistory} color="#3b82f6" unit="%" />
+        </Card>
+        <Card title="Requests/წთ — ბოლო 30 წთ" icon={TrendingUp}>
+          <Sparkline data={rpmHistory} color="#10b981" unit="" />
+        </Card>
+      </div>
     </div>
   );
 }
@@ -620,14 +709,24 @@ function PageQueries({ stats }) {
   );
 }
 
+const STATUS_FILTERS = [
+  { id: 'all',    label: 'ყველა' },
+  { id: '2xx',    label: '2xx ✓' },
+  { id: '4xx',    label: '4xx ⚠' },
+  { id: '5xx',    label: '5xx ✕' },
+  { id: 'errors', label: '4xx+5xx' },
+];
+
 function PageLogs() {
-  const [logs, setLogs]       = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [autoR, setAutoR]     = useState(true);
+  const [logs, setLogs]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [autoR, setAutoR]           = useState(true);
+  const [statusFilter, setStatus]   = useState('all');
+  const [pathFilter, setPath]       = useState('');
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch('/admin/dashboard/logs?limit=100');
+      const r = await fetch('/admin/dashboard/logs?limit=200');
       setLogs(await r.json());
     } catch {}
     setLoading(false);
@@ -640,17 +739,47 @@ function PageLogs() {
     return () => clearInterval(id);
   }, [load, autoR]);
 
+  const visible = logs.filter(l => {
+    if (pathFilter && !l.path.toLowerCase().includes(pathFilter.toLowerCase())) return false;
+    if (statusFilter === '2xx'    && (l.status < 200 || l.status >= 300)) return false;
+    if (statusFilter === '4xx'    && (l.status < 400 || l.status >= 500)) return false;
+    if (statusFilter === '5xx'    && l.status < 500)                       return false;
+    if (statusFilter === 'errors' && l.status < 400)                       return false;
+    return true;
+  });
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-400">ბოლო {logs.length} request</span>
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="text" placeholder="path ფილტრი..."
+          value={pathFilter} onChange={e => setPath(e.target.value)}
+          className="bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 w-52"
+        />
+        <div className="flex gap-1">
+          {STATUS_FILTERS.map(f => (
+            <button key={f.id} onClick={() => setStatus(f.id)}
+              className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                statusFilter === f.id
+                  ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+              }`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-slate-500 ml-auto">{visible.length} / {logs.length}</span>
         <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
           <input type="checkbox" checked={autoR} onChange={e => setAutoR(e.target.checked)} className="rounded" />
           ავტო-განახლება
         </label>
       </div>
-      {loading ? <Loader /> : logs.length === 0 ? (
-        <p className="text-center text-slate-500 text-sm py-12">Request-ები ჯერ არ არის</p>
+
+      {loading ? <Loader /> : visible.length === 0 ? (
+        <p className="text-center text-slate-500 text-sm py-12">
+          {logs.length === 0 ? 'Request-ები ჯერ არ არის' : 'ფილტრი ცარიელია'}
+        </p>
       ) : (
         <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -664,7 +793,7 @@ function PageLogs() {
               </tr>
             </thead>
             <tbody>
-              {logs.map(l => (
+              {visible.map(l => (
                 <tr key={l.id} className="border-b border-slate-700/40 last:border-0 hover:bg-slate-700/20">
                   <td className="px-4 py-2.5">
                     <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${METHOD_CLS[l.method] || METHOD_CLS.GET}`}>{l.method}</span>
@@ -696,32 +825,42 @@ const NAV = [
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [stats, setStats]   = useState(null);
-  const [online, setOnline] = useState(true);
-  const [ts, setTs]         = useState('');
-  const [spin, setSpin]     = useState(false);
-  const [page, setPage]     = useState('overview');
+  const [stats, setStats]     = useState(null);
+  const [history, setHistory] = useState([]);
+  const [online, setOnline]   = useState(true);
+  const [ts, setTs]           = useState('');
+  const [spin, setSpin]       = useState(false);
+  const [page, setPage]       = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const applyData = useCallback((data) => {
+    setStats(data);
+    setHistory(prev => addHistoryPoint(prev, data));
+    setOnline(true);
+    setTs(new Date().toLocaleTimeString('ka-GE'));
+  }, []);
 
   const load = useCallback(async () => {
     setSpin(true);
     try {
       const r = await fetch('/admin/dashboard/stats');
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      setStats(await r.json());
-      setOnline(true);
-      setTs(new Date().toLocaleTimeString('ka-GE'));
+      applyData(await r.json());
     } catch {
       setOnline(false);
       setTs('შეცდომა');
     } finally { setSpin(false); }
-  }, []);
+  }, [applyData]);
 
+  // SSE — real-time updates (replaces setInterval polling)
   useEffect(() => {
-    load();
-    const id = setInterval(load, 5000);
-    return () => clearInterval(id);
-  }, [load]);
+    const es = new EventSource('/admin/dashboard/events');
+    es.onmessage = (e) => {
+      try { applyData(JSON.parse(e.data)); } catch {}
+    };
+    es.onerror = () => setOnline(false);
+    return () => es.close();
+  }, [applyData]);
 
   function NavItem({ id, label, icon: Icon }) {
     const active = page === id;
@@ -791,7 +930,7 @@ export default function App() {
           </div>
         </header>
         <main className="flex-1 p-6">
-          {page === 'overview'  && <PageOverview stats={stats} online={online} />}
+          {page === 'overview'  && <PageOverview stats={stats} online={online} history={history} />}
           {page === 'endpoints' && <PageEndpoints />}
           {page === 'server'    && <PageServer stats={stats} />}
           {page === 'database'  && <PageDatabase stats={stats} />}

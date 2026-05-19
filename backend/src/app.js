@@ -52,7 +52,7 @@ const fullNameWebRouter = require('./routes/fullName_web');
 const legalUnitWebRouter = require('./routes/legal_unit_web');
 const gisSearchRouter = require('./routes/gis_search');
 const basicInfoRouter = require('./routes/basic_info');
-const { getDashboardStats, getDashboardLogs, clearCache } = require('./routes/dashboard');
+const { getDashboardStats, getDashboardEvents, getDashboardLogs, clearCache } = require('./routes/dashboard');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -98,6 +98,7 @@ app.get('/admin/dashboard', (req, res) => {
   res.sendFile('index.html', { root: dashboardBuild });
 });
 app.get('/admin/dashboard/stats', getDashboardStats);
+app.get('/admin/dashboard/events', getDashboardEvents);
 app.get('/admin/dashboard/logs', getDashboardLogs);
 app.delete('/admin/dashboard/cache', clearCache);
 
