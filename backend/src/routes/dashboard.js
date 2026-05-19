@@ -2,6 +2,7 @@ const os = require('os');
 const { checkDatabaseHealth } = require('../config/database');
 const { reportCacheManager } = require('../utils/cacheManager');
 const { queryMonitor } = require('../utils/queryMonitor');
+const { requestLogger } = require('../utils/requestLogger');
 
 const startTime = Date.now();
 
@@ -46,11 +47,27 @@ async function getDashboardStats(req, res) {
         peakMs: parseFloat(queryStats.peakExecutionTime.toFixed(2)),
         slowPct: queryStats.slowQueryPercentage,
         errorRate: queryStats.errorRate,
+        slowQueries: queryMonitor.getSlowQueries(10),
       },
+      requests: requestLogger.getSummary(),
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 }
 
-module.exports = { getDashboardStats };
+function getDashboardLogs(req, res) {
+  const limit = Math.min(parseInt(req.query.limit) || 100, 200);
+  res.json(requestLogger.getLogs(limit));
+}
+
+function clearCache(req, res) {
+  try {
+    reportCacheManager.clear();
+    res.json({ success: true, message: 'Cache გასუფთავდა' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { getDashboardStats, getDashboardLogs, clearCache };

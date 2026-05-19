@@ -3,12 +3,15 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+const { requestLogger } = require('./utils/requestLogger');
+
 const app = express();
 
 app.use(cors({
   exposedHeaders: ['X-Total-Count'],
 }));
 app.use(express.json());
+app.use(requestLogger.middleware());
 
 // Import database configuration
 const { sql, poolPromise } = require('./config/database');
@@ -49,7 +52,7 @@ const fullNameWebRouter = require('./routes/fullName_web');
 const legalUnitWebRouter = require('./routes/legal_unit_web');
 const gisSearchRouter = require('./routes/gis_search');
 const basicInfoRouter = require('./routes/basic_info');
-const { getDashboardStats } = require('./routes/dashboard');
+const { getDashboardStats, getDashboardLogs, clearCache } = require('./routes/dashboard');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -95,6 +98,8 @@ app.get('/admin/dashboard', (req, res) => {
   res.sendFile('index.html', { root: dashboardBuild });
 });
 app.get('/admin/dashboard/stats', getDashboardStats);
+app.get('/admin/dashboard/logs', getDashboardLogs);
+app.delete('/admin/dashboard/cache', clearCache);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {
