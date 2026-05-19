@@ -541,7 +541,7 @@ export default function App() {
       {/* Brand */}
       <div className="px-4 py-5 border-b border-slate-700">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">BR</div>
+          <img src="/dashboard-build/favicon.ico" alt="BR" className="w-8 h-8 rounded-lg" />
           <div>
             <div className="text-sm font-semibold text-slate-100">BR API</div>
             <div className="text-xs text-slate-500">Admin Dashboard</div>
