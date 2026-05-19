@@ -20,7 +20,8 @@
       "Bash(node -e ' *)",
       "PowerShell(Get-Process -Id 28556)",
       "mcp__filesystem__read_multiple_files",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(npm run *)"
     ]
   }
 }

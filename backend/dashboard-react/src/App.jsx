@@ -29,6 +29,8 @@ function buildExample(path, params) {
 }
 
 // ─── Endpoint definitions ─────────────────────────────────────────────────────
+// Example record: Stat_ID=20387840, Legal_Code=200007143, Legal_Form_ID=1 (შპს),
+// Ownership_Type_ID=11, Activity_2_Code=86.10.0, Region=ქ.თბილისი
 const ENDPOINT_GROUPS = [
   {
     name: 'ძიება', icon: '🔍',
@@ -36,18 +38,19 @@ const ENDPOINT_GROUPS = [
       {
         method: 'GET', path: '/api/documents', desc: 'სუბიექტების ძიება (გვერდებით)',
         params: [
-          qInt('page',   'გვერდი', 1), qInt('limit', 'ჩანაწერების რაოდენობა', 20),
+          qInt('page',   'გვერდი', 1),
+          qInt('limit',  'ჩანაწერების რაოდენობა', 20),
           qStr('identificationNumber', 'საიდენტიფიკაციო კოდი', '200007143'),
-          qStr('organizationName', 'ორგანიზაციის სახელი', 'სოციალური'),
-          qInt('legalForm', 'სამართლებრივი ფორმის ID', 7),
-          qInt('ownershipType', 'საკუთრების ტიპის ID', 1),
+          qStr('organizationName', 'ორგანიზაციის სახელი', 'სამედიცინო'),
+          qInt('legalForm', 'სამართლებრივი ფორმის ID (1=შპს)', 1),
+          qInt('ownershipType', 'საკუთრების ტიპის ID (11=კერძო ადგილობრივი)', 11),
           qBool('isActive', 'მხოლოდ აქტიური სუბიექტები', 'true'),
-          qStr('activityCode', 'NACE კოდი', 'G'),
-          qInt('size', 'ზომის კატეგორია', 2),
-          qStr('legalAddressRegion', 'იურიდიული მისამართის რეგიონი', 'თბილისი'),
-          qStr('legalAddressCity', 'იურიდიული მისამართის ქალაქი', 'თბილისი'),
-          qStr('head', 'ხელმძღვანელის სახელი', 'გიორგი'),
-          qStr('partner', 'პარტნიორის სახელი', 'გიორგი'),
+          qStr('activityCode', 'NACE კოდი', '86.10.0'),
+          qInt('size', 'ზომის კატეგორია', 4),
+          qStr('legalAddressRegion', 'იურიდიული მისამართის რეგიონი', 'ქ. თბილისი'),
+          qStr('legalAddressCity', 'იურიდიული მისამართის ქალაქი', 'ნაძალადევი'),
+          qStr('head', 'ხელმძღვანელის სახელი', 'გადაბაძე'),
+          qStr('partner', 'პარტნიორის სახელი', 'ავალიანი'),
         ],
       },
       {
@@ -57,9 +60,9 @@ const ENDPOINT_GROUPS = [
       {
         method: 'GET', path: '/api/documents/export', desc: 'Excel ექსპორტი',
         params: [
-          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი', ''),
-          qStr('organizationName', 'ორგანიზაციის სახელი', 'სოციალური'),
-          qInt('legalForm', 'სამართლებრივი ფორმის ID', 7),
+          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი', '200007143'),
+          qStr('organizationName', 'ორგანიზაციის სახელი', 'სამედიცინო'),
+          qInt('legalForm', 'სამართლებრივი ფორმის ID (1=შპს)', 1),
           qBool('isActive', 'მხოლოდ აქტიური', 'true'),
         ],
       },
@@ -67,13 +70,13 @@ const ENDPOINT_GROUPS = [
         method: 'GET', path: '/api/basic-info', desc: 'სუბიექტის ძირითადი ინფო',
         params: [
           qStr('identificationNumber', 'საიდენტიფიკაციო კოდი', '200007143'),
-          qStr('organizationName', 'ორგანიზაციის სახელი', ''),
-          qInt('legalForm', 'სამართლებრივი ფორმის ID', ''),
-          qInt('ownershipType', 'საკუთრების ტიპის ID', ''),
-          qBool('isActive', 'მხოლოდ აქტიური', ''),
-          qStr('activityCode', 'NACE კოდი', ''),
-          qStr('head', 'ხელმძღვანელის სახელი', ''),
-          qStr('partner', 'პარტნიორის სახელი', ''),
+          qStr('organizationName', 'ორგანიზაციის სახელი', 'სამედიცინო'),
+          qInt('legalForm', 'სამართლებრივი ფორმის ID (1=შპს)', 1),
+          qInt('ownershipType', 'საკუთრების ტიპის ID (11=კერძო ადგილობრივი)', 11),
+          qBool('isActive', 'მხოლოდ აქტიური', 'true'),
+          qStr('activityCode', 'NACE კოდი', '86.10.0'),
+          qStr('head', 'ხელმძღვანელის სახელი', 'გადაბაძე'),
+          qStr('partner', 'პარტნიორის სახელი', 'ავალიანი'),
         ],
       },
       {
@@ -87,41 +90,41 @@ const ENDPOINT_GROUPS = [
     endpoints: [
       {
         method: 'GET', path: '/api/address-web', desc: 'სუბიექტის მისამართი',
-        params: [qInt('statId', 'სუბიექტის სტატისტიკური ID', 123456, true)],
+        params: [qInt('statId', 'სუბიექტის სტატისტიკური ID', 20387840, true)],
       },
       {
         method: 'GET', path: '/api/full-name-web', desc: 'სუბიექტის სრული სახელი',
-        params: [qInt('statId', 'სუბიექტის სტატისტიკური ID', 123456, true)],
+        params: [qInt('statId', 'სუბიექტის სტატისტიკური ID', 20387840, true)],
       },
       {
         method: 'GET', path: '/api/representatives', desc: 'სუბიექტის წარმომადგენლები',
         params: [
-          qInt('statId', 'სუბიექტის სტატისტიკური ID', 123456, true),
+          qInt('statId', 'სუბიექტის სტატისტიკური ID', 20387840, true),
           qLang(),
         ],
       },
       {
         method: 'GET', path: '/api/partners', desc: 'სუბიექტის პარტნიორები',
         params: [
-          qInt('statId', 'სუბიექტის სტატისტიკური ID', 123456, true),
+          qInt('statId', 'სუბიექტის სტატისტიკური ID', 20387840, true),
           qLang(),
         ],
       },
       {
         method: 'GET', path: '/api/partners-vw', desc: 'პარტნიორები (view)',
-        params: [qInt('statId', 'სუბიექტის სტატისტიკური ID', 123456, true)],
+        params: [qInt('statId', 'სუბიექტის სტატისტიკური ID', 20387840, true)],
       },
       {
         method: 'GET', path: '/api/legal-unit-web', desc: 'საგადასახადო ერთეული',
         params: [
-          qInt('personId', 'პირის ID', 789, true),
+          qInt('personId', 'პირის ID', 20387840, true),
           qLang(),
         ],
       },
       {
         method: 'GET', path: '/api/coordinates', desc: 'გეო-კოორდინატები',
         params: [
-          qStr('taxId', 'საგადასახადო ID', '200007143', true),
+          qStr('taxId', 'საიდენტიფიკაციო კოდი', '200007143', true),
           qLang(),
         ],
       },
@@ -148,7 +151,7 @@ const ENDPOINT_GROUPS = [
       },
       {
         method: 'GET', path: '/api/locations/code/:code', desc: 'ლოკაცია კოდით',
-        params: [rStr('code', 'ლოკაციის კოდი', 'TBS'), qLang()],
+        params: [rStr('code', 'ლოკაციის კოდი', '11'), qLang()],
       },
       {
         method: 'GET', path: '/api/activities', desc: 'NACE საქმიანობები',
@@ -175,9 +178,9 @@ const ENDPOINT_GROUPS = [
         method: 'GET', path: '/api/gis-search', desc: 'სუბიექტების GIS ძიება',
         params: [
           qStr('city',      'ქალაქი', 'თბილისი'),
-          qStr('search',    'საძიებო ტექსტი', 'სოციალური'),
-          qInt('legalForm', 'სამართლებრივი ფორმა', 7),
-          qStr('activity',  'NACE საქმიანობა', 'G'),
+          qStr('search',    'საძიებო ტექსტი', 'სამედიცინო'),
+          qInt('legalForm', 'სამართლებრივი ფორმა (1=შპს)', 1),
+          qStr('activity',  'NACE საქმიანობა', '86.10.0'),
         ],
       },
       {
