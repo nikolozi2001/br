@@ -27,7 +27,8 @@
       "Bash(git commit -m ' *)",
       "Bash(curl -s \"http://localhost:5001/api/documents?page=1&limit=20&identificationNumber=200007143&legalForm=1&ownershipType=11&isActive=true&activityCode=86.10.0&size=3&legalAddressRegion=11&legalAddressCity=11%2047&head=%E1%83%92%E1%83%90%E1%83%93%E1%83%90%E1%83%91%E1%83%90%E1%83%AB%E1%83%94&partner=%E1%83%90%E1%83%95%E1%83%90%E1%83%9A%E1%83%98%E1%83%90%E1%83%9C%E1%83%98\")",
       "Bash(python -m json.tool --no-ensure-ascii)",
-      "Bash(curl -s \"http://localhost:5001/admin/dashboard/stats\")"
+      "Bash(curl -s \"http://localhost:5001/admin/dashboard/stats\")",
+      "Bash(npm install *)"
     ]
   }
 }

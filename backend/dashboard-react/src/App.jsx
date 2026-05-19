@@ -963,15 +963,45 @@ export default function App() {
     } finally { setSpin(false); }
   }, [applyData]);
 
-  // SSE — real-time updates (replaces setInterval polling)
+  // SSE with automatic fallback to polling if nginx buffers the stream
   useEffect(() => {
-    const es = new EventSource('/admin/dashboard/events');
-    es.onmessage = (e) => {
-      try { applyData(JSON.parse(e.data)); } catch {}
+    let es = null;
+    let pollId = null;
+    let sseOk = false;
+
+    const startPolling = () => {
+      if (pollId) return;
+      load();
+      pollId = setInterval(load, 5000);
     };
-    es.onerror = () => setOnline(false);
-    return () => es.close();
-  }, [applyData]);
+
+    try {
+      es = new EventSource('/admin/dashboard/events');
+
+      const timeout = setTimeout(() => {
+        if (!sseOk) { es?.close(); startPolling(); }
+      }, 8000);
+
+      es.onmessage = (e) => {
+        sseOk = true;
+        clearTimeout(timeout);
+        try { applyData(JSON.parse(e.data)); } catch {}
+      };
+      es.onerror = () => {
+        clearTimeout(timeout);
+        es?.close();
+        setOnline(false);
+        startPolling();
+      };
+    } catch {
+      startPolling();
+    }
+
+    return () => {
+      es?.close();
+      if (pollId) clearInterval(pollId);
+    };
+  }, [applyData, load]);
 
   function NavItem({ id, label, icon: Icon }) {
     const active = page === id;

@@ -73,6 +73,7 @@ function getDashboardEvents(req, res) {
     } catch (err) {
       res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
     }
+    if (typeof res.flush === 'function') res.flush();
   };
 
   send();
