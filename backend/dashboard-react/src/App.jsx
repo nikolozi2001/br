@@ -30,7 +30,7 @@ function buildExample(path, params) {
 
 // ─── Endpoint definitions ─────────────────────────────────────────────────────
 // Example record: Stat_ID=20387840, Legal_Code=200007143, Legal_Form_ID=1 (შპს),
-// Ownership_Type_ID=11, Activity_2_Code=86.10.0, Region=ქ.თბილისი
+// Ownership_Type_ID=11, Activity_2_Code=86.10.0, Region_Code=11, City_Code="11 47"
 const ENDPOINT_GROUPS = [
   {
     name: 'ძიება', icon: '🔍',
@@ -40,17 +40,17 @@ const ENDPOINT_GROUPS = [
         params: [
           qInt('page',   'გვერდი', 1),
           qInt('limit',  'ჩანაწერების რაოდენობა', 20),
-          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი (ერთი კოდი)', null),
-          qStr('organizationName', 'სახელი (ნაწილობრივი ძიება)', 'ვიბლიანი'),
-          qInt('legalForm', 'სამართლებრივი ფორმის ID (30=იმ, 1=შპს)', 30),
-          qInt('ownershipType', 'საკუთრების ტიპის ID (11=კერძო ადგილობრივი)', null),
+          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი (ერთი კოდი)', '200007143'),
+          qStr('organizationName', 'სახელი (ნაწილობრივი ძიება)', null),
+          qInt('legalForm', 'სამართლებრივი ფორმის ID (1=შპს, 30=იმ)', 1),
+          qInt('ownershipType', 'საკუთრების ტიპის ID (11=კერძო ადგილობრივი)', 11),
           qBool('isActive', 'მხოლოდ აქტიური სუბიექტები', 'true'),
-          qStr('activityCode', 'NACE კოდი', null),
-          qInt('size', 'ზომის კატეგ. (1=მცირე, 2=საშუალო, 3=მსხვილი)', 1),
-          qStr('legalAddressRegion', 'Region_Code (11=თბილისი, 12=ბათუმი...)', '11'),
-          qStr('legalAddressCity', 'City_Code (11 47=ნაძალადევი...)', null),
-          qStr('head', 'ხელმძღვანელის სახელი', null),
-          qStr('partner', 'პარტნიორის სახელი', null),
+          qStr('activityCode', 'NACE კოდი', '86.10.0'),
+          qInt('size', 'ზომის კატეგ. (1=მცირე, 2=საშუალო, 3=მსხვილი)', 3),
+          qStr('legalAddressRegion', 'Region_Code — კოდი, არა სახელი (11=ქ.თბილისი)', '11'),
+          qStr('legalAddressCity', 'City_Code — კოდი, არა სახელი (11 47=ნაძალადევი)', '11 47'),
+          qStr('head', 'ხელმძღვანელის სახელი', 'გადაბაძე'),
+          qStr('partner', 'პარტნიორის სახელი', 'ავალიანი'),
         ],
       },
       {
@@ -60,24 +60,24 @@ const ENDPOINT_GROUPS = [
       {
         method: 'GET', path: '/api/documents/export', desc: 'Excel ექსპორტი',
         params: [
-          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი', null),
-          qStr('organizationName', 'სახელი (ნაწილობრივი ძიება)', 'ვიბლიანი'),
-          qInt('legalForm', 'სამართლებრივი ფორმის ID (30=იმ, 1=შპს)', 30),
+          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი', '200007143'),
+          qStr('organizationName', 'სახელი (ნაწილობრივი ძიება)', null),
+          qInt('legalForm', 'სამართლებრივი ფორმის ID (1=შპს, 30=იმ)', 1),
           qBool('isActive', 'მხოლოდ აქტიური', 'true'),
         ],
       },
       {
         method: 'GET', path: '/api/basic-info', desc: 'სუბიექტის ძირითადი ინფო',
         params: [
-          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი (ერთი კოდი)', null),
-          qStr('organizationName', 'სახელი (ნაწილობრივი ძიება)', 'ვიბლიანი'),
-          qInt('legalForm', 'სამართლებრივი ფორმის ID (30=იმ, 1=შპს)', 30),
-          qInt('ownershipType', 'საკუთრების ტიპის ID (11=კერძო ადგილობრივი)', null),
+          qStr('identificationNumber', 'საიდენტიფიკაციო კოდი (ერთი კოდი)', '200007143'),
+          qStr('organizationName', 'სახელი (ნაწილობრივი ძიება)', null),
+          qInt('legalForm', 'სამართლებრივი ფორმის ID (1=შპს, 30=იმ)', 1),
+          qInt('ownershipType', 'საკუთრების ტიპის ID (11=კერძო ადგილობრივი)', 11),
           qBool('isActive', 'მხოლოდ აქტიური', 'true'),
-          qStr('activityCode', 'NACE კოდი', null),
-          qStr('head', 'ხელმძღვანელის სახელი', null),
-          qStr('partner', 'პარტნიორის სახელი', null),
-          qStr('legalAddressRegion', 'Region_Code (11=თბილისი...)', '11'),
+          qStr('activityCode', 'NACE კოდი', '86.10.0'),
+          qStr('head', 'ხელმძღვანელის სახელი', 'გადაბაძე'),
+          qStr('partner', 'პარტნიორის სახელი', 'ავალიანი'),
+          qStr('legalAddressRegion', 'Region_Code — კოდი, არა სახელი (11=ქ.თბილისი)', '11'),
         ],
       },
       {
@@ -321,7 +321,7 @@ function PathDisplay({ path }) {
 function EndpointRow({ method, path, desc, params }) {
   const [open, setOpen] = useState(false);
   const examplePath = buildExample(path, params.filter(p => p.example !== ''));
-  const fullUrl = window.location.origin + examplePath;
+  const fullUrl = 'https://br-api.geostat.ge' + examplePath;
   const canRun = method === 'GET';
 
   return (
