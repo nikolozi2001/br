@@ -717,12 +717,40 @@ const STATUS_FILTERS = [
   { id: 'errors', label: '4xx+5xx' },
 ];
 
+function normalizePath(p) {
+  return p.split('?')[0].replace(/\/\d{5,}/g, '/:id');
+}
+
+function buildEndpointStats(logs) {
+  const map = {};
+  for (const l of logs) {
+    const key = `${l.method}\x00${normalizePath(l.path)}`;
+    if (!map[key]) map[key] = { method: l.method, path: normalizePath(l.path), count: 0, totalMs: 0, errors: 0 };
+    map[key].count++;
+    map[key].totalMs += l.duration;
+    if (l.status >= 400) map[key].errors++;
+  }
+  return Object.values(map).map(e => ({
+    ...e,
+    avgMs:     Math.round(e.totalMs / e.count),
+    errorRate: e.count > 0 ? ((e.errors / e.count) * 100).toFixed(1) : '0.0',
+  }));
+}
+
+const SORT_OPTS = [
+  { id: 'count',  label: 'ხშირი'  },
+  { id: 'avgMs',  label: 'ნელი'   },
+  { id: 'errors', label: 'შეცდომა' },
+];
+
 function PageLogs() {
-  const [logs, setLogs]             = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [autoR, setAutoR]           = useState(true);
-  const [statusFilter, setStatus]   = useState('all');
-  const [pathFilter, setPath]       = useState('');
+  const [logs, setLogs]           = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [autoR, setAutoR]         = useState(true);
+  const [tab, setTab]             = useState('stats');
+  const [statusFilter, setStatus] = useState('all');
+  const [pathFilter, setPath]     = useState('');
+  const [sortBy, setSortBy]       = useState('count');
 
   const load = useCallback(async () => {
     try {
@@ -739,6 +767,12 @@ function PageLogs() {
     return () => clearInterval(id);
   }, [load, autoR]);
 
+  const endpointStats = buildEndpointStats(logs)
+    .sort((a, b) => b[sortBy] - a[sortBy])
+    .slice(0, 20);
+
+  const maxCount = endpointStats[0]?.count || 1;
+
   const visible = logs.filter(l => {
     if (pathFilter && !l.path.toLowerCase().includes(pathFilter.toLowerCase())) return false;
     if (statusFilter === '2xx'    && (l.status < 200 || l.status >= 300)) return false;
@@ -750,62 +784,139 @@ function PageLogs() {
 
   return (
     <div className="space-y-3">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="text" placeholder="path ფილტრი..."
-          value={pathFilter} onChange={e => setPath(e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 w-52"
-        />
-        <div className="flex gap-1">
-          {STATUS_FILTERS.map(f => (
-            <button key={f.id} onClick={() => setStatus(f.id)}
-              className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer ${
-                statusFilter === f.id
-                  ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
-              }`}>
-              {f.label}
-            </button>
-          ))}
+      {/* Tab switcher */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 bg-slate-800 border border-slate-700 rounded-lg p-1">
+          <button onClick={() => setTab('stats')}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors cursor-pointer ${tab === 'stats' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`}>
+            📊 ტოპ Endpoints
+          </button>
+          <button onClick={() => setTab('logs')}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors cursor-pointer ${tab === 'logs' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`}>
+            📋 Logs ({logs.length})
+          </button>
         </div>
-        <span className="text-xs text-slate-500 ml-auto">{visible.length} / {logs.length}</span>
         <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
           <input type="checkbox" checked={autoR} onChange={e => setAutoR(e.target.checked)} className="rounded" />
           ავტო-განახლება
         </label>
       </div>
 
-      {loading ? <Loader /> : visible.length === 0 ? (
-        <p className="text-center text-slate-500 text-sm py-12">
-          {logs.length === 0 ? 'Request-ები ჯერ არ არის' : 'ფილტრი ცარიელია'}
-        </p>
-      ) : (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-700">
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-left w-20">Method</th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-left">Path</th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-center w-16">Status</th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-right w-24">Duration</th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-right w-24">დრო</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map(l => (
-                <tr key={l.id} className="border-b border-slate-700/40 last:border-0 hover:bg-slate-700/20">
-                  <td className="px-4 py-2.5">
-                    <span className={`text-xs font-bold font-mono px-2 py-0.5 rounded border ${METHOD_CLS[l.method] || METHOD_CLS.GET}`}>{l.method}</span>
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-slate-300 truncate max-w-xs">{l.path}</td>
-                  <td className={`px-4 py-2.5 text-center font-semibold text-xs tabular-nums ${statusColor(l.status)}`}>{l.status}</td>
-                  <td className="px-4 py-2.5 text-right text-xs text-slate-400 tabular-nums">{l.duration} ms</td>
-                  <td className="px-4 py-2.5 text-right text-xs text-slate-500">{fmtTime(l.timestamp)}</td>
-                </tr>
+      {/* ── Tab: ტოპ Endpoints ── */}
+      {tab === 'stats' && (
+        loading ? <Loader /> : logs.length === 0 ? (
+          <p className="text-center text-slate-500 text-sm py-12">Request-ები ჯერ არ არის</p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex gap-1">
+              {SORT_OPTS.map(o => (
+                <button key={o.id} onClick={() => setSortBy(o.id)}
+                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                    sortBy === o.id
+                      ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}>
+                  {o.label === 'ხშირი' ? '🔢' : o.label === 'ნელი' ? '⏱' : '⚠'} {o.label}
+                </button>
               ))}
-            </tbody>
-          </table>
+              <span className="text-xs text-slate-600 self-center ml-2">{endpointStats.length} unique endpoint</span>
+            </div>
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-900/40">
+                    <th className="px-3 py-2.5 text-left text-slate-500 font-semibold uppercase w-16">Method</th>
+                    <th className="px-3 py-2.5 text-left text-slate-500 font-semibold uppercase">Path</th>
+                    <th className="px-3 py-2.5 text-right text-slate-500 font-semibold uppercase w-20">მოთხოვნა</th>
+                    <th className="px-3 py-2.5 text-right text-slate-500 font-semibold uppercase w-24">Avg ms</th>
+                    <th className="px-3 py-2.5 text-right text-slate-500 font-semibold uppercase w-20">შეცდ.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {endpointStats.map((e, i) => (
+                    <tr key={i} className="border-b border-slate-700/40 last:border-0 hover:bg-slate-700/20">
+                      <td className="px-3 py-2">
+                        <span className={`font-bold font-mono px-1.5 py-0.5 rounded border ${METHOD_CLS[e.method] || METHOD_CLS.GET}`}>{e.method}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="font-mono text-slate-300 truncate max-w-xs">{e.path}</div>
+                        <div className="mt-1 h-1 rounded-full bg-slate-700 overflow-hidden">
+                          <div className="h-1 rounded-full bg-blue-500/60" style={{ width: `${(e.count / maxCount) * 100}%` }} />
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-slate-200 font-semibold">{e.count.toLocaleString()}</td>
+                      <td className={`px-3 py-2 text-right tabular-nums font-semibold ${e.avgMs > 2000 ? 'text-red-400' : e.avgMs > 500 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {e.avgMs.toLocaleString()}
+                      </td>
+                      <td className={`px-3 py-2 text-right tabular-nums ${e.errors > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                        {e.errors > 0 ? `${e.errors} (${e.errorRate}%)` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* ── Tab: Logs ── */}
+      {tab === 'logs' && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text" placeholder="path ფილტრი..."
+              value={pathFilter} onChange={e => setPath(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 w-48"
+            />
+            <div className="flex gap-1">
+              {STATUS_FILTERS.map(f => (
+                <button key={f.id} onClick={() => setStatus(f.id)}
+                  className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                    statusFilter === f.id
+                      ? 'bg-blue-600/30 border-blue-500/50 text-blue-300'
+                      : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-slate-500 ml-auto">{visible.length} / {logs.length}</span>
+          </div>
+          {loading ? <Loader /> : visible.length === 0 ? (
+            <p className="text-center text-slate-500 text-sm py-12">
+              {logs.length === 0 ? 'Request-ები ჯერ არ არის' : 'ფილტრი ცარიელია'}
+            </p>
+          ) : (
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase text-left w-16">Method</th>
+                    <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase text-left">Path</th>
+                    <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase text-center w-14">Status</th>
+                    <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase text-left w-28 hidden md:table-cell">IP</th>
+                    <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase text-right w-20">ms</th>
+                    <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase text-right w-20">დრო</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map(l => (
+                    <tr key={l.id} className="border-b border-slate-700/40 last:border-0 hover:bg-slate-700/20">
+                      <td className="px-3 py-2">
+                        <span className={`text-xs font-bold font-mono px-1.5 py-0.5 rounded border ${METHOD_CLS[l.method] || METHOD_CLS.GET}`}>{l.method}</span>
+                      </td>
+                      <td className="px-3 py-2 font-mono text-xs text-slate-300 truncate max-w-[200px]">{l.path}</td>
+                      <td className={`px-3 py-2 text-center font-semibold text-xs tabular-nums ${statusColor(l.status)}`}>{l.status}</td>
+                      <td className="px-3 py-2 text-xs text-slate-500 font-mono hidden md:table-cell">{l.ip || '—'}</td>
+                      <td className="px-3 py-2 text-right text-xs text-slate-400 tabular-nums">{l.duration}</td>
+                      <td className="px-3 py-2 text-right text-xs text-slate-500">{fmtTime(l.timestamp)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>
