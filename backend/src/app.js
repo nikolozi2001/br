@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -48,6 +49,7 @@ const fullNameWebRouter = require('./routes/fullName_web');
 const legalUnitWebRouter = require('./routes/legal_unit_web');
 const gisSearchRouter = require('./routes/gis_search');
 const basicInfoRouter = require('./routes/basic_info');
+const { getDashboardStats } = require('./routes/dashboard');
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
@@ -87,6 +89,12 @@ app.use('/api/full-name-web', fullNameWebRouter);
 app.use('/api/legal-unit-web', legalUnitWebRouter);
 app.use('/api/gis-search', gisSearchRouter);
 app.use('/api/basic-info', basicInfoRouter);
+const dashboardBuild = path.join(__dirname, '../public/dashboard-build');
+app.use('/dashboard-build', express.static(dashboardBuild));
+app.get('/admin/dashboard', (req, res) => {
+  res.sendFile('index.html', { root: dashboardBuild });
+});
+app.get('/admin/dashboard/stats', getDashboardStats);
 
 // Example API endpoint
 app.get('/api/test', async (req, res) => {

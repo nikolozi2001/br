@@ -3,7 +3,23 @@
     "allow": [
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\nqachibaia\\\\Desktop\\\\br\\\\backend\\\\src\\\\\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName)",
       "PowerShell(netstat -ano)",
-      "Bash(xargs wc -l)"
+      "Bash(xargs wc -l)",
+      "mcp__filesystem__list_directory",
+      "mcp__filesystem__read_text_file",
+      "mcp__filesystem__directory_tree",
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s http://localhost:5001/api/test)",
+      "Bash(curl -s http://localhost:5001/admin/dashboard/stats)",
+      "Bash(curl -s http://localhost:5001/admin/dashboard)",
+      "Bash(node -e \"require\\('./src/routes/dashboard'\\)\")",
+      "Bash(node -e \"require\\('C:/Users/nqachibaia/Desktop/br/backend/src/routes/dashboard'\\)\")",
+      "Bash(node -e \"require\\('C:/Users/nqachibaia/Desktop/br/backend/src/app'\\)\")",
+      "Read(//c/Users/nqachibaia/Desktop/pcaxis-server/login-react/**)",
+      "Bash(grep -n \"login\" C:/Users/nqachibaia/Desktop/pcaxis-server/index.js | head -20)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5001/admin/dashboard)",
+      "Bash(node -e ' *)",
+      "PowerShell(Get-Process -Id 28556)",
+      "mcp__filesystem__read_multiple_files"
     ]
   }
 }
