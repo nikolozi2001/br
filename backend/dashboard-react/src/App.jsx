@@ -963,45 +963,12 @@ export default function App() {
     } finally { setSpin(false); }
   }, [applyData]);
 
-  // SSE with automatic fallback to polling if nginx buffers the stream
+  // Polling every 5 s (IISNode does not support SSE streaming)
   useEffect(() => {
-    let es = null;
-    let pollId = null;
-    let sseOk = false;
-
-    const startPolling = () => {
-      if (pollId) return;
-      load();
-      pollId = setInterval(load, 5000);
-    };
-
-    try {
-      es = new EventSource('/admin/dashboard/events');
-
-      const timeout = setTimeout(() => {
-        if (!sseOk) { es?.close(); startPolling(); }
-      }, 8000);
-
-      es.onmessage = (e) => {
-        sseOk = true;
-        clearTimeout(timeout);
-        try { applyData(JSON.parse(e.data)); } catch {}
-      };
-      es.onerror = () => {
-        clearTimeout(timeout);
-        es?.close();
-        setOnline(false);
-        startPolling();
-      };
-    } catch {
-      startPolling();
-    }
-
-    return () => {
-      es?.close();
-      if (pollId) clearInterval(pollId);
-    };
-  }, [applyData, load]);
+    load();
+    const id = setInterval(load, 5000);
+    return () => clearInterval(id);
+  }, [load]);
 
   function NavItem({ id, label, icon: Icon }) {
     const active = page === id;
@@ -1063,6 +1030,10 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-500 hidden sm:block">{ts && `განახლდა: ${ts}`}</span>
+            <span className="hidden sm:flex items-center gap-1.5 text-xs bg-slate-700/60 border border-slate-600/50 text-slate-400 px-2.5 py-1 rounded-full">
+              <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400' : 'bg-red-400'}`} />
+              🔄 Polling 5s
+            </span>
             <button onClick={load}
               className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
               <RefreshCw className={`w-3 h-3 ${spin ? 'animate-spin' : ''}`} />
