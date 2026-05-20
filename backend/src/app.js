@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const { requestLogger } = require('./utils/requestLogger');
+const { createRateLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -53,6 +54,10 @@ const legalUnitWebRouter = require('./routes/legal_unit_web');
 const gisSearchRouter = require('./routes/gis_search');
 const basicInfoRouter = require('./routes/basic_info');
 const { getDashboardStats, getDashboardEvents, getDashboardLogs, clearCache } = require('./routes/dashboard');
+
+// Rate limiter – applied to all /api/* routes only (50 req/min per IP)
+const apiLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 50 });
+app.use('/api/', apiLimiter);
 
 // Route middlewares
 app.use('/api/legal-forms', legalFormsRouter);
