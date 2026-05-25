@@ -165,7 +165,7 @@ router.get("/export", async (req, res) => {
         ${csvCol("a.Address2")} + ',' + ${csvCol("a.Activity_2_Code")} + ',' + ${csvCol("a.Activity_2_Name")} + ',' +
         ${csvCol("a.Head")} + ',' + ${csvCol("a.Partner")} + ',' + ${csvCol("a.mob")} + ',' +
         ${csvCol("a.Email")} + ',' + ${csvCol("a.web")} + ',' + ${csvCol("a.Ownership_Type")} + ',' +
-        ${csvCol("CASE WHEN a.ISActive = 1 THEN N'აქტიური' ELSE N'არааქტიური' END")} + ',' + ${csvCol("a.Zoma")} + ',' + ${csvDate("a.Init_Reg_date")} AS CsvLine
+        ${csvCol("CASE WHEN a.ISActive = 1 THEN N'აქტიური' ELSE N'არააქტიური' END")} + ',' + ${csvCol("a.Zoma")} + ',' + ${csvDate("a.Init_Reg_date")} AS CsvLine
       FROM [register].[dbo].[DocMain] a
       LEFT JOIN [register].[CL].[Legal_Forms] lf ON lf.ID = a.Legal_Form_ID
       ${whereClause}
