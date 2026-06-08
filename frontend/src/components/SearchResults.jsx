@@ -1,5 +1,5 @@
 import { translations } from "../translations/searchForm";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActiveFilterCheckbox } from "./common/ActiveFilterCheckbox";
 import "../styles/scrollbar.css";
@@ -19,13 +19,23 @@ const formatDate = (dateString) => {
   }
 };
 
-function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap }) {
+function SearchResults({
+  results,
+  pagination,
+  isEnglish,
+  formData,
+  legalFormsMap,
+  currentPage = 1,
+  itemsPerPage = 50,
+  sortConfig = { key: null, direction: "asc" },
+  isFetching = false,
+  onPageChange = () => {},
+  onItemsPerPageChange = () => {},
+  onSortChange = () => {},
+}) {
   const t = translations[isEnglish ? "en" : "ge"];
   const navigate = useNavigate();
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState(new Set());
-  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Update URL when only identificationNumber is searched
   useEffect(() => {
@@ -73,35 +83,14 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
     }
   }, [formData]);
 
-  const sortData = (data, config) => {
-    // Ensure data is an array
-    if (!Array.isArray(data)) return [];
-    if (!config.key) return data;
-
-    return [...data].sort((a, b) => {
-      let aVal = config.key.split(".").reduce((obj, key) => obj?.[key], a);
-      let bVal = config.key.split(".").reduce((obj, key) => obj?.[key], b);
-
-      if (aVal === null || aVal === undefined) aVal = "";
-      if (bVal === null || bVal === undefined) bVal = "";
-
-      if (typeof aVal === "string") aVal = aVal.toLowerCase();
-      if (typeof bVal === "string") bVal = bVal.toLowerCase();
-
-      if (aVal < bVal) return config.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return config.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  };
-
   const handleSort = (key) => {
-    setSortConfig((prevConfig) => ({
+    onSortChange({
       key,
       direction:
-        prevConfig.key === key && prevConfig.direction === "asc"
+        sortConfig.key === key && sortConfig.direction === "asc"
           ? "desc"
           : "asc",
-    }));
+    });
   };
 
   const handleRowSelect = (id) => {
@@ -117,10 +106,10 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
   };
 
   const handleSelectAll = () => {
-    if (selectedRows.size === sortedResults.length) {
+    if (selectedRows.size === rows.length) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(sortedResults.map((r) => r.id)));
+      setSelectedRows(new Set(rows.map((r) => r.id)));
     }
   };
 
@@ -129,17 +118,9 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
     navigate(`/search-history?id=${identificationNumber}`);
   };
 
-  const sortedResults = useMemo(
-    () => sortData(results, sortConfig),
-    [results, sortConfig]
-  );
-
-  // Pagination
-  const totalPages = Math.ceil(sortedResults.length / itemsPerPage);
-  const paginatedResults = sortedResults.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Server-side pagination & sorting: `results` is already the current page, sorted.
+  const rows = Array.isArray(results) ? results : [];
+  const totalPages = pagination?.totalPages || 1;
 
   const getPageNumbers = () => {
     const pages = [];
@@ -197,14 +178,14 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
   return (
     <div className="w-full mt-4 bg-white rounded-lg shadow-sm border border-gray-100">
       {/* Table Container */}
-      <div className="relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+      <div className={`relative overflow-x-auto overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 transition-opacity ${isFetching ? "opacity-50 pointer-events-none" : ""}`}>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="sticky top-0 z-20 bg-[#0080BE] shadow-sm">
             <tr>
               <th className="sticky top-0 left-0 z-30 px-4 py-3 bg-[#0080BE] hover:bg-[#006698]">
                 <input
                   type="checkbox"
-                  checked={selectedRows.size === paginatedResults.length}
+                  checked={rows.length > 0 && selectedRows.size === rows.length}
                   onChange={handleSelectAll}
                   className="w-4 h-4 rounded border-gray-300 text-[#0080BE] focus:ring-[#0080BE] transition-colors"
                 />
@@ -318,7 +299,7 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedResults.map((result) => (
+            {rows.map((result) => (
               
               <tr
                 key={result.id}
@@ -402,8 +383,7 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
+                  onItemsPerPageChange(Number(e.target.value));
                 }}
                 className="appearance-none bg-white pl-3 pr-10 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 font-medium hover:border-[#0080BE] focus:outline-none focus:border-[#0080BE] focus:ring-2 focus:ring-[#0080BE]/20 transition-all"
               >
@@ -450,8 +430,8 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
                 aria-label="Pagination"
               >
                 <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
+                  onClick={() => onPageChange(1)}
+                  disabled={currentPage === 1 || isFetching}
                   className="relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
@@ -469,8 +449,8 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
                   </svg>
                 </button>
                 <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1 || isFetching}
                   className="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
@@ -501,7 +481,8 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
                   ) : (
                     <button
                       key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
+                      onClick={() => onPageChange(pageNum)}
+                      disabled={isFetching}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors
                         ${
                           currentPage === pageNum
@@ -518,10 +499,8 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
                 )}
 
                 <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
+                  onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages || isFetching}
                   className="relative inline-flex items-center px-3 py-2 border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >
@@ -539,8 +518,8 @@ function SearchResults({ results, pagination, isEnglish, formData, legalFormsMap
                   </svg>
                 </button>
                 <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
+                  onClick={() => onPageChange(totalPages)}
+                  disabled={currentPage === totalPages || isFetching}
                   className="relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50 
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-500 hover:text-gray-700"
                 >

@@ -13,6 +13,26 @@ const LETTER_TO_ROOT_ID = {
 
 const SIZE_MAP = { "1": "მცირე", "2": "საშუალო", "3": "მსხვილი" };
 
+// Whitelist of sortable result-fields → DB columns (prevents SQL injection)
+const SORT_COLUMN_MAP = {
+  identificationNumber:   "Legal_Code",
+  personalNumber:         "Personal_no",
+  abbreviation:           "Abbreviation",
+  name:                   "Full_Name",
+  "legalAddress.region":  "Region_name",
+  "legalAddress.city":    "City_name",
+  "legalAddress.address": "Address",
+  "factualAddress.region":  "Region_name2",
+  "factualAddress.city":    "City_name2",
+  "factualAddress.address": "Address2",
+  "activities.0.name":    "Activity_2_Name",
+  head:                   "Head",
+  ownershipType:          "Ownership_Type",
+  isActive:               "ISActive",
+  size:                   "Zoma",
+  Init_Reg_date:          "Init_Reg_date",
+};
+
 // CSV helpers
 const csvCol  = (col) => `ISNULL('"' + REPLACE(CAST(${col} AS NVARCHAR(MAX)), '"', '""') + '"', '""')`;
 const csvDate = (col) => `ISNULL('"' + CONVERT(NVARCHAR(10), ${col}, 120) + '"', '""')`;
@@ -71,9 +91,18 @@ function buildWhereClause(query, request) {
     where += " AND Ownership_Type_ID = @ownType";
     request.input("ownType", sql.Int, parseInt(ownershipType, 10));
   }
-  if (size && SIZE_MAP[size]) {
-    where += " AND Zoma = @sizeT";
-    request.input("sizeT", sql.NVarChar, SIZE_MAP[size]);
+  if (size) {
+    // ?size=1&size=2 (array), ?size=1,2 (comma), ?size=1 (single) — ყველა ვარიანტი
+    const sizes = (Array.isArray(size) ? size : String(size).split(","))
+      .map(s => String(s).trim())
+      .filter(s => SIZE_MAP[s]);
+    if (sizes.length) {
+      const params = sizes.map((s, i) => {
+        request.input(`sizeT${i}`, sql.NVarChar, SIZE_MAP[s]);
+        return `@sizeT${i}`;
+      }).join(",");
+      where += ` AND Zoma IN (${params})`;
+    }
   }
   if (isActive) {
     where += " AND ISActive = @isAct";
@@ -132,10 +161,17 @@ router.get("/", async (req, res) => {
     );
     const totalRecords = countResult.recordset[0].total;
 
+    // Sorting — column is whitelisted, direction is constrained; Legal_Code is the stable tiebreaker
+    const sortColumn = SORT_COLUMN_MAP[req.query.sortBy] || "Legal_Code";
+    const sortDir    = String(req.query.sortDir).toLowerCase() === "desc" ? "DESC" : "ASC";
+    const orderBy    = sortColumn === "Legal_Code"
+      ? `a.[Legal_Code] ${sortDir}`
+      : `a.[${sortColumn}] ${sortDir}, a.[Legal_Code] ASC`;
+
     request.input("offset", sql.Int, offset);
     request.input("limit",  sql.Int, limitInt);
     const result = await request.query(
-      `SELECT a.* FROM [register].[dbo].[DocMain] a ${whereClause} ORDER BY a.Legal_Code OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`
+      `SELECT a.* FROM [register].[dbo].[DocMain] a ${whereClause} ORDER BY ${orderBy} OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`
     );
 
     res.json({

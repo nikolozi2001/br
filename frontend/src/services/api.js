@@ -244,8 +244,10 @@ const buildSearchParams = (searchParams) => {
   }
 
   if (Array.isArray(searchParams.businessForm) && searchParams.businessForm.length > 0) {
-    const id = parseInt(searchParams.businessForm[0]?.value, 10);
-    if (!isNaN(id)) queryParams.append("size", id);
+    searchParams.businessForm.forEach((bf) => {
+      const id = parseInt(bf?.value, 10);
+      if (!isNaN(id)) queryParams.append("size", id);
+    });
   }
 
   if (Array.isArray(searchParams.activities) && searchParams.activities.length > 0) {
@@ -281,6 +283,8 @@ export const fetchDocuments = async (searchParams, lang = "ge", regionOptions = 
     queryParams.append("lang", lang);
     if (options.page)  queryParams.append("page",  options.page);
     if (options.limit) queryParams.append("limit", options.limit);
+    if (options.sortBy)  queryParams.append("sortBy",  options.sortBy);
+    if (options.sortDir) queryParams.append("sortDir", options.sortDir);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 300000);

@@ -28,7 +28,14 @@
       "Bash(curl -s \"http://localhost:5001/api/documents?page=1&limit=20&identificationNumber=200007143&legalForm=1&ownershipType=11&isActive=true&activityCode=86.10.0&size=3&legalAddressRegion=11&legalAddressCity=11%2047&head=%E1%83%92%E1%83%90%E1%83%93%E1%83%90%E1%83%91%E1%83%90%E1%83%AB%E1%83%94&partner=%E1%83%90%E1%83%95%E1%83%90%E1%83%9A%E1%83%98%E1%83%90%E1%83%9C%E1%83%98\")",
       "Bash(python -m json.tool --no-ensure-ascii)",
       "Bash(curl -s \"http://localhost:5001/admin/dashboard/stats\")",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(curl -s \"http://localhost:5173/api/documents?isActive=true&size=2&size=1&lang=ge&page=1&limit=5&sortBy=size&sortDir=desc\")",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);console.log\\('total:',j.pagination&&j.pagination.total,'totalPages:',j.pagination&&j.pagination.totalPages\\);console.log\\('Zoma of first rows:',\\(j.data||[]\\).map\\(r=>r.Zoma\\)\\);}catch\\(e\\){console.log\\('RAW:',d.slice\\(0,300\\)\\)}}\\)\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "Bash(curl -s -o /dev/null -w \"root status: %{http_code}\\\\n\" \"http://localhost:5173/\")",
+      "Bash(curl -s \"http://localhost:5173/\")",
+      "mcp__Claude_in_Chrome__read_page"
     ]
   }
 }

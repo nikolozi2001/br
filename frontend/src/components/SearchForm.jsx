@@ -30,6 +30,10 @@ function SearchForm({ isEnglish }) {
   const [pagination, setPagination] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false); // page/sort changes (table stays visible)
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [abortController, setAbortController] = useState(null);
   const [isStopped, setIsStopped] = useState(false);
   const [legalFormsMap, setLegalFormsMap] = useState({});
@@ -47,7 +51,6 @@ function SearchForm({ isEnglish }) {
     legalMunicipalityOptions,
     handleInputChange,
     handleReset,
-    handleSubmit,
   } = useSearchForm(isEnglish);
 
   // Fetch legal forms for mapping
@@ -132,8 +135,17 @@ useEffect(() => {
       setPagination(null);
       setIsLoading(true);
 
+      setPage(1);
+      setSortConfig({ key: null, direction: "asc" });
+
       try {
-        const response = await handleSubmit(controller.signal);
+        const response = await fetchDocuments(
+          formData,
+          isEnglish ? "en" : "ge",
+          regionOptions,
+          controller.signal,
+          { page: 1, limit: pageSize }
+        );
 
         if (response && !controller.signal.aborted) {
           setSearchResults(response.results || []);
@@ -180,6 +192,9 @@ useEffect(() => {
           setFormData(savedFormData);
           setSearchResults(results);
           setPagination(savedPagination);
+          setLastSearchParams(savedFormData);
+          if (savedPagination?.page)  setPage(savedPagination.page);
+          if (savedPagination?.limit) setPageSize(savedPagination.limit);
           setShowResults(true);
         } catch { /* ignore JSON parse errors */ }
         sessionStorage.removeItem('br_search_state');
@@ -199,6 +214,56 @@ useEffect(() => {
     window.history.replaceState({}, "", url.toString());
   };
 
+  // Fetch a specific page/sort from the server for already-submitted search params.
+  // Keeps the table visible (uses isFetching, not isLoading) — used by pagination & sorting.
+  const fetchPage = async (params, nextPage, nextPageSize, nextSort) => {
+    if (!params) return;
+    const controller = new AbortController();
+    setAbortController(controller);
+    setIsFetching(true);
+    try {
+      const response = await fetchDocuments(
+        params,
+        isEnglish ? "en" : "ge",
+        regionOptions,
+        controller.signal,
+        {
+          page: nextPage,
+          limit: nextPageSize,
+          sortBy: nextSort.key || undefined,
+          sortDir: nextSort.direction,
+        }
+      );
+      if (response && !controller.signal.aborted) {
+        setSearchResults(response.results || []);
+        setPagination(response.pagination || null);
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") console.error("Pagination fetch error:", error);
+    } finally {
+      setIsFetching(false);
+      setAbortController(null);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage === page || isFetching) return;
+    setPage(newPage);
+    fetchPage(lastSearchParams, newPage, pageSize, sortConfig);
+  };
+
+  const handleItemsPerPageChange = (newSize) => {
+    setPageSize(newSize);
+    setPage(1);
+    fetchPage(lastSearchParams, 1, newSize, sortConfig);
+  };
+
+  const handleSortChange = (newSort) => {
+    setSortConfig(newSort);
+    setPage(1);
+    fetchPage(lastSearchParams, 1, pageSize, newSort);
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
 
@@ -209,12 +274,23 @@ useEffect(() => {
     setPagination(null);
     setIsLoading(true);
 
+    // Fresh search always starts at page 1 with the current page size and no sort
+    const freshSort = { key: null, direction: "asc" };
+    setPage(1);
+    setSortConfig(freshSort);
+
     const controller = new AbortController();
     setAbortController(controller);
 
     try {
       // We wrap this in a try/catch to catch any unexpected logic errors
-      const response = await handleSubmit(controller.signal);
+      const response = await fetchDocuments(
+        formData,
+        isEnglish ? "en" : "ge",
+        regionOptions,
+        controller.signal,
+        { page: 1, limit: pageSize }
+      );
 
       // If we have a response and it wasn't aborted
       if (response && !controller.signal?.aborted) {
@@ -236,7 +312,7 @@ useEffect(() => {
       }
     } finally {
       // THIS IS THE KEY: This always runs regardless of success or crash
-      setIsLoading(false); 
+      setIsLoading(false);
       setAbortController(null);
     }
 };
@@ -1198,6 +1274,13 @@ useEffect(() => {
                               formData={formData}
                               handleInputChange={handleInputChange}
                               legalFormsMap={legalFormsMap}
+                              currentPage={page}
+                              itemsPerPage={pageSize}
+                              sortConfig={sortConfig}
+                              isFetching={isFetching}
+                              onPageChange={handlePageChange}
+                              onItemsPerPageChange={handleItemsPerPageChange}
+                              onSortChange={handleSortChange}
                             />
                           </Suspense>
                         )}
