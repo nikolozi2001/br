@@ -706,9 +706,10 @@ const Charts = ({ isEnglish }) => {
           return fallbackDownload(format, chartContainer, title);
         }
 
-        // Create clean filename
+        // Create clean filename (keep unicode letters/numbers, e.g. Georgian)
         let cleanFileName = title
-          .replace(/[^\w\s-_.]/g, "")
+          .replace(/[^\p{L}\p{N}\s\-_.]/gu, "")
+          .trim()
           .replace(/\s+/g, "_")
           .toLowerCase();
 
@@ -716,8 +717,55 @@ const Charts = ({ isEnglish }) => {
           cleanFileName = `chart_${Date.now()}`;
         }
 
-        // Use fallback method for all formats since ECharts export is unreliable
-        return fallbackDownload(format, chartContainer, title);
+        // SVG export requires the SVG renderer, which our charts don't use
+        // (default canvas renderer). Render the same option through a temporary
+        // off-screen SVG-renderer instance to produce a real SVG file.
+        if (format === "svg") {
+          const { width, height } = echartsInstance.getDom().getBoundingClientRect();
+          const tempDom = document.createElement("div");
+          tempDom.style.cssText = `position:absolute;left:-9999px;top:-9999px;width:${
+            width || 800
+          }px;height:${height || 400}px;`;
+          document.body.appendChild(tempDom);
+          const svgInstance = echarts.init(tempDom, null, {
+            renderer: "svg",
+            width: width || 800,
+            height: height || 400,
+          });
+          svgInstance.setOption(echartsInstance.getOption());
+          const svgData = svgInstance.renderToSVGString();
+          svgInstance.dispose();
+          document.body.removeChild(tempDom);
+
+          const svgBlob = new Blob([svgData], {
+            type: "image/svg+xml;charset=utf-8",
+          });
+          const url = URL.createObjectURL(svgBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${cleanFileName}.svg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          return;
+        }
+
+        // Use ECharts' native export for raster formats (PNG/JPEG). This works
+        // with the default canvas renderer, unlike the SVG-based fallback.
+        const dataURL = echartsInstance.getDataURL({
+          type: format === "jpeg" ? "jpeg" : "png",
+          pixelRatio: Math.max(window.devicePixelRatio || 1, 2),
+          backgroundColor: "#fff",
+        });
+
+        const a = document.createElement("a");
+        a.href = dataURL;
+        a.download = `${cleanFileName}.${format === "jpeg" ? "jpg" : "png"}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
       } catch (error) {
         console.error("Download failed:", error);
         return fallbackDownload(format, chartContainer, title);
