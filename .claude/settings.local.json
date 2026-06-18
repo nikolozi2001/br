@@ -35,7 +35,9 @@
       "mcp__Claude_in_Chrome__navigate",
       "Bash(curl -s -o /dev/null -w \"root status: %{http_code}\\\\n\" \"http://localhost:5173/\")",
       "Bash(curl -s \"http://localhost:5173/\")",
-      "mcp__Claude_in_Chrome__read_page"
+      "mcp__Claude_in_Chrome__read_page",
+      "Skill(fewer-permission-prompts)",
+      "Skill(fewer-permission-prompts:*)"
     ]
   }
 }

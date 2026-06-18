@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Download, ChevronDown, Maximize2, ListRestart } from "lucide-react";
+import { useReactToPrint } from "react-to-print";
 
 const ChartContainer = ({
   title,
@@ -12,18 +13,31 @@ const ChartContainer = ({
   activeDropdown,
   toggleDropdown,
   setActiveDropdown,
-  handlePrintChart,
   downloadChartFromECharts,
 }) => {
+  // 1. ვქმნით ლოკალურ რეფერენსს კონკრეტული ჩარტის კონტეინერისთვის
+  const chartComponentRef = useRef(null);
+
+  // 2. ვაწყობთ ბეჭდვის ფუნქციას react-to-print ჰუკის გამოყენებით
+  const handlePrint = useReactToPrint({
+    contentRef: chartComponentRef,
+    documentTitle: title || "Chart",
+  });
+
   // Show ListRestart button only for charts 2, 3, 4, and 6 (using 1-based indexing)
   const showListRestart = [1, 2, 3, 5].includes(chartIndex);
 
   return (
     <div
       className="chart-container"
-      ref={(el) =>
-        el && (window.chartRefs = { ...window.chartRefs, [chartIndex]: el })
-      }
+      ref={(el) => {
+        // ვინახავთ როგორც ლოკალურ რეფში react-to-print-ისთვის
+        chartComponentRef.current = el;
+        // ვინახავთ გლობალურ ობიექტშიც, თუ ეს პროექტის სხვა ნაწილს სჭირდება
+        if (el) {
+          window.chartRefs = { ...window.chartRefs, [chartIndex]: el };
+        }
+      }}
     >
       <div className="chart-header">
         <h3 className="chart-title">{title}</h3>
@@ -59,12 +73,12 @@ const ChartContainer = ({
               <div className="dropdown-menu">
                 <button
                   className="dropdown-item"
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
-                    const container = e.target.closest(".chart-container");
                     setActiveDropdown(null);
+                    // 3. ვიძახებთ react-to-print-ის ბეჭდვის ფუნქციას
                     setTimeout(() => {
-                      handlePrintChart(container, title);
+                      handlePrint();
                     }, 100);
                   }}
                 >
@@ -95,7 +109,7 @@ const ChartContainer = ({
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest(".chart-container");
+                    const container = chartComponentRef.current;
                     setActiveDropdown(null);
                     setTimeout(async () => {
                       try {
@@ -148,7 +162,7 @@ const ChartContainer = ({
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest(".chart-container");
+                    const container = chartComponentRef.current;
                     setActiveDropdown(null);
                     setTimeout(async () => {
                       try {
@@ -209,7 +223,7 @@ const ChartContainer = ({
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest(".chart-container");
+                    const container = chartComponentRef.current;
                     setActiveDropdown(null);
                     setTimeout(async () => {
                       try {
@@ -252,7 +266,7 @@ const ChartContainer = ({
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
-                      d="M0.4769 7.29639H12.2778C12.5403 7.29639 12.7547 7.51084 12.7547 7.77329V12.1025C12.7547 12.365 12.5403 12.5794 12.2778 12.5794H0.4769C0.214454 12.5794 0 12.365 0 12.1025V7.77329C0 7.51084 0.214488 7.29639 0.4769 7.29639Z"
+                      d="M0.4769 7.29639H12.2778C12.5403 7.29639 12.7547 7.51084 12.7547 7.77329V12.1025C12.7547 12.365 12.5403 12.5794 12.2778 12.5794H0.4769 hazardsC0.214454 12.5794 0 12.365 0 12.1025V7.77329C0 7.51084 0.214488 7.29639 0.4769 7.29639Z"
                       fill="#B71D21"
                     />
                   </svg>
@@ -262,7 +276,7 @@ const ChartContainer = ({
                   className="dropdown-item"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const container = e.target.closest(".chart-container");
+                    const container = chartComponentRef.current;
                     setActiveDropdown(null);
                     setTimeout(async () => {
                       try {

@@ -330,25 +330,6 @@
   }
 }
 
-// Print styles
-@media print {
-  .charts-grid {
-    .chart-container {
-      box-shadow: none;
-      border: 1px solid #e2e8f0;
-      break-inside: avoid;
-      margin-bottom: 15px;
-      
-      .chart-header {
-        background: #f8fafc !important;
-        
-        .chart-actions {
-          display: none;
-        }
-      }
-    }
-  }
-}
 
 // Maximize Modal Styles
 .maximize-modal-overlay {
@@ -695,21 +676,64 @@
   }
 }
 
-// Print optimizations for activity chart
+
 @media print {
-  .activity-chart-container {
-    .chart-insights {
-      background: white !important;
-      border-top: 1px solid #e5e7eb !important;
-    }
-    
-    .recharts-wrapper {
-      page-break-inside: avoid;
-    }
+  /* 1. ვაიძულებთ ბრაუზერს შეინარჩუნოს ორიგინალი ფერები */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  
-  .activity-chart-loading,
-  .chart-error-state {
-    background: white !important;
+
+  /* 2. ვმალავთ სრულიად ყველაფერს გვერდზე, გარდა იმ ჩარტისა, რომელსაც ვბეჭდავთ */
+  body * {
+    visibility: hidden;
+  }
+
+  /* 3. ვხდით აქტიურ ჩარტს და მის შვილობილ ელემენტებს ხილვადს */
+  .chart-container,
+  .chart-container * {
+    visibility: visible;
+  }
+
+  /* 4. ვათავსებთ ჩარტს გვერდის დასაწყისში სუფთად */
+  .chart-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 24px !important;
+    background-color: #ffffff !important;
+  }
+
+  /* 5. ვმალავთ ბეჭდვის, ჩამოტვირთვისა და გადიდების ღილაკებს, რადგან ფურცელზე ისინი არ გვჭირდება */
+  .chart-actions {
+    display: none !important;
+  }
+
+  /* 6. ვასწორებთ ჰედერის სტრუქტურას, რომ სათაური ლამაზად დაჯდეს */
+  .chart-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 20px !important;
+    border-bottom: 2px solid #edf2f7 !important;
+    padding-bottom: 10px !important;
+  }
+
+  .chart-title {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #2d3748 !important;
+  }
+
+  /* 7. გრაფიკის კონტენტის კონტეინერს ვაძლევთ სრულ სიგანეს */
+  .chart-content {
+    width: 100% !important;
+    height: auto !important;
+    margin-top: 15px !important;
   }
 }

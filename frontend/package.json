@@ -26,6 +26,7 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.6.3",
     "react-select": "^5.10.1",
+    "react-to-print": "^3.3.0",
     "sass": "^1.89.2",
     "tailwindcss": "^4.1.10",
     "xlsx": "^0.18.5"
