@@ -751,6 +751,71 @@ const Charts = ({ isEnglish }) => {
           return;
         }
 
+        // PDF export: render the chart (with title) onto a canvas, then embed
+        // it into an A4 PDF via jsPDF. Drawing the title on canvas keeps proper
+        // Georgian font rendering instead of relying on jsPDF fonts.
+        if (format === "pdf") {
+          const chartImgUrl = echartsInstance.getDataURL({
+            type: "png",
+            pixelRatio: Math.max(window.devicePixelRatio || 1, 2),
+            backgroundColor: "#fff",
+          });
+
+          const { jsPDF } = await import("jspdf");
+          const img = new Image();
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = chartImgUrl;
+          });
+
+          const titleHeight = 60;
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          canvas.width = img.width;
+          canvas.height = img.height + titleHeight;
+
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.fillStyle = "#000";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const fontSize = Math.min(canvas.width * 0.03, 24);
+          ctx.font = `bold ${fontSize}px "Noto Sans Georgian", "BPG Nino Mtavruli", "Sylfaen", Arial, sans-serif`;
+          ctx.fillText(title || "", canvas.width / 2, titleHeight / 2);
+          ctx.drawImage(img, 0, titleHeight);
+
+          const ratio = canvas.width / canvas.height;
+          const orientation = ratio > 1 ? "landscape" : "portrait";
+          const pdf = new jsPDF({ orientation, unit: "mm", format: "a4" });
+          const a4Width = orientation === "landscape" ? 297 : 210;
+          const a4Height = orientation === "landscape" ? 210 : 297;
+          const margin = 10;
+          const maxW = a4Width - margin * 2;
+          const maxH = a4Height - margin * 2;
+
+          let imgW, imgH;
+          if (ratio > maxW / maxH) {
+            imgW = maxW;
+            imgH = maxW / ratio;
+          } else {
+            imgH = maxH;
+            imgW = maxH * ratio;
+          }
+
+          pdf.addImage(
+            canvas.toDataURL("image/png"),
+            "PNG",
+            (a4Width - imgW) / 2,
+            (a4Height - imgH) / 2,
+            imgW,
+            imgH
+          );
+          pdf.save(`${cleanFileName}.pdf`);
+          return;
+        }
+
         // Use ECharts' native export for raster formats (PNG/JPEG). This works
         // with the default canvas renderer, unlike the SVG-based fallback.
         const dataURL = echartsInstance.getDataURL({
