@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "ბიზნეს რეგისტრი",
+    "slug": "geostat-business-register",
+    "scheme": "geostat-br",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ge.geostat.businessregister"
+    },
+    "android": {
+      "package": "ge.geostat.businessregister",
+      "adaptiveIcon": {
+        "backgroundColor": "#0080BE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0080BE",
+          "imageWidth": 180
+        }
+      ]
+    ]
+  }
+}

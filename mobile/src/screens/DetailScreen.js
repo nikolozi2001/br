@@ -1,0 +1,386 @@
+import React, { useEffect, useState } from 'react';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
+
+import Icon from '../components/Icon';
+import SubjectShareSheet from '../components/SubjectShareSheet';
+import { Card, DataRow, EmptyState, HeroGradient, RoundButton, SectionLabel, Skeleton } from '../components/primitives';
+import { fetchSubjectDetail, formatDate } from '../api/registry';
+import { getStrings } from '../i18n/strings';
+import { useAppStore } from '../state/AppStore';
+import { useTheme } from '../theme/ThemeProvider';
+
+/** Flat map placeholder — matches the prototype's stylised grid + pin. */
+function MapPreview({ onPress, addressLine, mapLabel }) {
+  const { colors, fs, radius } = useTheme();
+  return (
+    <Card style={{ overflow: 'hidden' }} radius={radius.xl}>
+      <Pressable onPress={onPress} style={{ height: 150, backgroundColor: colors.mapBg }}>
+        <View style={{ position: 'absolute', top: '38%', left: '20%', width: '46%', height: 12, borderRadius: 3, backgroundColor: colors.mapRoad, transform: [{ rotate: '-18deg' }] }} />
+        <View style={{ position: 'absolute', top: '60%', left: '8%', width: '70%', height: 12, borderRadius: 3, backgroundColor: colors.mapRoad, transform: [{ rotate: '6deg' }] }} />
+        <View style={{ position: 'absolute', top: 0, bottom: 0, left: '44%', width: 14, backgroundColor: colors.tint.blue10 }} />
+        <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -15, marginTop: -30, alignItems: 'center' }}>
+          <Icon name="pin" size={30} color={colors.red} filled width={1.5} />
+        </View>
+        <View
+          style={{
+            position: 'absolute',
+            right: 10,
+            bottom: 10,
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            borderWidth: 1,
+            borderColor: colors.line2,
+            borderRadius: 8,
+            paddingVertical: 6,
+            paddingHorizontal: 11,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          <Icon name="external" size={13} color={colors.brand} />
+          <Text style={{ fontSize: fs(12), fontWeight: '600', color: colors.brand }}>{mapLabel}</Text>
+        </View>
+      </Pressable>
+      <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 15 }}>
+        <Icon name="pin" size={17} color={colors.faint} />
+        <Text style={{ flex: 1, fontSize: fs(13.5), color: colors.ink, lineHeight: fs(18) }}>{addressLine}</Text>
+      </Pressable>
+    </Card>
+  );
+}
+
+/** Single-slice donut standing in for the partner capital breakdown. */
+function CapitalDonut({ label, percent }) {
+  const { colors, fonts, fs } = useTheme();
+  return (
+    <Card style={{ padding: 18, gap: 16, alignItems: 'center' }}>
+      <View style={{ width: 120, height: 120, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={120} height={120} viewBox="0 0 120 120">
+          <Circle cx={60} cy={60} r={60} fill={colors.brand} />
+          <Circle cx={60} cy={60} r={30} fill={colors.card} />
+        </Svg>
+        <View style={{ position: 'absolute' }}>
+          <Text style={{ fontFamily: fonts.heading, fontSize: fs(15), color: colors.brand }}>{percent}</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: colors.brand }} />
+        <Text style={{ fontSize: fs(13), color: colors.ink }}>{`${label} · ${percent}`}</Text>
+      </View>
+    </Card>
+  );
+}
+
+function ListCard({ children }) {
+  return <Card style={{ overflow: 'hidden' }}>{children}</Card>;
+}
+
+function DetailSkeleton() {
+  const { colors, radius } = useTheme();
+  return (
+    <View style={{ gap: 20 }}>
+      {[120, 140].map((w) => (
+        <View key={w} style={{ gap: 8 }}>
+          <Skeleton width={w} />
+          <Card style={{ padding: 15, gap: 13 }}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton width={80} tone="field" />
+                <Skeleton width={100} />
+              </View>
+            ))}
+          </Card>
+        </View>
+      ))}
+      <View style={{ height: 150, borderRadius: radius.xl, backgroundColor: colors.line }} />
+    </View>
+  );
+}
+
+export default function DetailScreen({ navigation, route }) {
+  const subject = route.params.subject;
+  const { colors, fonts, fs, lang } = useTheme();
+  const t = getStrings(lang);
+  const insets = useSafeAreaInsets();
+  const { isFavourite, toggleFavourite, restoreFavourite, showToast } = useAppStore();
+
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchSubjectDetail(subject.statId ?? subject.id, lang)
+      .then((data) => {
+        if (!cancelled) setDetail(data);
+      })
+      .catch(() => {
+        if (!cancelled) setDetail(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [subject.statId, subject.id, lang]);
+
+  const favourite = isFavourite(subject.id);
+
+  const onToggleFavourite = () => {
+    const added = toggleFavourite(subject);
+    if (added) {
+      showToast(t.favAdded);
+    } else {
+      showToast(t.favRemoved, () => restoreFavourite(subject), t.undo);
+    }
+  };
+
+  const openMap = () => {
+    if (subject.x && subject.y) {
+      const url = `https://maps.google.com/?q=${subject.x},${subject.y}`;
+      Linking.openURL(url).catch(() => showToast(t.openingMap));
+    } else {
+      showToast(t.openingMap);
+    }
+  };
+
+  const addressLine = [subject.addr, subject.region].filter(Boolean).join(', ');
+  const relatedPersons =
+    detail?.representatives?.length
+      ? detail.representatives
+      : subject.head
+        ? [{ person: subject.head, role: t.director, date: formatDate(subject.regDate) }]
+        : [];
+  const partners = detail?.partners?.length ? detail.partners : [];
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <HeroGradient>
+        <View
+          style={{
+            paddingTop: insets.top + 12,
+            paddingHorizontal: 16,
+            paddingBottom: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <RoundButton icon="back" color="#fff" background="rgba(255,255,255,0.16)" onPress={() => navigation.goBack()} />
+          <Text style={{ fontFamily: fonts.heading, fontSize: fs(15), color: 'rgba(255,255,255,0.9)' }}>{t.subject}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <RoundButton
+              background={favourite ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.16)'}
+              onPress={onToggleFavourite}
+            >
+              <Icon name="heart" size={18} color={favourite ? colors.red : '#fff'} filled={favourite} />
+            </RoundButton>
+            <RoundButton icon="share" color={colors.brand} background="#fff" elevated onPress={() => setShareOpen(true)} />
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: 16, paddingTop: 4, paddingBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                paddingVertical: 3,
+                paddingHorizontal: 10,
+                borderRadius: 999,
+              }}
+            >
+              <View
+                style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: subject.active ? '#7ef5a8' : '#fca5a5' }}
+              />
+              <Text style={{ color: '#fff', fontSize: fs(11), fontWeight: '600' }}>
+                {subject.active ? t.active : t.inactive}
+              </Text>
+            </View>
+            {subject.form ? (
+              <View
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.16)',
+                  paddingVertical: 3,
+                  paddingHorizontal: 10,
+                  borderRadius: 999,
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: fs(11), fontWeight: '600' }}>{subject.form}</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={{ fontFamily: fonts.heading, fontSize: fs(22), color: '#fff', letterSpacing: -0.33, lineHeight: fs(27) }}>
+            {subject.name}
+          </Text>
+          <Text style={{ marginTop: 5, fontSize: fs(13), color: 'rgba(255,255,255,0.8)' }}>
+            {t.idLabel} <Text style={{ color: '#fff', fontWeight: '600' }}>{subject.id}</Text>
+          </Text>
+        </View>
+      </HeroGradient>
+
+      <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 110, gap: 20 }}>
+        {loading ? (
+          <DetailSkeleton />
+        ) : (
+          <>
+            <View style={{ gap: 8 }}>
+              <SectionLabel>{t.basicInfo}</SectionLabel>
+              <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
+                <DataRow label={t.legalCode} value={subject.code} />
+                <DataRow label={t.legalFormFull} value={subject.formFull} />
+                <DataRow label={t.head} value={subject.head} last />
+              </Card>
+            </View>
+
+            <View style={{ gap: 8 }}>
+              <SectionLabel>{t.legalAddress}</SectionLabel>
+              <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
+                <DataRow label={t.region} value={subject.region} />
+                <DataRow label={t.municipality} value={subject.muni} />
+                <DataRow label={t.address} value={subject.addr} last />
+              </Card>
+            </View>
+
+            <View style={{ gap: 8 }}>
+              <SectionLabel>{t.sectionNace}</SectionLabel>
+              <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
+                <DataRow label={t.activityCode} value={subject.nace} />
+                <DataRow label={t.activityName} value={subject.naceName} last />
+              </Card>
+            </View>
+
+            <View style={{ gap: 8 }}>
+              <SectionLabel>{t.contact}</SectionLabel>
+              <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
+                <DataRow label={t.phone} value={subject.phone} valueColor={colors.brand} />
+                <DataRow label={t.email} value={subject.email} valueColor={colors.brand} last />
+              </Card>
+            </View>
+
+            <View style={{ gap: 8 }}>
+              <SectionLabel>{t.sectionExtra}</SectionLabel>
+              <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
+                <DataRow label={t.ownership} value={subject.ownership} />
+                <DataRow label={t.businessSize} value={subject.size} />
+                <DataRow label={t.firstRegistration} value={subject.regDate} last />
+              </Card>
+            </View>
+
+            <View style={{ gap: 8 }}>
+              <SectionLabel>{t.location}</SectionLabel>
+              <MapPreview onPress={openMap} addressLine={addressLine} mapLabel={t.viewOnMap} />
+            </View>
+
+            {relatedPersons.length > 0 ? (
+              <View style={{ gap: 8 }}>
+                <SectionLabel>{t.relatedPersons}</SectionLabel>
+                <ListCard>
+                  {relatedPersons.map((p, i) => (
+                    <View
+                      key={`${p.person}-${i}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        padding: 15,
+                        borderTopWidth: i === 0 ? 0 : 1,
+                        borderTopColor: colors.line3,
+                      }}
+                    >
+                      <View style={{ gap: 2, flex: 1 }}>
+                        <Text style={{ fontSize: fs(15), color: colors.brand, fontWeight: '600' }}>{p.person}</Text>
+                        <Text style={{ fontSize: fs(12), color: colors.muted }}>{p.role}</Text>
+                      </View>
+                      <Text style={{ fontSize: fs(12), color: colors.faint }}>{p.date}</Text>
+                    </View>
+                  ))}
+                </ListCard>
+              </View>
+            ) : null}
+
+            <View style={{ gap: 8 }}>
+              <SectionLabel>{t.partners}</SectionLabel>
+              <CapitalDonut label={t.localCapital} percent="100%" />
+              {partners.length > 0 ? (
+                <ListCard>
+                  {partners.map((p, i) => (
+                    <View
+                      key={`${p.person}-${i}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        padding: 15,
+                        borderTopWidth: i === 0 ? 0 : 1,
+                        borderTopColor: colors.line3,
+                      }}
+                    >
+                      <View style={{ gap: 2, flex: 1 }}>
+                        <Text style={{ fontSize: fs(15), color: colors.ink, fontWeight: '600' }}>{p.person}</Text>
+                        <Text style={{ fontSize: fs(12), color: colors.muted }}>{`${t.share} ${p.share}`}</Text>
+                      </View>
+                      <Text style={{ fontSize: fs(12), color: colors.faint }}>{p.date}</Text>
+                    </View>
+                  ))}
+                </ListCard>
+              ) : null}
+            </View>
+
+            {detail?.addressHistory?.length ? (
+              <View style={{ gap: 8 }}>
+                <SectionLabel>{t.addressHistory}</SectionLabel>
+                <ListCard>
+                  {detail.addressHistory.map((a, i) => (
+                    <View
+                      key={`${a.addr}-${i}`}
+                      style={{ gap: 3, padding: 15, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.line3 }}
+                    >
+                      <Text style={{ fontSize: fs(14), color: colors.ink, fontWeight: '500', lineHeight: fs(19) }}>
+                        {a.addr}
+                      </Text>
+                      <Text style={{ fontSize: fs(12), color: colors.muted }}>
+                        {[a.region, a.date].filter(Boolean).join(' · ')}
+                      </Text>
+                    </View>
+                  ))}
+                </ListCard>
+              </View>
+            ) : null}
+
+            {detail?.nameHistory?.length ? (
+              <View style={{ gap: 8 }}>
+                <SectionLabel>{t.nameHistory}</SectionLabel>
+                <ListCard>
+                  {detail.nameHistory.map((n, i) => (
+                    <View
+                      key={`${n.name}-${i}`}
+                      style={{ gap: 3, padding: 15, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.line3 }}
+                    >
+                      <Text style={{ fontSize: fs(14), color: colors.ink, fontWeight: '500' }}>{n.name}</Text>
+                      <Text style={{ fontSize: fs(12), color: colors.muted }}>
+                        {[n.form, n.ownership, n.date].filter(Boolean).join(' · ')}
+                      </Text>
+                    </View>
+                  ))}
+                </ListCard>
+              </View>
+            ) : null}
+
+            {!detail ? <EmptyState icon="search" title={t.networkError} body={t.emptyBody} /> : null}
+          </>
+        )}
+      </ScrollView>
+
+      <SubjectShareSheet visible={shareOpen} onClose={() => setShareOpen(false)} subject={subject} />
+    </View>
+  );
+}
