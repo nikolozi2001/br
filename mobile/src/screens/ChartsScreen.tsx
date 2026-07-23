@@ -51,13 +51,12 @@ interface StackedData {
 interface ChartCardProps {
   title: string;
   onFlip?: () => void;
-  flipped?: boolean;
   onExport: () => void;
   captureRef: React.RefObject<View | null>;
   children: React.ReactNode;
 }
 
-function ChartCard({ title, onFlip, flipped, onExport, captureRef, children }: ChartCardProps) {
+function ChartCard({ title, onFlip, onExport, captureRef, children }: ChartCardProps) {
   const { colors, fonts, fs, radius } = useTheme();
   return (
     <Card ref={captureRef} collapsable={false} style={{ overflow: 'hidden' }} radius={radius.xl}>
@@ -76,7 +75,8 @@ function ChartCard({ title, onFlip, flipped, onExport, captureRef, children }: C
           </Text>
           {onFlip ? (
             <Pressable onPress={onFlip} style={iconButton}>
-              <Icon name={flipped ? 'bars' : 'toggleTable'} size={16} color="#fff" />
+              {/* Fixed icon — the flip toggle keeps the same affordance in both states. */}
+              <Icon name="listRestart" size={16} color="#fff" />
             </Pressable>
           ) : null}
           <Pressable onPress={onExport} style={iconButton}>
@@ -341,7 +341,6 @@ export default function ChartsScreen() {
                       ? 'Enterprise births by economic activity'
                       : 'საწარმოთა დაბადება ეკონომიკური საქმიანობის სახეების მიხედვით'
                 }
-                flipped={flipped.nace}
                 onFlip={() => toggle('nace')}
                 onExport={() => setExportChart('nace')}
                 captureRef={refFor('nace')}
@@ -363,7 +362,6 @@ export default function ChartsScreen() {
                       ? 'Enterprise births by region'
                       : 'საწარმოთა დაბადება რეგიონების მიხედვით'
                 }
-                flipped={flipped.region}
                 onFlip={() => toggle('region')}
                 onExport={() => setExportChart('region')}
                 captureRef={refFor('region')}
@@ -388,7 +386,6 @@ export default function ChartsScreen() {
                       ? 'Distribution of enterprise births by region'
                       : 'დაბადებულ საწარმოთა განაწილება რეგიონების მიხედვით'
                 }
-                flipped={flipped.pie}
                 onFlip={() => toggle('pie')}
                 onExport={() => setExportChart('pie')}
                 captureRef={refFor('pie')}
@@ -434,7 +431,6 @@ export default function ChartsScreen() {
                       ? 'Share of enterprise births by sector'
                       : 'საწარმოთა დაბადების წილი დარგების მიხედვით'
                 }
-                flipped={flipped.sector}
                 onFlip={() => toggle('sector')}
                 onExport={() => setExportChart('sector')}
                 captureRef={refFor('sector')}

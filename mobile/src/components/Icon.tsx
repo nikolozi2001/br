@@ -134,6 +134,22 @@ const PATHS: Record<string, (args: PathArgs) => React.ReactElement> = {
       <Path d="M7 13h6M7 17h8M16 3l5 5-6 1 1-6z" stroke={color} strokeWidth={width} strokeLinejoin="round" />
     </>
   ),
+  // lucide "list-restart" — the chart births ⇄ deaths flip affordance.
+  listRestart: ({ color, width }) => (
+    <>
+      <Path d="M21 6H3" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M7 12H3" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M7 18H3" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M12 18a5 5 0 0 0 9-3 4.5 4.5 0 0 0-4.5-4.5c-1.33 0-2.54.54-3.41 1.41L11 14"
+        stroke={color}
+        strokeWidth={width}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path d="M11 10v4h4" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof PATHS;
