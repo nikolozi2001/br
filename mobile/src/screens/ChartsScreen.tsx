@@ -13,6 +13,7 @@ import {
   fetchBirthNace,
   fetchBirthRegion,
   fetchBirthSector,
+  fetchDeathNace,
   groupDigits,
 } from '../api/registry';
 import { regionLabel } from '../data/regions';
@@ -23,9 +24,15 @@ import type { ApiRecord, BarRow, BirthDeathPoint, Lang, PieSlice, Series } from 
 interface ChartData {
   birthDeath: BirthDeathPoint[];
   nace: ApiRecord[];
+  naceDeath: ApiRecord[];
   region: ApiRecord[];
   distribution: ApiRecord[];
   sector: ApiRecord[];
+}
+
+interface NaceSeries {
+  years: string[];
+  series: Series[];
 }
 
 /** A stacked series keyed by year, with one coloured segment per category. */
@@ -122,12 +129,13 @@ export default function ChartsScreen() {
     Promise.all([
       safe(fetchBirthDeath(lang)),
       safe(fetchBirthNace(lang)),
+      safe(fetchDeathNace(lang)),
       safe(fetchBirthRegion(lang)),
       safe(fetchBirthDistribution(lang)),
       safe(fetchBirthSector(lang)),
     ])
-      .then(([birthDeath, nace, region, distribution, sector]) => {
-        if (!cancelled) setData({ birthDeath, nace, region, distribution, sector });
+      .then(([birthDeath, nace, naceDeath, region, distribution, sector]) => {
+        if (!cancelled) setData({ birthDeath, nace, naceDeath, region, distribution, sector });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -141,25 +149,32 @@ export default function ChartsScreen() {
 
   /* ── Derived chart inputs ─────────────────────────────────────────────── */
 
-  const naceSeries = useMemo(() => {
-    const rows = data?.nace ?? [];
-    if (!rows.length) return null;
-    const years = Object.keys(rows[0])
-      .filter((k) => /^\d{4}$/.test(k))
-      .sort();
-    // Only the four largest sections stay readable at this size.
-    // `NACE_Rev_2_Code` carries the section's name; `section_division` its letter.
-    const top: Series[] = [...rows]
-      .map((r) => ({
-        label: String(r.NACE_Rev_2_Code || r.section_division || '—'),
-        values: years.map((y) => Number(r[y]) || 0),
-        color: '',
-      }))
-      .sort((a, b) => b.values.reduce((x, y) => x + y, 0) - a.values.reduce((x, y) => x + y, 0))
-      .slice(0, 4)
-      .map((serie, i) => ({ ...serie, color: chartColors.lines[i] ?? chartColors.birth }));
-    return { years, series: top };
-  }, [data, chartColors]);
+  // The NACE line chart flips between births and deaths — same structure, one
+  // builder, so both stay in sync. `NACE_Rev_2_Code` is the section name,
+  // `section_division` its letter. Only the four largest sections stay readable.
+  const buildNaceSeries = React.useCallback(
+    (rows: ApiRecord[]): NaceSeries | null => {
+      if (!rows.length) return null;
+      const years = Object.keys(rows[0])
+        .filter((k) => /^\d{4}$/.test(k))
+        .sort();
+      const top: Series[] = [...rows]
+        .map((r) => ({
+          label: String(r.NACE_Rev_2_Code || r.section_division || '—'),
+          values: years.map((y) => Number(r[y]) || 0),
+          color: '',
+        }))
+        .sort((a, b) => b.values.reduce((x, y) => x + y, 0) - a.values.reduce((x, y) => x + y, 0))
+        .slice(0, 4)
+        .map((serie, i) => ({ ...serie, color: chartColors.lines[i] ?? chartColors.birth }));
+      return { years, series: top };
+    },
+    [chartColors],
+  );
+
+  const naceBirthSeries = useMemo(() => buildNaceSeries(data?.nace ?? []), [data, buildNaceSeries]);
+  const naceDeathSeries = useMemo(() => buildNaceSeries(data?.naceDeath ?? []), [data, buildNaceSeries]);
+  const naceSeries = flipped.nace ? naceDeathSeries : naceBirthSeries;
 
   const regionStack = useMemo(() => {
     const rows = data?.region ?? [];
@@ -266,27 +281,23 @@ export default function ChartsScreen() {
 
             {naceSeries ? (
               <ChartCard
+                // Flip toggles the data (births ⇄ deaths); the chart stays a line chart.
                 title={
-                  lang === 'en'
-                    ? 'Enterprise births by economic activity'
-                    : 'საწარმოთა დაბადება ეკონომიკური საქმიანობის სახეების მიხედვით'
+                  flipped.nace
+                    ? lang === 'en'
+                      ? 'Enterprise deaths by economic activity'
+                      : 'საწარმოთა გარდაცვალება ეკონომიკური საქმიანობის სახეების მიხედვით'
+                    : lang === 'en'
+                      ? 'Enterprise births by economic activity'
+                      : 'საწარმოთა დაბადება ეკონომიკური საქმიანობის სახეების მიხედვით'
                 }
                 flipped={flipped.nace}
                 onFlip={() => toggle('nace')}
                 onExport={() => setExportChart('nace')}
                 captureRef={refFor('nace')}
               >
-                {flipped.nace ? (
-                  <DataTable
-                    columns={[t.activityName, naceSeries.years.at(-1) ?? '']}
-                    rows={naceSeries.series.map((s) => [s.label, groupDigits(s.values.at(-1))])}
-                  />
-                ) : (
-                  <>
-                    <LineChart series={naceSeries.series} labels={naceSeries.years} />
-                    <Legend line items={naceSeries.series.map((s) => ({ label: s.label, color: s.color }))} />
-                  </>
-                )}
+                <LineChart series={naceSeries.series} labels={naceSeries.years} />
+                <Legend line items={naceSeries.series.map((s) => ({ label: s.label, color: s.color }))} />
               </ChartCard>
             ) : null}
 

@@ -274,6 +274,12 @@ export async function fetchBirthNace(lang: Lang): Promise<ApiRecord[]> {
   return data.filter((r) => r.NACE_Rev_2_Code != null && r.NACE_Rev_2_Code !== '');
 }
 
+/** Same shape as {@link fetchBirthNace}, for enterprise deaths by NACE section. */
+export async function fetchDeathNace(lang: Lang): Promise<ApiRecord[]> {
+  const data = toArray(await apiGet('/enterprise-death-nace', { lang: apiLang(lang) }));
+  return data.filter((r) => r.NACE_Rev_2_Code != null && r.NACE_Rev_2_Code !== '');
+}
+
 /* ── Helpers ───────────────────────────────────────────────────────────────── */
 
 /** `2012-06-08T00:00:00.000Z` → `06/2012`; passes through anything unparseable. */
