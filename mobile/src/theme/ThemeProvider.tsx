@@ -15,7 +15,8 @@ import {
 } from './tokens';
 import type { FontSize, Lang } from '../types';
 
-const STORAGE_KEY = 'br.settings.v1';
+// v2: default `defaultActiveOnly` flipped to false — bump resets stale v1 blobs.
+const STORAGE_KEY = 'br.settings.v2';
 
 export interface Settings {
   dark: boolean;
@@ -29,7 +30,7 @@ const DEFAULT_SETTINGS: Settings = {
   dark: false,
   fontSize: 'normal',
   lang: 'ka',
-  defaultActiveOnly: true,
+  defaultActiveOnly: false,
   saveHistory: true,
 };
 

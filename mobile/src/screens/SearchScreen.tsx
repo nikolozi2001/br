@@ -88,7 +88,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 14, paddingBottom: 180, gap: 20 }}
+          contentContainerStyle={{ padding: 14, paddingBottom: 24 + insets.bottom, gap: 20 }}
           keyboardShouldPersistTaps="handled"
         >
           {recent.length > 0 ? (
@@ -260,66 +260,51 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
               </View>
             </Card>
           </View>
-        </ScrollView>
 
-        {/* Sticky action bar */}
-        <View
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            paddingHorizontal: 14,
-            paddingTop: 10,
-            paddingBottom: 10 + insets.bottom,
-            backgroundColor: colors.chrome,
-            borderTopWidth: 1,
-            borderTopColor: colors.line2,
-            flexDirection: 'row',
-            gap: 10,
-          }}
-        >
-          <Pressable
-            onPress={resetForm}
-            style={({ pressed }) => ({
-              flex: 1,
-              height: 46,
-              borderRadius: radius.lg,
-              borderWidth: 1.5,
-              borderColor: colors.red,
-              backgroundColor: colors.card,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 7,
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-            })}
-          >
-            <Icon name="close" size={17} color={colors.red} width={2.4} />
-            <Text style={{ fontFamily: fonts.heading, fontSize: fs(16), color: colors.red }}>{t.clear}</Text>
-          </Pressable>
+          {/* Action buttons — scroll with the form rather than a fixed bar */}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+            <Pressable
+              onPress={submit}
+              style={({ pressed }) => [
+                {
+                  flex: 1,
+                  height: 46,
+                  borderRadius: radius.lg,
+                  backgroundColor: colors.brand,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                },
+                shadow.cta,
+              ]}
+            >
+              <Icon name="search" size={18} color="#fff" />
+              <Text style={{ fontFamily: fonts.heading, fontSize: fs(16), color: '#fff' }}>{t.search}</Text>
+            </Pressable>
 
-          <Pressable
-            onPress={submit}
-            style={({ pressed }) => [
-              {
+            <Pressable
+              onPress={resetForm}
+              style={({ pressed }) => ({
                 flex: 1,
                 height: 46,
                 borderRadius: radius.lg,
-                backgroundColor: colors.brand,
+                borderWidth: 1.5,
+                borderColor: colors.red,
+                backgroundColor: colors.card,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8,
+                gap: 7,
                 transform: [{ scale: pressed ? 0.97 : 1 }],
-              },
-              shadow.cta,
-            ]}
-          >
-            <Icon name="search" size={18} color="#fff" />
-            <Text style={{ fontFamily: fonts.heading, fontSize: fs(16), color: '#fff' }}>{t.search}</Text>
-          </Pressable>
-        </View>
+              })}
+            >
+              <Icon name="close" size={17} color={colors.red} width={2.4} />
+              <Text style={{ fontFamily: fonts.heading, fontSize: fs(16), color: colors.red }}>{t.clear}</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       <PickerSheet
