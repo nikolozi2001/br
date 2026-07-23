@@ -1,50 +1,88 @@
 import React, { useEffect, useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 
 import Icon from '../components/Icon';
 import SubjectShareSheet from '../components/SubjectShareSheet';
 import { Card, DataRow, EmptyState, HeroGradient, RoundButton, SectionLabel, Skeleton } from '../components/primitives';
-import { fetchSubjectDetail, formatDate } from '../api/registry';
+import { fetchCoordinates, fetchSubjectDetail, formatDate, formatLongDate } from '../api/registry';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { HomeScreenProps } from '../navigation/types';
 import type { PersonRow, SubjectDetail } from '../types';
 
-/** Flat map placeholder — matches the prototype's stylised grid + pin. */
-function MapPreview({ onPress, addressLine, mapLabel }: { onPress: () => void; addressLine: string; mapLabel: string }) {
+interface Coords {
+  lat: number;
+  lng: number;
+}
+
+/** Real map when coordinates are known, otherwise the prototype's stylised placeholder. */
+function MapPreview({
+  onPress,
+  addressLine,
+  mapLabel,
+  coords,
+  name,
+}: {
+  onPress: () => void;
+  addressLine: string;
+  mapLabel: string;
+  coords: Coords | null;
+  name: string;
+}) {
   const { colors, fs, radius } = useTheme();
+
   return (
     <Card style={{ overflow: 'hidden' }} radius={radius.xl}>
-      <Pressable onPress={onPress} style={{ height: 150, backgroundColor: colors.mapBg }}>
-        <View style={{ position: 'absolute', top: '38%', left: '20%', width: '46%', height: 12, borderRadius: 3, backgroundColor: colors.mapRoad, transform: [{ rotate: '-18deg' }] }} />
-        <View style={{ position: 'absolute', top: '60%', left: '8%', width: '70%', height: 12, borderRadius: 3, backgroundColor: colors.mapRoad, transform: [{ rotate: '6deg' }] }} />
-        <View style={{ position: 'absolute', top: 0, bottom: 0, left: '44%', width: 14, backgroundColor: colors.tint.blue10 }} />
-        <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -15, marginTop: -30, alignItems: 'center' }}>
-          <Icon name="pin" size={30} color={colors.red} filled width={1.5} />
+      {coords ? (
+        <View style={{ height: 170 }}>
+          <MapView
+            provider={PROVIDER_DEFAULT}
+            style={{ flex: 1 }}
+            pointerEvents="none"
+            initialRegion={{
+              latitude: coords.lat,
+              longitude: coords.lng,
+              latitudeDelta: 0.012,
+              longitudeDelta: 0.012,
+            }}
+          >
+            <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} title={name} description={addressLine} />
+          </MapView>
+          <Pressable
+            onPress={onPress}
+            style={{
+              position: 'absolute',
+              right: 10,
+              bottom: 10,
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              borderWidth: 1,
+              borderColor: colors.line2,
+              borderRadius: 8,
+              paddingVertical: 6,
+              paddingHorizontal: 11,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            <Icon name="external" size={13} color={colors.brand} />
+            <Text style={{ fontSize: fs(12), fontWeight: '600', color: colors.brand }}>{mapLabel}</Text>
+          </Pressable>
         </View>
-        <View
-          style={{
-            position: 'absolute',
-            right: 10,
-            bottom: 10,
-            backgroundColor: 'rgba(255,255,255,0.95)',
-            borderWidth: 1,
-            borderColor: colors.line2,
-            borderRadius: 8,
-            paddingVertical: 6,
-            paddingHorizontal: 11,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 5,
-          }}
-        >
-          <Icon name="external" size={13} color={colors.brand} />
-          <Text style={{ fontSize: fs(12), fontWeight: '600', color: colors.brand }}>{mapLabel}</Text>
-        </View>
-      </Pressable>
+      ) : (
+        <Pressable onPress={onPress} style={{ height: 150, backgroundColor: colors.mapBg }}>
+          <View style={{ position: 'absolute', top: '38%', left: '20%', width: '46%', height: 12, borderRadius: 3, backgroundColor: colors.mapRoad, transform: [{ rotate: '-18deg' }] }} />
+          <View style={{ position: 'absolute', top: '60%', left: '8%', width: '70%', height: 12, borderRadius: 3, backgroundColor: colors.mapRoad, transform: [{ rotate: '6deg' }] }} />
+          <View style={{ position: 'absolute', top: 0, bottom: 0, left: '44%', width: 14, backgroundColor: colors.tint.blue10 }} />
+          <View style={{ position: 'absolute', top: '50%', left: '50%', marginLeft: -15, marginTop: -30, alignItems: 'center' }}>
+            <Icon name="pin" size={30} color={colors.red} filled width={1.5} />
+          </View>
+        </Pressable>
+      )}
       <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 15 }}>
         <Icon name="pin" size={17} color={colors.faint} />
         <Text style={{ flex: 1, fontSize: fs(13.5), color: colors.ink, lineHeight: fs(18) }}>{addressLine}</Text>
@@ -111,6 +149,10 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
   const [detail, setDetail] = useState<SubjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
+  // Prefer coords from the search row; otherwise resolve them by tax id.
+  const [coords, setCoords] = useState<Coords | null>(
+    subject.x != null && subject.y != null ? { lat: subject.x, lng: subject.y } : null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -130,6 +172,23 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
     };
   }, [subject.statId, subject.id, lang]);
 
+  // The search endpoint omits X/Y unless coord-filtered — resolve them here.
+  useEffect(() => {
+    if (coords || !subject.code) return;
+    let cancelled = false;
+    fetchCoordinates(subject.code, lang)
+      .then((c) => {
+        if (!cancelled && c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
+          setCoords({ lat: c.lat, lng: c.lng });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subject.code, lang]);
+
   const favourite = isFavourite(subject.id);
 
   const onToggleFavourite = () => {
@@ -142,8 +201,13 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
   };
 
   const openMap = () => {
-    if (subject.x && subject.y) {
-      const url = `https://maps.google.com/?q=${subject.x},${subject.y}`;
+    if (coords) {
+      // Apple Maps on iOS, Google Maps elsewhere — labelled with the subject name.
+      const label = encodeURIComponent(subject.name);
+      const url =
+        Platform.OS === 'ios'
+          ? `http://maps.apple.com/?q=${label}&ll=${coords.lat},${coords.lng}`
+          : `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`;
       Linking.openURL(url).catch(() => showToast(t.openingMap));
     } else {
       showToast(t.openingMap);
@@ -271,13 +335,19 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
               <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
                 <DataRow label={t.ownership} value={subject.ownership} />
                 <DataRow label={t.businessSize} value={subject.size} />
-                <DataRow label={t.firstRegistration} value={subject.regDate} last />
+                <DataRow label={t.firstRegistration} value={formatLongDate(subject.regDate, lang)} last />
               </Card>
             </View>
 
             <View style={{ gap: 8 }}>
               <SectionLabel>{t.location}</SectionLabel>
-              <MapPreview onPress={openMap} addressLine={addressLine} mapLabel={t.viewOnMap} />
+              <MapPreview
+                onPress={openMap}
+                addressLine={addressLine}
+                mapLabel={t.viewOnMap}
+                coords={coords}
+                name={subject.name}
+              />
             </View>
 
             {relatedPersons.length > 0 ? (

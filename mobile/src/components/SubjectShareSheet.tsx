@@ -7,16 +7,17 @@ import * as Sharing from 'expo-sharing';
 import Icon from './Icon';
 import { GeostatLogo } from './ScreenHeader';
 import { HeroGradient } from './primitives';
+import { formatLongDate } from '../api/registry';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { Strings } from '../i18n/strings';
-import type { Subject } from '../types';
+import type { Lang, Subject } from '../types';
 
 const escapeHtml = (value: unknown): string =>
   String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function summaryHtml(subject: Subject, t: Strings): string {
+function summaryHtml(subject: Subject, t: Strings, lang: Lang): string {
   const rows = [
     [t.idLabel, subject.id],
     [t.legalCode, subject.code],
@@ -25,7 +26,7 @@ function summaryHtml(subject: Subject, t: Strings): string {
     [t.head, subject.head],
     [t.activity, [subject.nace, subject.naceName].filter(Boolean).join(' · ')],
     [t.address, [subject.addr, subject.region].filter(Boolean).join(', ')],
-    [t.registration, subject.regDate],
+    [t.registration, formatLongDate(subject.regDate, lang)],
   ];
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     body{font-family:-apple-system,system-ui,sans-serif;padding:28px;color:#1a1a2e}
@@ -75,7 +76,7 @@ export default function SubjectShareSheet({ visible, onClose, subject }: Subject
     onClose();
     showToast(t.preparingPdf);
     try {
-      const { uri } = await Print.printToFileAsync({ html: summaryHtml(subject, t) });
+      const { uri } = await Print.printToFileAsync({ html: summaryHtml(subject, t, lang) });
       if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
     } catch (err) {
       showToast((err as Error)?.message || t.networkError);
@@ -86,7 +87,7 @@ export default function SubjectShareSheet({ visible, onClose, subject }: Subject
     onClose();
     showToast(t.openingPrint);
     try {
-      await Print.printAsync({ html: summaryHtml(subject, t) });
+      await Print.printAsync({ html: summaryHtml(subject, t, lang) });
     } catch (err) {
       showToast((err as Error)?.message || t.networkError);
     }
@@ -136,7 +137,7 @@ export default function SubjectShareSheet({ visible, onClose, subject }: Subject
               <Line label={t.head} value={subject.head} />
               <Line label={t.activity} value={[subject.nace, subject.naceName].filter(Boolean).join(' · ')} />
               <Line label={t.address} value={[subject.addr, subject.region].filter(Boolean).join(', ')} />
-              <Line label={t.registration} value={subject.regDate} />
+              <Line label={t.registration} value={formatLongDate(subject.regDate, lang)} />
             </View>
 
             <View style={{ flexDirection: 'row', gap: 9, marginTop: 4 }}>

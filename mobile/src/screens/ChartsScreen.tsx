@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 
@@ -7,33 +7,11 @@ import Icon from '../components/Icon';
 import ScreenHeader, { FlagChip } from '../components/ScreenHeader';
 import { Card, HeroGradient } from '../components/primitives';
 import { GroupedBarChart, HorizontalBars, Legend, LineChart, PieChart, StackedBarChart } from '../components/charts';
-import {
-  fetchBirthDeath,
-  fetchBirthDistribution,
-  fetchBirthNace,
-  fetchBirthRegion,
-  fetchBirthSector,
-  fetchDeathDistribution,
-  fetchDeathNace,
-  fetchDeathRegion,
-  fetchDeathSector,
-} from '../api/registry';
+import useChartData from '../hooks/useChartData';
 import { regionLabel } from '../data/regions';
 import { getStrings } from '../i18n/strings';
 import { useTheme } from '../theme/ThemeProvider';
-import type { ApiRecord, BarRow, BirthDeathPoint, Lang, PieSlice, Series } from '../types';
-
-interface ChartData {
-  birthDeath: BirthDeathPoint[];
-  nace: ApiRecord[];
-  naceDeath: ApiRecord[];
-  region: ApiRecord[];
-  regionDeath: ApiRecord[];
-  distribution: ApiRecord[];
-  distributionDeath: ApiRecord[];
-  sector: ApiRecord[];
-  sectorDeath: ApiRecord[];
-}
+import type { ApiRecord, BarRow, Lang, PieSlice, Series } from '../types';
 
 interface NaceSeries {
   years: string[];
@@ -116,8 +94,8 @@ export default function ChartsScreen() {
   const { chartColors, colors, fs, lang } = useTheme();
   const t = getStrings(lang);
 
-  const [data, setData] = useState<ChartData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Cached per language — instant on tab revisits and language toggles.
+  const { data, loading } = useChartData(lang);
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
   const [exportChart, setExportChart] = useState<string | null>(null);
   // One capture target per chart card, so export snapshots the right one.
@@ -126,56 +104,6 @@ export default function ChartsScreen() {
     if (!cardRefs.current[key]) cardRefs.current[key] = React.createRef();
     return cardRefs.current[key];
   };
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    const safe = <T,>(p: Promise<T[]>): Promise<T[]> => p.catch(() => [] as T[]);
-    Promise.all([
-      safe(fetchBirthDeath(lang)),
-      safe(fetchBirthNace(lang)),
-      safe(fetchDeathNace(lang)),
-      safe(fetchBirthRegion(lang)),
-      safe(fetchDeathRegion(lang)),
-      safe(fetchBirthDistribution(lang)),
-      safe(fetchDeathDistribution(lang)),
-      safe(fetchBirthSector(lang)),
-      safe(fetchDeathSector(lang)),
-    ])
-      .then(
-        ([
-          birthDeath,
-          nace,
-          naceDeath,
-          region,
-          regionDeath,
-          distribution,
-          distributionDeath,
-          sector,
-          sectorDeath,
-        ]) => {
-          if (!cancelled) {
-            setData({
-              birthDeath,
-              nace,
-              naceDeath,
-              region,
-              regionDeath,
-              distribution,
-              distributionDeath,
-              sector,
-              sectorDeath,
-            });
-          }
-        },
-      )
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [lang]);
 
   const toggle = (key: string) => setFlipped((prev) => ({ ...prev, [key]: !prev[key] }));
 
