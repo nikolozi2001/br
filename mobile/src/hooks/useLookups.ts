@@ -9,14 +9,25 @@ import {
   fetchSizes,
 } from '../api/registry';
 import { useTheme } from '../theme/ThemeProvider';
+import type { Option } from '../types';
 
 /**
  * Loads every picker's option list once per language. Failures resolve to an
  * empty list so a picker opens (empty) rather than the screen breaking.
  */
-export default function useLookups() {
+export interface Lookups {
+  legalForms: Option[];
+  regions: Option[];
+  municipalities: Option[];
+  naceCodes: Option[];
+  naceNames: Option[];
+  ownership: Option[];
+  sizes: Option[];
+}
+
+export default function useLookups(): Lookups {
   const { lang } = useTheme();
-  const [lookups, setLookups] = useState({
+  const [lookups, setLookups] = useState<Lookups>({
     legalForms: [],
     regions: [],
     municipalities: [],
@@ -28,7 +39,7 @@ export default function useLookups() {
 
   useEffect(() => {
     let cancelled = false;
-    const safe = (p, fallback) => p.catch(() => fallback);
+    const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> => p.catch(() => fallback);
 
     Promise.all([
       safe(fetchLegalForms(lang), []),

@@ -4,12 +4,33 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import BottomSheet from './BottomSheet';
 import Icon from './Icon';
+import type { Option } from '../types';
 
 /**
  * Option picker sheet. Lists come from the backend lookup endpoints and can be
  * long (NACE codes, municipalities), so anything over 12 rows gets a filter box.
  */
-export default function PickerSheet({ visible, title, options, selected, onSelect, onClose, cancelLabel, searchPlaceholder }) {
+export interface PickerSheetProps {
+  visible: boolean;
+  title: string;
+  options: Option[];
+  selected: Option | null;
+  onSelect: (option: Option) => void;
+  onClose: () => void;
+  cancelLabel: string;
+  searchPlaceholder: string;
+}
+
+export default function PickerSheet({
+  visible,
+  title,
+  options,
+  selected,
+  onSelect,
+  onClose,
+  cancelLabel,
+  searchPlaceholder,
+}: PickerSheetProps) {
   const { colors, fs, radius } = useTheme();
   const [query, setQuery] = useState('');
 
@@ -54,10 +75,10 @@ export default function PickerSheet({ visible, title, options, selected, onSelec
       ) : null}
 
       {filtered.map((option) => {
-        const isCurrent = (selected?.value ?? selected?.label) === (option.value ?? option.label);
+        const isCurrent = selected?.value === option.value;
         return (
           <Pressable
-            key={String(option.value ?? option.label)}
+            key={option.value}
             onPress={() => {
               setQuery('');
               onSelect(option);

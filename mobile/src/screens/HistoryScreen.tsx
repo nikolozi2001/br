@@ -8,15 +8,17 @@ import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useSearch } from '../state/SearchStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { SettingsScreenProps } from '../navigation/types';
+import type { RecentSearch } from '../types';
 
-export default function HistoryScreen({ navigation }) {
+export default function HistoryScreen({ navigation }: SettingsScreenProps<'History'>) {
   const { colors, fonts, fs, lang, radius, shadow } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
   const { recent, clearRecent } = useAppStore();
   const { runSearchWith } = useSearch();
 
-  const repeat = (entry) => {
+  const repeat = (entry: RecentSearch) => {
     runSearchWith({ id: entry.id || '', name: entry.name || '' });
     navigation.navigate('HomeTab', { screen: 'Results' });
   };

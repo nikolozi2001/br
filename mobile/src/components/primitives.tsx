@@ -1,12 +1,15 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../theme/ThemeProvider';
 import Icon from './Icon';
 
+type Style = StyleProp<ViewStyle>;
+
 /** Blue gradient used by every screen header. */
-export function HeroGradient({ children, style }) {
+export function HeroGradient({ children, style }: { children?: React.ReactNode; style?: Style }) {
   const { colors } = useTheme();
   return (
     <LinearGradient
@@ -21,7 +24,7 @@ export function HeroGradient({ children, style }) {
 }
 
 /** The small uppercase blue label that heads every card group. */
-export function SectionLabel({ children, style }) {
+export function SectionLabel({ children, style }: { children?: React.ReactNode; style?: StyleProp<TextStyle> }) {
   const { colors, fonts, fs } = useTheme();
   return (
     <Text
@@ -36,7 +39,15 @@ export function SectionLabel({ children, style }) {
 }
 
 /** White rounded surface with the design system's 1px border + soft shadow. */
-export const Card = React.forwardRef(function Card({ children, style, radius: r, ...rest }, ref) {
+export interface CardProps extends React.ComponentProps<typeof View> {
+  children?: React.ReactNode;
+  radius?: number;
+}
+
+export const Card = React.forwardRef<View, CardProps>(function Card(
+  { children, style, radius: r, ...rest },
+  ref,
+) {
   const { colors, radius, shadow } = useTheme();
   return (
     <View
@@ -59,7 +70,14 @@ export const Card = React.forwardRef(function Card({ children, style, radius: r,
 });
 
 /** `label ................ value` row inside a detail card. */
-export function DataRow({ label, value, last = false, valueColor }) {
+export interface DataRowProps {
+  label: string;
+  value?: string | null;
+  last?: boolean;
+  valueColor?: string;
+}
+
+export function DataRow({ label, value, last = false, valueColor }: DataRowProps) {
   const { colors, fs } = useTheme();
   return (
     <View
@@ -89,7 +107,7 @@ export function DataRow({ label, value, last = false, valueColor }) {
 }
 
 /** iOS-style switch matching the prototype's 46×28 pill. */
-export function Toggle({ value, onChange }) {
+export function Toggle({ value, onChange }: { value: boolean; onChange: (next: boolean) => void }) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -125,7 +143,16 @@ export function Toggle({ value, onChange }) {
 }
 
 /** Circular header button (back, favourite, share). */
-export function RoundButton({ icon, onPress, background, color, elevated = false, children }) {
+export interface RoundButtonProps {
+  icon?: string;
+  onPress?: () => void;
+  background: string;
+  color?: string;
+  elevated?: boolean;
+  children?: React.ReactNode;
+}
+
+export function RoundButton({ icon, onPress, background, color, elevated = false, children }: RoundButtonProps) {
   const { shadow } = useTheme();
   return (
     <Pressable
@@ -144,13 +171,20 @@ export function RoundButton({ icon, onPress, background, color, elevated = false
         elevated && shadow.raised,
       ]}
     >
-      {children ?? <Icon name={icon} size={17} color={color} />}
+      {children ?? (icon ? <Icon name={icon} size={17} color={color} /> : null)}
     </Pressable>
   );
 }
 
 /** Centred illustration + title + body used by every empty state. */
-export function EmptyState({ icon, title, body, size = 92 }) {
+export interface EmptyStateProps {
+  icon: string;
+  title: string;
+  body: string;
+  size?: number;
+}
+
+export function EmptyState({ icon, title, body, size = 92 }: EmptyStateProps) {
   const { colors, fonts, fs } = useTheme();
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', gap: 14, paddingVertical: 56, paddingHorizontal: 30 }}>
@@ -175,7 +209,15 @@ export function EmptyState({ icon, title, body, size = 92 }) {
 }
 
 /** Shimmerless placeholder block — a flat tinted bar while data loads. */
-export function Skeleton({ width, height = 12, radius = 6, tone = 'line', style }) {
+export interface SkeletonProps {
+  width: number | `${number}%`;
+  height?: number;
+  radius?: number;
+  tone?: 'line' | 'field';
+  style?: Style;
+}
+
+export function Skeleton({ width, height = 12, radius = 6, tone = 'line', style }: SkeletonProps) {
   const { colors } = useTheme();
   return (
     <View

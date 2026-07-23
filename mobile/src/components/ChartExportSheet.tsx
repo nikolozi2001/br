@@ -4,13 +4,17 @@ import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
 import { captureRef } from 'react-native-view-shot';
 
+import type { View } from 'react-native';
+
 import BottomSheet, { SheetRow } from './BottomSheet';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 
 /** Rasterises the chart card, copies it into the cache, and opens the share sheet. */
-async function captureAndShare(viewRef, format, mimeType) {
+type CaptureRef = React.RefObject<View | null>;
+
+async function captureAndShare(viewRef: CaptureRef, format: 'png' | 'jpg', mimeType: string) {
   const uri = await captureRef(viewRef, { format, quality: 0.95, result: 'tmpfile' });
   const target = new File(Paths.cache, `chart.${format}`);
   if (target.exists) target.delete();
@@ -23,18 +27,28 @@ async function captureAndShare(viewRef, format, mimeType) {
  * snapshot of the rendered card — there is no SVG option because the card is
  * rasterised, not re-serialised.
  */
-export default function ChartExportSheet({ visible, onClose, viewRef }) {
+export interface ChartExportSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  /** The chart card to rasterise; null while no card is selected. */
+  viewRef: CaptureRef | null;
+}
+
+export default function ChartExportSheet({ visible, onClose, viewRef }: ChartExportSheetProps) {
   const { colors, lang } = useTheme();
   const t = getStrings(lang);
   const { showToast } = useAppStore();
 
-  const guard = (message, action) => async () => {
+  /** Closes the sheet, then runs `action` with the (guaranteed) capture target. */
+  const guard = (message: string, action: (ref: CaptureRef) => Promise<unknown>) => async () => {
+    const ref = viewRef;
     onClose();
+    if (!ref) return;
     showToast(message);
     try {
-      await action();
+      await action(ref);
     } catch (err) {
-      showToast(String(err?.message || t.networkError));
+      showToast((err as Error)?.message || t.networkError);
     }
   };
 
@@ -46,8 +60,8 @@ export default function ChartExportSheet({ visible, onClose, viewRef }) {
         badgeBg={colors.line}
         title={t.print}
         subtitle={t.airPrint}
-        onPress={guard(t.openingPrint, async () => {
-          const uri = await captureRef(viewRef, { format: 'png', quality: 1, result: 'data-uri' });
+        onPress={guard(t.openingPrint, async (ref) => {
+          const uri = await captureRef(ref, { format: 'png', quality: 1, result: 'data-uri' });
           await Print.printAsync({ html: `<img src="${uri}" style="width:100%"/>` });
         })}
       />
@@ -57,7 +71,7 @@ export default function ChartExportSheet({ visible, onClose, viewRef }) {
         badgeBg="#dcfce7"
         title={t.pngImage}
         subtitle=".png"
-        onPress={guard(t.preparingPng, () => captureAndShare(viewRef, 'png', 'image/png'))}
+        onPress={guard(t.preparingPng, (ref) => captureAndShare(ref, 'png', 'image/png'))}
       />
       <SheetRow
         badge="JPG"
@@ -65,7 +79,7 @@ export default function ChartExportSheet({ visible, onClose, viewRef }) {
         badgeBg="#dbeafe"
         title={t.jpegImage}
         subtitle=".jpg"
-        onPress={guard(t.preparingJpeg, () => captureAndShare(viewRef, 'jpg', 'image/jpeg'))}
+        onPress={guard(t.preparingJpeg, (ref) => captureAndShare(ref, 'jpg', 'image/jpeg'))}
       />
       <SheetRow
         badge="PDF"
@@ -74,8 +88,8 @@ export default function ChartExportSheet({ visible, onClose, viewRef }) {
         title={t.pdfDocument}
         subtitle=".pdf"
         divider={false}
-        onPress={guard(t.preparingPdf, async () => {
-          const dataUri = await captureRef(viewRef, { format: 'png', quality: 1, result: 'data-uri' });
+        onPress={guard(t.preparingPdf, async (ref) => {
+          const dataUri = await captureRef(ref, { format: 'png', quality: 1, result: 'data-uri' });
           const { uri } = await Print.printToFileAsync({ html: `<img src="${dataUri}" style="width:100%"/>` });
           if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
         })}

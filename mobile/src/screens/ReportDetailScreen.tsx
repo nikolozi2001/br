@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import type { TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ReportExportSheet from '../components/ReportExportSheet';
@@ -7,9 +8,20 @@ import { Card, EmptyState, HeroGradient, RoundButton } from '../components/primi
 import { fetchReport, groupDigits } from '../api/registry';
 import { getReport, parseCountsReport, parseMatrixReport } from '../data/reports';
 import { getStrings } from '../i18n/strings';
-import { useTheme } from '../theme/ThemeProvider';
+import { useTheme, type ThemeColors } from '../theme/ThemeProvider';
+import type { ReportsScreenProps } from '../navigation/types';
+import { isCountsReport, type ApiRecord, type ParsedReport, type ReportMeta } from '../types';
 
-function StatTile({ label, value, percent, percentColor, onBlue = false }) {
+interface StatTileProps {
+  label: string;
+  value: string;
+  percent?: string | null;
+  percentColor: string;
+  /** Rendered on the blue totals banner rather than a white card. */
+  onBlue?: boolean;
+}
+
+function StatTile({ label, value, percent, percentColor, onBlue = false }: StatTileProps) {
   const { colors, fs } = useTheme();
   return (
     <View
@@ -32,13 +44,19 @@ function StatTile({ label, value, percent, percentColor, onBlue = false }) {
   );
 }
 
-export default function ReportDetailScreen({ navigation, route }) {
+export default function ReportDetailScreen({ navigation, route }: ReportsScreenProps<'ReportDetail'>) {
   const report = getReport(route.params.id);
+  if (!report) return null;
+
+  return <ReportDetail report={report} onBack={() => navigation.goBack()} />;
+}
+
+function ReportDetail({ report, onBack }: { report: ReportMeta; onBack: () => void }) {
   const { colors, fonts, fs, lang, radius, shadow } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
 
-  const [rows, setRows] = useState(null);
+  const [rows, setRows] = useState<ApiRecord[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -60,12 +78,14 @@ export default function ReportDetailScreen({ navigation, route }) {
     };
   }, [report.id, lang]);
 
-  const parsed = useMemo(() => {
+  const parsed = useMemo<ParsedReport | null>(() => {
     if (!rows) return null;
     return report.shape === 'counts' ? parseCountsReport(rows, report) : parseMatrixReport(rows);
   }, [rows, report]);
 
-  const isEmpty = !loading && (!parsed || (report.shape === 'counts' ? !parsed.items.length : !parsed.items.length));
+  const counts = isCountsReport(parsed) ? parsed : null;
+  const matrix = !isCountsReport(parsed) ? parsed : null;
+  const isEmpty = !loading && (!parsed || (counts ? !counts.items.length : !matrix?.items.length));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -80,7 +100,7 @@ export default function ReportDetailScreen({ navigation, route }) {
             gap: 10,
           }}
         >
-          <RoundButton icon="back" color="#fff" background="rgba(255,255,255,0.16)" onPress={() => navigation.goBack()} />
+          <RoundButton icon="back" color="#fff" background="rgba(255,255,255,0.16)" onPress={onBack} />
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7 }}>
             <View
               style={{
@@ -112,17 +132,17 @@ export default function ReportDetailScreen({ navigation, route }) {
           <Card style={{ paddingVertical: 40, paddingHorizontal: 24 }}>
             <EmptyState icon="emptyReport" title={t.reportEmptyTitle} body={t.reportEmptyBody} size={78} />
           </Card>
-        ) : report.shape === 'counts' ? (
+        ) : counts ? (
           <>
             <HeroGradient style={{ borderRadius: radius.lg + 2, padding: 14, gap: 9 }}>
               <Text style={{ fontFamily: fonts.heading, fontSize: fs(15), color: '#fff' }}>{t.total}</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <StatTile onBlue label={t.registered} value={groupDigits(parsed.totalReg)} percent="100.0%" percentColor="#bbf7d0" />
-                <StatTile onBlue label={t.activeCount} value={groupDigits(parsed.totalAct)} percent="100.0%" percentColor="#bbf7d0" />
+                <StatTile onBlue label={t.registered} value={groupDigits(counts.totalReg)} percent="100.0%" percentColor="#bbf7d0" />
+                <StatTile onBlue label={t.activeCount} value={groupDigits(counts.totalAct)} percent="100.0%" percentColor="#bbf7d0" />
               </View>
             </HeroGradient>
 
-            {parsed.items.map((row, index) => (
+            {counts.items.map((row, index) => (
               <View
                 key={`${row.code}-${index}`}
                 style={{
@@ -167,13 +187,13 @@ export default function ReportDetailScreen({ navigation, route }) {
               <View>
                 <View style={{ flexDirection: 'row', borderBottomWidth: 2, borderBottomColor: colors.line2 }}>
                   <Text style={[headerCell(fs, colors), { width: 190 }]} />
-                  {parsed.columns.map((c) => (
+                  {matrix!.columns.map((c) => (
                     <Text key={c} style={[headerCell(fs, colors), { width: 84, textAlign: 'right' }]}>
                       {c}
                     </Text>
                   ))}
                 </View>
-                {parsed.items.map((row, index) => (
+                {matrix!.items.map((row, index) => (
                   <View
                     key={`${row.label}-${index}`}
                     style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.line3 }}
@@ -204,7 +224,7 @@ export default function ReportDetailScreen({ navigation, route }) {
   );
 }
 
-const headerCell = (fs, colors) => ({
+const headerCell = (fs: (n: number) => number, colors: ThemeColors): TextStyle => ({
   paddingVertical: 9,
   paddingHorizontal: 10,
   fontSize: fs(12),
@@ -212,7 +232,7 @@ const headerCell = (fs, colors) => ({
   color: colors.brand,
 });
 
-const bodyCell = (fs, colors) => ({
+const bodyCell = (fs: (n: number) => number, colors: ThemeColors): TextStyle => ({
   paddingVertical: 11,
   paddingHorizontal: 10,
   fontSize: fs(13),

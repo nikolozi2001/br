@@ -10,11 +10,13 @@ import { HeroGradient } from './primitives';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { Strings } from '../i18n/strings';
+import type { Subject } from '../types';
 
-const escapeHtml = (value) =>
+const escapeHtml = (value: unknown): string =>
   String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function summaryHtml(subject, t) {
+function summaryHtml(subject: Subject, t: Strings): string {
   const rows = [
     [t.idLabel, subject.id],
     [t.legalCode, subject.code],
@@ -42,7 +44,7 @@ function summaryHtml(subject, t) {
   </body></html>`;
 }
 
-function Line({ label, value, valueColor }) {
+function Line({ label, value, valueColor }: { label: string; value?: string; valueColor?: string }) {
   const { colors, fs } = useTheme();
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
@@ -57,7 +59,13 @@ function Line({ label, value, valueColor }) {
 }
 
 /** Preview card for the subject's PDF summary, with share + print actions. */
-export default function SubjectShareSheet({ visible, onClose, subject }) {
+export interface SubjectShareSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  subject: Subject;
+}
+
+export default function SubjectShareSheet({ visible, onClose, subject }: SubjectShareSheetProps) {
   const { colors, fonts, fs, lang, radius, shadow } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
@@ -70,7 +78,7 @@ export default function SubjectShareSheet({ visible, onClose, subject }) {
       const { uri } = await Print.printToFileAsync({ html: summaryHtml(subject, t) });
       if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
     } catch (err) {
-      showToast(String(err?.message || t.networkError));
+      showToast((err as Error)?.message || t.networkError);
     }
   };
 
@@ -80,7 +88,7 @@ export default function SubjectShareSheet({ visible, onClose, subject }) {
     try {
       await Print.printAsync({ html: summaryHtml(subject, t) });
     } catch (err) {
-      showToast(String(err?.message || t.networkError));
+      showToast((err as Error)?.message || t.networkError);
     }
   };
 

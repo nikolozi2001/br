@@ -23,7 +23,15 @@ export const brandTint = {
 };
 
 /** Light palette — mirrors the `.brapp` custom-property block. */
-export const lightPalette = {
+export interface Palette {
+  bg: string; card: string; ink: string; muted: string; faint: string;
+  line: string; line2: string; line3: string; field: string;
+  chrome: string; sheet: string; statBg: string;
+  scrim: string; scrimStrong: string; skeleton: string;
+  mapGrid: string; mapBg: string; mapRoad: string;
+}
+
+export const lightPalette: Palette = {
   bg: '#eff3f7',
   card: '#ffffff',
   ink: '#1a1a2e',
@@ -45,7 +53,7 @@ export const lightPalette = {
 };
 
 /** Dark palette — mirrors `.themeDark`. */
-export const darkPalette = {
+export const darkPalette: Palette = {
   bg: '#0d1a24',
   card: '#14232f',
   ink: '#eaf1f6',
@@ -89,7 +97,7 @@ export const fonts = {
 };
 
 /** Multipliers behind the settings screen's A- / A / A+ control (`.fsSmall`, `.fsLarge`). */
-export const fontScales = {
+export const fontScales: Record<'small' | 'normal' | 'large', number> = {
   small: 0.9,
   normal: 1,
   large: 1.14,

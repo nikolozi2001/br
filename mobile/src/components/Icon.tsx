@@ -1,11 +1,18 @@
 import React from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
+interface PathArgs {
+  color: string;
+  width: number;
+  fill?: string;
+  filled: boolean;
+}
+
 /**
  * The prototype's inline 24×24 stroke icons. `color` maps to `currentColor`,
  * `fill` is only used by the tab bar's soft-filled active state.
  */
-const PATHS = {
+const PATHS: Record<string, (args: PathArgs) => React.ReactElement> = {
   search: ({ color, fill, width }) => (
     <>
       <Circle cx={11} cy={11} r={7} fill={fill || 'none'} stroke={color} strokeWidth={width} />
@@ -129,7 +136,18 @@ const PATHS = {
   ),
 };
 
-export default function Icon({ name, size = 20, color = '#1a1a2e', width = 2, fill, filled = false }) {
+export type IconName = keyof typeof PATHS;
+
+export interface IconProps {
+  name: string;
+  size?: number;
+  color?: string;
+  width?: number;
+  fill?: string;
+  filled?: boolean;
+}
+
+export default function Icon({ name, size = 20, color = '#1a1a2e', width = 2, fill, filled = false }: IconProps) {
   const render = PATHS[name];
   if (!render) return null;
   return (

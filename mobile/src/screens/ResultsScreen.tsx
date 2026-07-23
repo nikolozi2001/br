@@ -10,8 +10,11 @@ import { groupDigits } from '../api/registry';
 import { getStrings } from '../i18n/strings';
 import { useSearch } from '../state/SearchStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { HomeScreenProps } from '../navigation/types';
+import type { SortKey } from '../types';
+import type { Strings } from '../i18n/strings';
 
-const SORTS = [
+const SORTS: { key: SortKey; labelKey: keyof Strings }[] = [
   { key: 'name', labelKey: 'sortName' },
   { key: 'id', labelKey: 'sortId' },
   { key: 'date', labelKey: 'sortDate' },
@@ -41,7 +44,7 @@ function SkeletonCard() {
   );
 }
 
-export default function ResultsScreen({ navigation }) {
+export default function ResultsScreen({ navigation }: HomeScreenProps<'Results'>) {
   const { colors, fonts, fs, lang, radius } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
@@ -49,7 +52,7 @@ export default function ResultsScreen({ navigation }) {
     useSearch();
   const [shareOpen, setShareOpen] = useState(false);
 
-  const arrow = (key) => (sortBy === key ? (sortDir > 0 ? ' ↑' : ' ↓') : '');
+  const arrow = (key: SortKey) => (sortBy === key ? (sortDir > 0 ? ' ↑' : ' ↓') : '');
 
   const header = (
     <HeroGradient>
@@ -97,7 +100,7 @@ export default function ResultsScreen({ navigation }) {
               }}
             >
               <Text style={{ fontSize: fs(12.5), fontWeight: '600', color: selected ? colors.brand : '#fff' }}>
-                {t[labelKey]}
+                {t[labelKey] as string}
                 {arrow(key)}
               </Text>
             </Pressable>

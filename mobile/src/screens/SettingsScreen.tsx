@@ -9,8 +9,10 @@ import { API_BASE_URL } from '../api/client';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { SettingsScreenProps } from '../navigation/types';
+import type { FontSize, Lang } from '../types';
 
-function Row({ children, last = false, onPress }) {
+function Row({ children, last = false, onPress }: { children: React.ReactNode; last?: boolean; onPress?: () => void }) {
   const { colors } = useTheme();
   const content = (
     <View
@@ -30,7 +32,7 @@ function Row({ children, last = false, onPress }) {
   return onPress ? <Pressable onPress={onPress}>{content}</Pressable> : content;
 }
 
-export default function SettingsScreen({ navigation }) {
+export default function SettingsScreen({ navigation }: SettingsScreenProps<'SettingsRoot'>) {
   const { colors, fonts, fs, lang, settings, update } = useTheme();
   const t = getStrings(lang);
   const { recent } = useAppStore();
@@ -44,10 +46,10 @@ export default function SettingsScreen({ navigation }) {
         <View style={{ gap: 8 }}>
           <SectionLabel>{t.language}</SectionLabel>
           <Card style={{ overflow: 'hidden' }}>
-            {[
+            {([
               { value: 'ka', label: t.georgian },
               { value: 'en', label: t.english },
-            ].map((option, index) => (
+            ] as { value: Lang; label: string }[]).map((option, index) => (
               <Pressable
                 key={option.value}
                 onPress={() => update({ lang: option.value })}

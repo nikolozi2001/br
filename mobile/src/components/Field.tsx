@@ -1,11 +1,21 @@
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
+import type { KeyboardTypeOptions, StyleProp, ViewStyle } from 'react-native';
 
 import { useTheme } from '../theme/ThemeProvider';
 import Icon from './Icon';
 
 /** Labelled 44px text input (`.brinput`). */
-export function TextField({ label, value, onChangeText, placeholder, keyboardType, style }) {
+export interface TextFieldProps {
+  label: string;
+  value: string;
+  onChangeText: (next: string) => void;
+  placeholder?: string;
+  keyboardType?: KeyboardTypeOptions;
+  style?: StyleProp<ViewStyle>;
+}
+
+export function TextField({ label, value, onChangeText, placeholder, keyboardType, style }: TextFieldProps) {
   const { colors, fs, radius } = useTheme();
   return (
     <View style={[{ gap: 6 }, style]}>
@@ -32,7 +42,17 @@ export function TextField({ label, value, onChangeText, placeholder, keyboardTyp
 }
 
 /** Labelled select that opens a PickerSheet; shows placeholder text when unset. */
-export function SelectField({ label, value, placeholder, onPress, style, compact = false }) {
+export interface SelectFieldProps {
+  label: string;
+  value?: string;
+  placeholder: string;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+  /** Narrower type/padding, for two-up rows. */
+  compact?: boolean;
+}
+
+export function SelectField({ label, value, placeholder, onPress, style, compact = false }: SelectFieldProps) {
   const { colors, fs, radius } = useTheme();
   const hasValue = Boolean(value);
   return (
@@ -69,7 +89,22 @@ export function SelectField({ label, value, placeholder, onPress, style, compact
 }
 
 /** Two-option segmented pill (legal / factual address, font size). */
-export function Segmented({ options, value, onChange, small = false }) {
+export interface SegmentedOption<T extends string> {
+  value: T;
+  label: string;
+  /** Font size override — the A- / A / A+ control steps its own type. */
+  size?: number;
+}
+
+export interface SegmentedProps<T extends string> {
+  options: SegmentedOption<T>[];
+  value: T;
+  onChange: (next: T) => void;
+  /** Compact square variant used by the font-size control. */
+  small?: boolean;
+}
+
+export function Segmented<T extends string>({ options, value, onChange, small = false }: SegmentedProps<T>) {
   const { colors, fs } = useTheme();
   return (
     <View

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import type { ViewStyle } from 'react-native';
 
 import ChartExportSheet from '../components/ChartExportSheet';
 import Icon from '../components/Icon';
@@ -17,9 +18,34 @@ import {
 import { regionLabel } from '../data/regions';
 import { getStrings } from '../i18n/strings';
 import { useTheme } from '../theme/ThemeProvider';
+import type { ApiRecord, BarRow, BirthDeathPoint, Lang, PieSlice, Series } from '../types';
+
+interface ChartData {
+  birthDeath: BirthDeathPoint[];
+  nace: ApiRecord[];
+  region: ApiRecord[];
+  distribution: ApiRecord[];
+  sector: ApiRecord[];
+}
+
+/** A stacked series keyed by year, with one coloured segment per category. */
+interface StackedData {
+  years: (string | number)[];
+  segments: { key?: string; label: string; color: string }[];
+  values: number[][];
+}
 
 /** Card chrome: blue title bar with optional flip + export buttons. */
-function ChartCard({ title, onFlip, flipped, onExport, captureRef, children }) {
+interface ChartCardProps {
+  title: string;
+  onFlip?: () => void;
+  flipped?: boolean;
+  onExport: () => void;
+  captureRef: React.RefObject<View | null>;
+  children: React.ReactNode;
+}
+
+function ChartCard({ title, onFlip, flipped, onExport, captureRef, children }: ChartCardProps) {
   const { colors, fonts, fs, radius } = useTheme();
   return (
     <Card ref={captureRef} collapsable={false} style={{ overflow: 'hidden' }} radius={radius.xl}>
@@ -51,7 +77,7 @@ function ChartCard({ title, onFlip, flipped, onExport, captureRef, children }) {
   );
 }
 
-const iconButton = {
+const iconButton: ViewStyle = {
   width: 30,
   height: 30,
   borderRadius: 8,
@@ -61,13 +87,15 @@ const iconButton = {
 };
 
 /** Reads a `{legend_title, 2014: n, …}` row set into years + stacked values. */
-function pivotByYear(rows, labelKey, labelKeyEn, lang) {
+function pivotByYear(rows: ApiRecord[], labelKey: string, labelKeyEn: string, lang: Lang) {
   const years = rows.length
     ? Object.keys(rows[0])
         .filter((k) => /^\d{4}$/.test(k))
         .sort()
     : [];
-  const segments = rows.map((r) => (lang === 'en' ? r[labelKeyEn] || r[labelKey] : r[labelKey])).filter(Boolean);
+  const segments = rows
+    .map((r) => String((lang === 'en' ? r[labelKeyEn] || r[labelKey] : r[labelKey]) ?? ''))
+    .filter(Boolean);
   const values = years.map((y) => rows.map((r) => Number(r[y]) || 0));
   return { years, segments, values };
 }
@@ -76,13 +104,13 @@ export default function ChartsScreen() {
   const { chartColors, colors, fs, lang } = useTheme();
   const t = getStrings(lang);
 
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [flipped, setFlipped] = useState({});
-  const [exportChart, setExportChart] = useState(null);
+  const [flipped, setFlipped] = useState<Record<string, boolean>>({});
+  const [exportChart, setExportChart] = useState<string | null>(null);
   // One capture target per chart card, so export snapshots the right one.
-  const cardRefs = useRef({});
-  const refFor = (key) => {
+  const cardRefs = useRef<Record<string, React.RefObject<View | null>>>({});
+  const refFor = (key: string) => {
     if (!cardRefs.current[key]) cardRefs.current[key] = React.createRef();
     return cardRefs.current[key];
   };
@@ -90,7 +118,7 @@ export default function ChartsScreen() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const safe = (p) => p.catch(() => []);
+    const safe = <T,>(p: Promise<T[]>): Promise<T[]> => p.catch(() => [] as T[]);
     Promise.all([
       safe(fetchBirthDeath(lang)),
       safe(fetchBirthNace(lang)),
@@ -109,7 +137,7 @@ export default function ChartsScreen() {
     };
   }, [lang]);
 
-  const toggle = (key) => setFlipped((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key: string) => setFlipped((prev) => ({ ...prev, [key]: !prev[key] }));
 
   /* ── Derived chart inputs ─────────────────────────────────────────────── */
 
@@ -121,14 +149,15 @@ export default function ChartsScreen() {
       .sort();
     // Only the four largest sections stay readable at this size.
     // `NACE_Rev_2_Code` carries the section's name; `section_division` its letter.
-    const top = [...rows]
+    const top: Series[] = [...rows]
       .map((r) => ({
-        label: r.NACE_Rev_2_Code || r.section_division || '—',
+        label: String(r.NACE_Rev_2_Code || r.section_division || '—'),
         values: years.map((y) => Number(r[y]) || 0),
+        color: '',
       }))
       .sort((a, b) => b.values.reduce((x, y) => x + y, 0) - a.values.reduce((x, y) => x + y, 0))
       .slice(0, 4)
-      .map((s, i) => ({ ...s, color: chartColors.lines[i] }));
+      .map((serie, i) => ({ ...serie, color: chartColors.lines[i] ?? chartColors.birth }));
     return { years, series: top };
   }, [data, chartColors]);
 
@@ -141,15 +170,16 @@ export default function ChartsScreen() {
     const names = Object.keys(rows[0])
       .filter((k) => k !== yearKey && typeof rows[0][k] === 'number')
       .filter((k) => rows.some((r) => Number(r[k]) > 0));
-    return {
-      years: rows.map((r) => r[yearKey]),
+    const stack: StackedData = {
+      years: rows.map((r) => r[yearKey] as string | number),
       segments: names.map((name, i) => ({
         key: name,
         label: regionLabel(name, lang),
-        color: chartColors.regions[i % chartColors.regions.length],
+        color: chartColors.regions[i % chartColors.regions.length]!,
       })),
       values: rows.map((r) => names.map((n) => Number(r[n]) || 0)),
     };
+    return stack;
   }, [data, lang, chartColors]);
 
   // The distribution endpoint already returns percentages in `share`.
@@ -159,24 +189,30 @@ export default function ChartsScreen() {
     const sorted = [...rows].sort((a, b) => (Number(b.share) || 0) - (Number(a.share) || 0));
     const top = sorted.slice(0, 6);
     const restShare = sorted.slice(6).reduce((s, r) => s + (Number(r.share) || 0), 0);
-    const slices = top.map((r) => ({ label: r.name, value: Number(r.share) || 0 }));
+    const slices = top.map((r) => ({ label: String(r.name ?? ''), value: Number(r.share) || 0 }));
     if (restShare > 0) slices.push({ label: lang === 'en' ? 'Other regions' : 'სხვა რეგიონები', value: restShare });
-    return slices.map((s, i) => ({
-      ...s,
-      percent: `${s.value.toFixed(1)}%`,
-      color: chartColors.pie[i % chartColors.pie.length],
-    }));
+    return slices.map(
+      (slice, i): PieSlice => ({
+        ...slice,
+        percent: `${slice.value.toFixed(1)}%`,
+        color: chartColors.pie[i % chartColors.pie.length]!,
+      }),
+    );
   }, [data, lang, chartColors]);
 
   const sectorPivot = useMemo(() => {
     const rows = data?.sector ?? [];
     if (!rows.length) return null;
     const { years, segments, values } = pivotByYear(rows, 'legend_title', 'legend_title_en', lang);
-    return {
+    const pivot: StackedData = {
       years,
-      segments: segments.map((label, i) => ({ label, color: chartColors.stacked100[i % chartColors.stacked100.length] })),
+      segments: segments.map((label, i) => ({
+        label,
+        color: chartColors.stacked100[i % chartColors.stacked100.length]!,
+      })),
       values,
     };
+    return pivot;
   }, [data, lang, chartColors]);
 
   const sectorBars = useMemo(() => {
@@ -185,12 +221,14 @@ export default function ChartsScreen() {
     const lastValues = sectorPivot.values[lastIndex] || [];
     const total = lastValues.reduce((a, b) => a + b, 0) || 1;
     return sectorPivot.segments
-      .map((segment, i) => ({
-        label: segment.label,
-        value: lastValues[i] || 0,
-        display: `${(((lastValues[i] || 0) / total) * 100).toFixed(1)}%`,
-        color: chartColors.sectors[i % chartColors.sectors.length],
-      }))
+      .map(
+        (segment, i): BarRow => ({
+          label: segment.label,
+          value: lastValues[i] || 0,
+          display: `${(((lastValues[i] || 0) / total) * 100).toFixed(1)}%`,
+          color: chartColors.sectors[i % chartColors.sectors.length]!,
+        }),
+      )
       .sort((a, b) => b.value - a.value)
       .slice(0, 6);
   }, [sectorPivot, chartColors]);
@@ -240,7 +278,7 @@ export default function ChartsScreen() {
               >
                 {flipped.nace ? (
                   <DataTable
-                    columns={[t.activityName, naceSeries.years.at(-1)]}
+                    columns={[t.activityName, naceSeries.years.at(-1) ?? '']}
                     rows={naceSeries.series.map((s) => [s.label, groupDigits(s.values.at(-1))])}
                   />
                 ) : (
@@ -262,7 +300,7 @@ export default function ChartsScreen() {
               >
                 {flipped.region ? (
                   <DataTable
-                    columns={[t.region, regionStack.years.at(-1)]}
+                    columns={[t.region, regionStack.years.at(-1) ?? '']}
                     rows={regionStack.segments.map((s, i) => [
                       s.label,
                       groupDigits(regionStack.values.at(-1)?.[i] ?? 0),
@@ -341,7 +379,7 @@ export default function ChartsScreen() {
               >
                 {flipped.sector ? (
                   <DataTable
-                    columns={[t.activityName, sectorPivot.years.at(-1)]}
+                    columns={[t.activityName, sectorPivot.years.at(-1) ?? '']}
                     rows={sectorPivot.segments.map((s, i) => [
                       s.label,
                       groupDigits(sectorPivot.values.at(-1)?.[i] ?? 0),

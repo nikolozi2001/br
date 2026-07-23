@@ -6,8 +6,9 @@ import Icon from '../components/Icon';
 import { REPORTS } from '../data/reports';
 import { getStrings } from '../i18n/strings';
 import { useTheme } from '../theme/ThemeProvider';
+import type { ReportsScreenProps } from '../navigation/types';
 
-export default function ReportsScreen({ navigation }) {
+export default function ReportsScreen({ navigation }: ReportsScreenProps<'ReportsList'>) {
   const { colors, fonts, fs, lang, radius, shadow } = useTheme();
   const t = getStrings(lang);
 

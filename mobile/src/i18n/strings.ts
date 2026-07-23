@@ -1,3 +1,5 @@
+import type { Lang } from '../types';
+
 /**
  * Georgian copy is taken verbatim from the prototype; English is the mirror
  * used when the language toggle is switched to EN.
@@ -47,13 +49,13 @@ const ka = {
 
   // results
   results: 'შედეგები',
-  foundCount: (n) => `ნაპოვნია ${n} სუბიექტი`,
+  foundCount: (n: string | number) => `ნაპოვნია ${n} სუბიექტი`,
   sortBy: 'დახარისხება:',
   sortName: 'დასახელება',
   sortId: 'ID',
   sortDate: 'რეგ. თარიღი',
   loadMore: 'მეტის ჩატვირთვა',
-  showing: (a, b) => `ნაჩვენებია ${a} / ${b}`,
+  showing: (a: string | number, b: string | number) => `ნაჩვენებია ${a} / ${b}`,
   emptyTitle: 'ვერაფერი მოიძებნა',
   emptyBody: 'შეცვალეთ ძებნის პარამეტრები ან გააუქმეთ ფილტრები.',
   pullIdle: 'ჩამოწიეთ განსაახლებლად',
@@ -62,7 +64,7 @@ const ka = {
 
   // favourites
   favTitle: 'რჩეული სუბიექტები',
-  favCount: (n) => `${n} შენახული სუბიექტი`,
+  favCount: (n: string | number) => `${n} შენახული სუბიექტი`,
   favEmptyTitle: 'ჯერ არაფერია შენახული',
   favEmptyBody: 'სუბიექტის გვერდზე დააჭირეთ გულის ღილაკს, რომ აქ დაემატოს.',
   favAdded: 'დამატებულია რჩეულებში',
@@ -124,7 +126,7 @@ const ka = {
   defaultActiveOnly: 'ნაგულისხმევად მხოლოდ აქტიური',
   saveHistory: 'ძებნის ისტორიის შენახვა',
   searchHistory: 'ძებნის ისტორია',
-  historyCount: (n) => `${n} ჩანაწერი`,
+  historyCount: (n: string | number) => `${n} ჩანაწერი`,
   historyEmptyTitle: 'ისტორია ცარიელია',
   historyEmptyBody: 'შესრულებული ძებნები აქ გამოჩნდება სწრაფი განმეორებისთვის.',
   byName: 'დასახელებით',
@@ -138,7 +140,7 @@ const ka = {
 
   // sheets
   exportShareTitle: 'ექსპორტი და გაზიარება',
-  exportShareSubtitle: (n) => `${n} ჩანაწერი · მიმდინარე ფილტრით`,
+  exportShareSubtitle: (n: string | number) => `${n} ჩანაწერი · მიმდინარე ფილტრით`,
   excelTable: 'Excel ცხრილი',
   csvData: 'CSV მონაცემები',
   pdfDocument: 'PDF დოკუმენტი',
@@ -209,13 +211,13 @@ const en = {
   choose: 'Select',
 
   results: 'Results',
-  foundCount: (n) => `${n} subjects found`,
+  foundCount: (n: string | number) => `${n} subjects found`,
   sortBy: 'Sort by:',
   sortName: 'Name',
   sortId: 'ID',
   sortDate: 'Reg. date',
   loadMore: 'Load more',
-  showing: (a, b) => `Showing ${a} / ${b}`,
+  showing: (a: string | number, b: string | number) => `Showing ${a} / ${b}`,
   emptyTitle: 'Nothing found',
   emptyBody: 'Change the search parameters or reset the filters.',
   pullIdle: 'Pull to refresh',
@@ -223,7 +225,7 @@ const en = {
   pullRefreshing: 'Refreshing…',
 
   favTitle: 'Saved subjects',
-  favCount: (n) => `${n} saved subjects`,
+  favCount: (n: string | number) => `${n} saved subjects`,
   favEmptyTitle: 'Nothing saved yet',
   favEmptyBody: 'Tap the heart on a subject page to add it here.',
   favAdded: 'Added to favourites',
@@ -281,7 +283,7 @@ const en = {
   defaultActiveOnly: 'Active only by default',
   saveHistory: 'Save search history',
   searchHistory: 'Search history',
-  historyCount: (n) => `${n} entries`,
+  historyCount: (n: string | number) => `${n} entries`,
   historyEmptyTitle: 'History is empty',
   historyEmptyBody: 'Performed searches appear here so you can repeat them quickly.',
   byName: 'By name',
@@ -294,7 +296,7 @@ const en = {
   privacy: 'Privacy policy',
 
   exportShareTitle: 'Export and share',
-  exportShareSubtitle: (n) => `${n} records · current filter`,
+  exportShareSubtitle: (n: string | number) => `${n} records · current filter`,
   excelTable: 'Excel table',
   csvData: 'CSV data',
   pdfDocument: 'PDF document',
@@ -323,13 +325,15 @@ const en = {
   networkError: 'Could not reach the server',
 };
 
-const dictionaries = { ka, en };
+export type Strings = typeof ka;
 
-export function getStrings(lang) {
-  return dictionaries[lang] || ka;
+const dictionaries: Record<Lang, Strings> = { ka, en };
+
+export function getStrings(lang: Lang): Strings {
+  return dictionaries[lang] ?? ka;
 }
 
 /** Backend language code — the API uses `ge` for Georgian, not `ka`. */
-export function apiLang(lang) {
+export function apiLang(lang: Lang): 'ge' | 'en' {
   return lang === 'en' ? 'en' : 'ge';
 }

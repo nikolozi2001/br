@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme/ThemeProvider';
@@ -9,7 +9,26 @@ import Icon from './Icon';
  * The prototype's bottom sheet: scrim + rounded panel that slides up, with a
  * separate rounded "Cancel" button underneath (iOS action-sheet convention).
  */
-export default function BottomSheet({ visible, onClose, title, subtitle, cancelLabel, children, scroll = false }) {
+export interface BottomSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle?: string;
+  cancelLabel: string;
+  children?: React.ReactNode;
+  /** Render the body in a ScrollView — for long option lists. */
+  scroll?: boolean;
+}
+
+export default function BottomSheet({
+  visible,
+  onClose,
+  title,
+  subtitle,
+  cancelLabel,
+  children,
+  scroll = false,
+}: BottomSheetProps) {
   const { colors, fonts, fs, radius } = useTheme();
   const insets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
@@ -29,7 +48,7 @@ export default function BottomSheet({ visible, onClose, title, subtitle, cancelL
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
       <View style={{ flex: 1 }}>
-        <Animated.View style={{ ...StyleSheetAbsolute, backgroundColor: colors.scrim, opacity: anim }}>
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim, opacity: anim }]}>
           <Pressable style={{ flex: 1 }} onPress={onClose} />
         </Animated.View>
 
@@ -83,10 +102,29 @@ export default function BottomSheet({ visible, onClose, title, subtitle, cancelL
   );
 }
 
-const StyleSheetAbsolute = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
-
 /** A single tappable row inside an export/action sheet. */
-export function SheetRow({ badge, badgeColor, badgeBg, icon, title, subtitle, onPress, divider = true }) {
+export interface SheetRowProps {
+  /** Short text badge (XLS, CSV…). Mutually exclusive with `icon`. */
+  badge?: string;
+  badgeColor: string;
+  badgeBg: string;
+  icon?: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  divider?: boolean;
+}
+
+export function SheetRow({
+  badge,
+  badgeColor,
+  badgeBg,
+  icon,
+  title,
+  subtitle,
+  onPress,
+  divider = true,
+}: SheetRowProps) {
   const { colors, fs, radius } = useTheme();
   return (
     <>
@@ -113,9 +151,9 @@ export function SheetRow({ badge, badgeColor, badgeBg, icon, title, subtitle, on
         >
           {badge ? (
             <Text style={{ fontSize: fs(11), fontWeight: '700', color: badgeColor }}>{badge}</Text>
-          ) : (
+          ) : icon ? (
             <Icon name={icon} size={20} color={badgeColor} />
-          )}
+          ) : null}
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: fs(15), color: colors.ink, fontWeight: '500' }}>{title}</Text>

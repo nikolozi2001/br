@@ -7,8 +7,9 @@ import { EmptyState, RoundButton } from '../components/primitives';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { HomeScreenProps } from '../navigation/types';
 
-export default function FavouritesScreen({ navigation }) {
+export default function FavouritesScreen({ navigation }: HomeScreenProps<'Favourites'>) {
   const { colors, dark, fonts, fs, lang } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();

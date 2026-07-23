@@ -3,13 +3,14 @@ import { Text, View } from 'react-native';
 import Svg, { G, Line, Path, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 
 import { useTheme } from '../theme/ThemeProvider';
+import type { BarRow, BirthDeathPoint, LegendItem, PieSlice, Series } from '../types';
 
 const W = 330;
 /** Room for the y-axis tick labels. */
 const AXIS_PAD = 34;
 
 /** 57583 → "57.6k" — keeps axis labels inside AXIS_PAD. */
-function tickLabel(value) {
+function tickLabel(value: number): string {
   if (Math.abs(value) >= 1000) {
     const k = value / 1000;
     return `${k >= 10 ? Math.round(k) : k.toFixed(1)}k`;
@@ -18,7 +19,7 @@ function tickLabel(value) {
 }
 
 /** Coloured swatch row shared by every chart. */
-export function Legend({ items, line = false }) {
+export function Legend({ items, line = false }: { items: LegendItem[]; line?: boolean }) {
   const { colors, fs } = useTheme();
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12, columnGap: 14 }}>
@@ -40,7 +41,7 @@ export function Legend({ items, line = false }) {
 }
 
 /** Value table shown when a chart card is flipped. */
-export function DataTable({ columns, rows }) {
+export function DataTable({ columns, rows }: { columns: (string | number)[]; rows: [string, string][] }) {
   const { colors, fs } = useTheme();
   return (
     <View>
@@ -85,7 +86,7 @@ export function DataTable({ columns, rows }) {
 }
 
 /** Grouped bars — births vs deaths per year. */
-export function GroupedBarChart({ data }) {
+export function GroupedBarChart({ data }: { data: BirthDeathPoint[] }) {
   const { colors } = useTheme();
   const H = 185;
   const pad = AXIS_PAD;
@@ -126,7 +127,7 @@ export function GroupedBarChart({ data }) {
 }
 
 /** Multi-series line chart. `series` = [{ label, color, values }]. */
-export function LineChart({ series, labels }) {
+export function LineChart({ series, labels }: { series: Series[]; labels: (string | number)[] }) {
   const { colors } = useTheme();
   const H = 180;
   const pad = AXIS_PAD;
@@ -135,7 +136,7 @@ export function LineChart({ series, labels }) {
   const base = H - 20;
   const max = Math.max(1, ...series.flatMap((s) => s.values));
   const n = labels.length;
-  const xAt = (i) => pad + i * ((right - pad) / Math.max(1, n - 1));
+  const xAt = (i: number) => pad + i * ((right - pad) / Math.max(1, n - 1));
   const ticks = [0, 0.34, 0.67, 1].map((f) => Math.round(max * f));
   // With many years, label every other one so they do not collide.
   const labelStep = n > 8 ? 2 : 1;
@@ -176,7 +177,16 @@ export function LineChart({ series, labels }) {
 }
 
 /** Stacked bars, one bar per year. `segments` = [{ label, color }]. */
-export function StackedBarChart({ years, values, segments, normalize = false }) {
+export interface StackedBarChartProps {
+  years: (string | number)[];
+  /** One inner array per year, values ordered to match `segments`. */
+  values: number[][];
+  segments: LegendItem[];
+  /** Render every bar full-height, showing composition rather than totals. */
+  normalize?: boolean;
+}
+
+export function StackedBarChart({ years, values, segments, normalize = false }: StackedBarChartProps) {
   const H = 170;
   const max = normalize ? 1 : Math.max(1, ...values.map((v) => v.reduce((a, b) => a + b, 0)));
   const step = W / Math.max(1, years.length);
@@ -195,7 +205,7 @@ export function StackedBarChart({ years, values, segments, normalize = false }) 
             {stack.map((v, si) => {
               const h = (v / sum) * totalHeight;
               y -= h;
-              return <Rect key={si} x={x} y={y} width={barWidth} height={Math.max(0, h)} fill={segments[si]?.color} />;
+              return <Rect key={si} x={x} y={y} width={barWidth} height={Math.max(0, h)} fill={segments[si]?.color ?? '#cbd5e1'} />;
             })}
             <SvgText x={i * step + step / 2} y={H + 12} fontSize={8.5} fill="#94a3b8" textAnchor="middle">
               {String(year).slice(-2)}
@@ -208,7 +218,7 @@ export function StackedBarChart({ years, values, segments, normalize = false }) 
 }
 
 /** Full pie (no donut hole), matching the prototype's region distribution. */
-export function PieChart({ slices, size = 130 }) {
+export function PieChart({ slices, size = 130 }: { slices: PieSlice[]; size?: number }) {
   const cx = 70;
   const cy = 70;
   const r = 66;
@@ -238,7 +248,7 @@ export function PieChart({ slices, size = 130 }) {
 }
 
 /** Labelled horizontal progress bars. */
-export function HorizontalBars({ rows }) {
+export function HorizontalBars({ rows }: { rows: BarRow[] }) {
   const { colors, fs } = useTheme();
   const max = Math.max(1, ...rows.map((r) => r.value));
   return (

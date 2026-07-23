@@ -12,8 +12,10 @@ import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useSearch } from '../state/SearchStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { HomeScreenProps } from '../navigation/types';
+import type { Option, PickerKey } from '../types';
 
-export default function SearchScreen({ navigation }) {
+export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) {
   const { colors, fonts, fs, lang, radius, shadow, update } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
@@ -21,9 +23,9 @@ export default function SearchScreen({ navigation }) {
   const { form, patchForm, resetForm, runSearch, runSearchWith } = useSearch();
   const lookups = useLookups();
 
-  const [picker, setPicker] = useState(null);
+  const [picker, setPicker] = useState<PickerKey | null>(null);
 
-  const pickerConfig = useMemo(
+  const pickerConfig = useMemo<Record<PickerKey, { title: string; options: Option[] }>>(
     () => ({
       legalForm: { title: t.legalForm, options: lookups.legalForms },
       region: { title: t.region, options: lookups.regions },
@@ -41,7 +43,7 @@ export default function SearchScreen({ navigation }) {
     navigation.navigate('Results');
   };
 
-  const active = pickerConfig[picker];
+  const active = picker ? pickerConfig[picker] : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -328,7 +330,7 @@ export default function SearchScreen({ navigation }) {
         cancelLabel={t.cancel}
         searchPlaceholder={t.search}
         onSelect={(option) => {
-          patchForm({ [picker]: option });
+          if (picker) patchForm({ [picker]: option });
           setPicker(null);
         }}
         onClose={() => setPicker(null)}

@@ -3,10 +3,11 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { searchSubjects } from '../api/registry';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAppStore } from './AppStore';
+import type { SearchForm, SortKey, Subject } from '../types';
 
 const PAGE_SIZE = 20;
 
-const emptyForm = {
+const emptyForm: SearchForm = {
   id: '',
   name: '',
   head: '',
@@ -23,20 +24,46 @@ const emptyForm = {
   activeOnly: true,
 };
 
-const SearchContext = createContext(null);
+interface LoadOptions {
+  append: boolean;
+  currentSortBy?: SortKey;
+  currentSortDir?: number;
+  formOverride?: SearchForm;
+}
 
-export function SearchProvider({ children }) {
+export interface SearchValue {
+  form: SearchForm;
+  patchForm: (patch: Partial<SearchForm>) => void;
+  resetForm: () => void;
+  results: Subject[];
+  total: number;
+  loading: boolean;
+  loadingMore: boolean;
+  error: Error | null;
+  sortBy: SortKey;
+  sortDir: number;
+  changeSort: (key: SortKey) => void;
+  runSearch: () => void;
+  runSearchWith: (patch: Partial<SearchForm>) => void;
+  loadMore: () => void;
+  refresh: () => void;
+  hasMore: boolean;
+}
+
+const SearchContext = createContext<SearchValue | null>(null);
+
+export function SearchProvider({ children }: { children: React.ReactNode }) {
   const { lang, settings } = useTheme();
   const { pushRecent } = useAppStore();
 
-  const [form, setForm] = useState({ ...emptyForm, activeOnly: settings.defaultActiveOnly });
-  const [results, setResults] = useState([]);
+  const [form, setForm] = useState<SearchForm>({ ...emptyForm, activeOnly: settings.defaultActiveOnly });
+  const [results, setResults] = useState<Subject[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState('name');
+  const [error, setError] = useState<Error | null>(null);
+  const [sortBy, setSortBy] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState(1);
 
   const requestId = useRef(0);
@@ -46,7 +73,7 @@ export function SearchProvider({ children }) {
     setForm((prev) => (prev.dirty ? prev : { ...prev, activeOnly: settings.defaultActiveOnly }));
   }, [settings.defaultActiveOnly]);
 
-  const patchForm = useCallback((patch) => {
+  const patchForm = useCallback((patch: Partial<SearchForm>) => {
     setForm((prev) => ({ ...prev, ...patch, dirty: true }));
   }, []);
 
@@ -55,7 +82,7 @@ export function SearchProvider({ children }) {
   }, [settings.defaultActiveOnly]);
 
   const load = useCallback(
-    async (nextPage, { append, currentSortBy, currentSortDir, formOverride }) => {
+    async (nextPage: number, { append, currentSortBy, currentSortDir, formOverride }: LoadOptions) => {
       const id = ++requestId.current;
       if (append) setLoadingMore(true);
       else setLoading(true);
@@ -75,7 +102,7 @@ export function SearchProvider({ children }) {
         setPage(nextPage);
       } catch (err) {
         if (id !== requestId.current) return;
-        setError(err);
+        setError(err as Error);
         if (!append) setResults([]);
       } finally {
         if (id === requestId.current) {
@@ -92,16 +119,16 @@ export function SearchProvider({ children }) {
     if (settings.saveHistory) {
       pushRecent({ id: form.id, name: form.name });
     }
-    load(1, { append: false });
+    void load(1, { append: false });
   }, [form.id, form.name, load, pushRecent, settings.saveHistory]);
 
   /** Applies a patch and searches with it immediately, without waiting a render. */
   const runSearchWith = useCallback(
-    (patch) => {
-      const next = { ...form, ...patch, dirty: true };
+    (patch: Partial<SearchForm>) => {
+      const next: SearchForm = { ...form, ...patch, dirty: true };
       setForm(next);
       if (settings.saveHistory) pushRecent({ id: next.id, name: next.name });
-      load(1, { append: false, formOverride: next });
+      void load(1, { append: false, formOverride: next });
     },
     [form, load, pushRecent, settings.saveHistory],
   );
@@ -109,22 +136,22 @@ export function SearchProvider({ children }) {
   const loadMore = useCallback(() => {
     if (loading || loadingMore) return;
     if (results.length >= total) return;
-    load(page + 1, { append: true });
+    void load(page + 1, { append: true });
   }, [load, loading, loadingMore, page, results.length, total]);
 
-  const refresh = useCallback(() => load(1, { append: false }), [load]);
+  const refresh = useCallback(() => void load(1, { append: false }), [load]);
 
   const changeSort = useCallback(
-    (key) => {
+    (key: SortKey) => {
       const nextDir = sortBy === key ? -sortDir : 1;
       setSortBy(key);
       setSortDir(nextDir);
-      load(1, { append: false, currentSortBy: key, currentSortDir: nextDir });
+      void load(1, { append: false, currentSortBy: key, currentSortDir: nextDir });
     },
     [load, sortBy, sortDir],
   );
 
-  const value = useMemo(
+  const value = useMemo<SearchValue>(
     () => ({
       form, patchForm, resetForm,
       results, total, loading, loadingMore, error,
@@ -141,7 +168,7 @@ export function SearchProvider({ children }) {
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 }
 
-export function useSearch() {
+export function useSearch(): SearchValue {
   const ctx = useContext(SearchContext);
   if (!ctx) throw new Error('useSearch must be used inside <SearchProvider>');
   return ctx;

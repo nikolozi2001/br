@@ -6,7 +6,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import Icon from './Icon';
 
 /** Floating pill toast pinned above the tab bar, with an optional undo action. */
-export default function Toast() {
+export default function Toast(): React.ReactElement | null {
   const { toast, hideToast } = useAppStore();
   const { fs } = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
@@ -41,7 +41,7 @@ export default function Toast() {
         {toast.action ? (
           <Pressable
             onPress={() => {
-              toast.action();
+              toast.action?.();
               hideToast();
             }}
             style={{

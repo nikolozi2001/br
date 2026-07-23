@@ -7,13 +7,14 @@ import GeoFlag from '../../assets/svg/geo.svg';
 import UkFlag from '../../assets/svg/uk.svg';
 import { useTheme } from '../theme/ThemeProvider';
 import { HeroGradient } from './primitives';
+import type { Lang } from '../types';
 
 /**
  * Geostat wordmark. The source artwork is in PDF (Y-up) coordinates and
  * react-native-svg drops the flipping root transform, so the flip is applied
  * here instead. `color` tints it — every fill in the file is `currentColor`.
  */
-export function GeostatLogo({ height, color = '#ffffff' }) {
+export function GeostatLogo({ height, color = '#ffffff' }: { height: number; color?: string }) {
   const width = height * (360.464 / 63);
   return (
     <GeostatLogoSvg
@@ -27,7 +28,7 @@ export function GeostatLogo({ height, color = '#ffffff' }) {
 }
 
 /** 38×26 rounded flag chip used in headers and the language setting. */
-export function FlagChip({ lang, width = 38, height = 26 }) {
+export function FlagChip({ lang, width = 38, height = 26 }: { lang: Lang; width?: number; height?: number }) {
   const Flag = lang === 'en' ? UkFlag : GeoFlag;
   return (
     <View
@@ -49,7 +50,15 @@ export function FlagChip({ lang, width = 38, height = 26 }) {
  * Tab-root header: white Geostat wordmark, optional right-hand actions, then a
  * big title / subtitle block on the blue gradient.
  */
-export default function ScreenHeader({ title, subtitle, actions, logoHeight = 44 }) {
+export interface ScreenHeaderProps {
+  title: string;
+  subtitle?: string;
+  /** Rendered to the right of the wordmark (favourites, language toggle…). */
+  actions?: React.ReactNode;
+  logoHeight?: number;
+}
+
+export default function ScreenHeader({ title, subtitle, actions, logoHeight = 44 }: ScreenHeaderProps) {
   const { fonts, fs } = useTheme();
   const insets = useSafeAreaInsets();
 

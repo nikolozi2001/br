@@ -6,7 +6,7 @@ import { getStrings } from '../i18n/strings';
 import { useTheme } from '../theme/ThemeProvider';
 
 /** Branded launch overlay — visible for ~1.9s, then fades out. */
-export default function Splash({ onDone }) {
+export default function Splash({ onDone }: { onDone: () => void }) {
   const { colors, fonts, fs } = useTheme();
   const t = getStrings('ka');
   const fade = useRef(new Animated.Value(1)).current;

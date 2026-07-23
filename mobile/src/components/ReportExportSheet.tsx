@@ -9,16 +9,23 @@ import { getStrings } from '../i18n/strings';
 import { groupDigits } from '../api/registry';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { Strings } from '../i18n/strings';
+import { isCountsReport, type ParsedReport, type ReportMeta } from '../types';
 
-const escapeHtml = (value) =>
+const escapeHtml = (value: unknown): string =>
   String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+const escapeCsv = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
 /** Flattens either report shape into a plain header + rows table. */
-function toTable(report, parsed, t) {
+interface Table {
+  header: string[];
+  rows: string[][];
+}
+
+function toTable(report: ReportMeta, parsed: ParsedReport | null, t: Strings): Table {
   if (!parsed) return { header: [], rows: [] };
-  if (report.shape === 'counts') {
+  if (isCountsReport(parsed)) {
     return {
       header: ['#', t.orgName, t.registered, '%', t.activeCount, '%'],
       rows: parsed.items.map((r) => [r.code, r.name, groupDigits(r.reg), r.regP, groupDigits(r.act), r.actP]),
@@ -30,7 +37,7 @@ function toTable(report, parsed, t) {
   };
 }
 
-function buildHtml(title, table) {
+function buildHtml(title: string, table: Table): string {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     body{font-family:-apple-system,system-ui,sans-serif;padding:18px;color:#1a1a2e}
     h1{font-size:14px;color:#0080be;margin:0 0 12px;line-height:1.4}
@@ -46,7 +53,7 @@ function buildHtml(title, table) {
   </table></body></html>`;
 }
 
-async function writeAndShare(filename, contents, mimeType) {
+async function writeAndShare(filename: string, contents: string, mimeType: string) {
   const file = new File(Paths.cache, filename);
   if (file.exists) file.delete();
   file.create();
@@ -54,7 +61,14 @@ async function writeAndShare(filename, contents, mimeType) {
   if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType, UTI: mimeType });
 }
 
-export default function ReportExportSheet({ visible, onClose, report, parsed }) {
+export interface ReportExportSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  report: ReportMeta;
+  parsed: ParsedReport | null;
+}
+
+export default function ReportExportSheet({ visible, onClose, report, parsed }: ReportExportSheetProps) {
   const { colors, lang } = useTheme();
   const t = getStrings(lang);
   const { showToast } = useAppStore();
@@ -64,13 +78,13 @@ export default function ReportExportSheet({ visible, onClose, report, parsed }) 
   const html = buildHtml(title, table);
   const csv = `﻿${[table.header, ...table.rows].map((r) => r.map(escapeCsv).join(',')).join('\n')}`;
 
-  const guard = (message, action) => async () => {
+  const guard = (message: string, action: () => Promise<unknown>) => async () => {
     onClose();
     showToast(message);
     try {
       await action();
     } catch (err) {
-      showToast(String(err?.message || t.networkError));
+      showToast((err as Error)?.message || t.networkError);
     }
   };
 

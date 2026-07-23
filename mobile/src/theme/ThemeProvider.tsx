@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -11,11 +11,21 @@ import {
   lightPalette,
   radius,
   shadow,
+  type Palette,
 } from './tokens';
+import type { FontSize, Lang } from '../types';
 
 const STORAGE_KEY = 'br.settings.v1';
 
-const DEFAULT_SETTINGS = {
+export interface Settings {
+  dark: boolean;
+  fontSize: FontSize;
+  lang: Lang;
+  defaultActiveOnly: boolean;
+  saveHistory: boolean;
+}
+
+const DEFAULT_SETTINGS: Settings = {
   dark: false,
   fontSize: 'normal',
   lang: 'ka',
@@ -23,23 +33,48 @@ const DEFAULT_SETTINGS = {
   saveHistory: true,
 };
 
-const ThemeContext = createContext(null);
+export interface ThemeColors extends Palette {
+  brand: string;
+  brandHover: string;
+  brandLight: string;
+  red: string;
+  redDark: string;
+  green: string;
+  greenDark: string;
+  tint: typeof brandTint;
+}
 
-export function ThemeProvider({ children }) {
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+export interface ThemeValue {
+  hydrated: boolean;
+  settings: Settings;
+  update: (patch: Partial<Settings>) => void;
+  dark: boolean;
+  lang: Lang;
+  /** Scales a design-spec pixel size by the user's font-size preference. */
+  fs: (size: number) => number;
+  scale: number;
+  colors: ThemeColors;
+  radius: typeof radius;
+  fonts: typeof fonts;
+  shadow: typeof shadow;
+  chartColors: typeof chartColors;
+}
+
+const ThemeContext = createContext<ThemeValue | null>(null);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
-        if (cancelled) return;
-        if (raw) {
-          try {
-            setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
-          } catch {
-            // corrupted payload — fall back to defaults
-          }
+        if (cancelled || !raw) return;
+        try {
+          setSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) });
+        } catch {
+          // corrupted payload — fall back to defaults
         }
       })
       .finally(() => {
@@ -50,7 +85,7 @@ export function ThemeProvider({ children }) {
     };
   }, []);
 
-  const update = useCallback((patch) => {
+  const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
@@ -58,7 +93,7 @@ export function ThemeProvider({ children }) {
     });
   }, []);
 
-  const value = useMemo(() => {
+  const value = useMemo<ThemeValue>(() => {
     const palette = settings.dark ? darkPalette : lightPalette;
     const scale = fontScales[settings.fontSize] ?? 1;
 
@@ -68,8 +103,7 @@ export function ThemeProvider({ children }) {
       update,
       dark: settings.dark,
       lang: settings.lang,
-      /** Scales a design-spec pixel size by the user's font-size preference. */
-      fs: (size) => Math.round(size * scale * 100) / 100,
+      fs: (size: number) => Math.round(size * scale * 100) / 100,
       scale,
       colors: {
         ...palette,
@@ -92,7 +126,7 @@ export function ThemeProvider({ children }) {
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
-export function useTheme() {
+export function useTheme(): ThemeValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used inside <ThemeProvider>');
   return ctx;

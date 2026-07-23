@@ -1,8 +1,10 @@
+import type { Lang } from '../types';
+
 /**
  * `/api/enterprise-birth-region` returns English column identifiers regardless
  * of the `lang` parameter, so labels are mapped here for display.
  */
-const REGION_LABELS = {
+const REGION_LABELS: Record<string, Record<Lang, string>> = {
   Tbilisi: { ka: 'ქ. თბილისი', en: 'Tbilisi' },
   Abkhazia_A_R: { ka: 'აფხაზეთის ა.რ', en: 'Abkhazia A.R.' },
   Adjara: { ka: 'აჭარის ა.რ', en: 'Adjara A.R.' },
@@ -18,7 +20,7 @@ const REGION_LABELS = {
   Unknown: { ka: 'უცნობი', en: 'Unknown' },
 };
 
-export function regionLabel(key, lang) {
+export function regionLabel(key: string, lang: Lang): string {
   const entry = REGION_LABELS[key];
   if (entry) return entry[lang] ?? entry.ka;
   return String(key).replace(/_/g, ' ');

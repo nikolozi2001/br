@@ -14,13 +14,19 @@ import SearchScreen from '../screens/SearchScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TabBar from './TabBar';
 import { useTheme } from '../theme/ThemeProvider';
+import type {
+  HomeStackParamList,
+  ReportsStackParamList,
+  RootTabParamList,
+  SettingsStackParamList,
+} from './types';
 
-const Tab = createBottomTabNavigator();
-const HomeStack = createNativeStackNavigator();
-const ReportsStack = createNativeStackNavigator();
-const SettingsStack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator<RootTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const ReportsStack = createNativeStackNavigator<ReportsStackParamList>();
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 
-const stackOptions = { headerShown: false, animation: 'slide_from_right' };
+const stackOptions = { headerShown: false, animation: 'slide_from_right' } as const;
 
 function HomeNavigator() {
   return (

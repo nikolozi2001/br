@@ -2,18 +2,23 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import Icon from '../components/Icon';
-import { getStrings } from '../i18n/strings';
-import { useTheme } from '../theme/ThemeProvider';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-const ICONS = {
+import Icon from '../components/Icon';
+import { getStrings, type Strings } from '../i18n/strings';
+import { useTheme } from '../theme/ThemeProvider';
+import type { RootTabParamList } from './types';
+
+type TabName = keyof RootTabParamList;
+
+const ICONS: Record<TabName, string> = {
   HomeTab: 'search',
   ReportsTab: 'table',
   ChartsTab: 'bars',
   SettingsTab: 'gear',
 };
 
-const LABELS = {
+const LABELS: Record<TabName, keyof Strings> = {
   HomeTab: 'tabHome',
   ReportsTab: 'tabReports',
   ChartsTab: 'tabCharts',
@@ -21,7 +26,7 @@ const LABELS = {
 };
 
 /** Translucent chrome bar with a soft-filled active pill, per the prototype. */
-export default function TabBar({ state, navigation }) {
+export default function TabBar({ state, navigation }: BottomTabBarProps) {
   const { colors, fs, lang } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
@@ -49,7 +54,7 @@ export default function TabBar({ state, navigation }) {
             accessibilityState={{ selected: focused }}
             onPress={() => {
               const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+              if (!focused && !event.defaultPrevented) navigation.navigate(route.name as TabName);
             }}
             style={{
               flex: 1,
@@ -62,12 +67,14 @@ export default function TabBar({ state, navigation }) {
             }}
           >
             <Icon
-              name={ICONS[route.name]}
+              name={ICONS[route.name as TabName]}
               size={23}
               color={color}
               fill={focused ? colors.tint.blue16 : undefined}
             />
-            <Text style={{ fontSize: fs(10), fontWeight: focused ? '600' : '500', color }}>{t[LABELS[route.name]]}</Text>
+            <Text style={{ fontSize: fs(10), fontWeight: focused ? '600' : '500', color }}>
+              {t[LABELS[route.name as TabName]] as string}
+            </Text>
           </Pressable>
         );
       })}

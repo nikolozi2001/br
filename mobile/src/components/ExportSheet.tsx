@@ -9,8 +9,13 @@ import { getStrings } from '../i18n/strings';
 import { groupDigits } from '../api/registry';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { Strings } from '../i18n/strings';
+import type { Subject } from '../types';
 
-const COLUMNS = [
+type ColumnKey = keyof Subject;
+type LabelKey = keyof Strings;
+
+const COLUMNS: [ColumnKey, LabelKey][] = [
   ['id', 'idLabel'],
   ['code', 'legalCode'],
   ['name', 'orgName'],
@@ -23,20 +28,20 @@ const COLUMNS = [
   ['head', 'head'],
 ];
 
-const escapeHtml = (value) =>
+const escapeHtml = (value: unknown): string =>
   String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+const escapeCsv = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
-function buildCsv(rows, t) {
-  const header = COLUMNS.map(([, key]) => escapeCsv(t[key])).join(',');
+function buildCsv(rows: Subject[], t: Strings): string {
+  const header = COLUMNS.map(([, key]) => escapeCsv(t[key] as string)).join(',');
   const body = rows.map((row) => COLUMNS.map(([field]) => escapeCsv(row[field])).join(',')).join('\n');
   // BOM so Excel detects UTF-8 and renders Georgian correctly.
   return `﻿${header}\n${body}`;
 }
 
-function buildHtmlTable(rows, t, title) {
-  const header = COLUMNS.map(([, key]) => `<th>${escapeHtml(t[key])}</th>`).join('');
+function buildHtmlTable(rows: Subject[], t: Strings, title: string): string {
+  const header = COLUMNS.map(([, key]) => `<th>${escapeHtml(t[key] as string)}</th>`).join('');
   const body = rows
     .map((row) => `<tr>${COLUMNS.map(([field]) => `<td>${escapeHtml(row[field])}</td>`).join('')}</tr>`)
     .join('');
@@ -50,7 +55,7 @@ function buildHtmlTable(rows, t, title) {
   </style></head><body><h1>${escapeHtml(title)}</h1><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></body></html>`;
 }
 
-async function writeAndShare(filename, contents, mimeType) {
+async function writeAndShare(filename: string, contents: string, mimeType: string): Promise<string> {
   const file = new File(Paths.cache, filename);
   if (file.exists) file.delete();
   file.create();
@@ -66,18 +71,28 @@ async function writeAndShare(filename, contents, mimeType) {
  * CSV and .xls (an HTML table, which Excel and Numbers both open) are written to
  * the cache directory, PDF goes through expo-print.
  */
-export default function ExportSheet({ visible, onClose, count, rows, title }) {
+export interface ExportSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  /** Total matching records — shown in the sheet subtitle. */
+  count: number;
+  /** The rows actually loaded, which is what gets exported. */
+  rows: Subject[];
+  title: string;
+}
+
+export default function ExportSheet({ visible, onClose, count, rows, title }: ExportSheetProps) {
   const { colors, lang } = useTheme();
   const t = getStrings(lang);
   const { showToast } = useAppStore();
 
-  const guard = (message, action) => async () => {
+  const guard = (message: string, action: () => Promise<unknown>) => async () => {
     onClose();
     showToast(message);
     try {
       await action();
     } catch (err) {
-      showToast(String(err?.message || t.networkError));
+      showToast((err as Error)?.message || t.networkError);
     }
   };
 

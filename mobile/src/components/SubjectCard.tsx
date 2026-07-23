@@ -1,18 +1,19 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { useTheme } from '../theme/ThemeProvider';
+import { useTheme, type ThemeColors } from '../theme/ThemeProvider';
 import Icon from './Icon';
+import type { Subject } from '../types';
 
 /**
  * Result / favourite row card. `სს` (joint-stock) gets the red accent badge,
  * everything else the brand blue one — same rule as the prototype's `badge()`.
  */
-export function badgeColor(form, colors) {
+export function badgeColor(form: string, colors: ThemeColors): string {
   return form === 'სს' || form === 'JSC' ? colors.redDark : colors.brand;
 }
 
-export default function SubjectCard({ subject, onPress }) {
+export default function SubjectCard({ subject, onPress }: { subject: Subject; onPress: () => void }) {
   const { colors, fs, radius, shadow } = useTheme();
   const accent = badgeColor(subject.form, colors);
 

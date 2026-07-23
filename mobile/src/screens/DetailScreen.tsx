@@ -10,9 +10,11 @@ import { fetchSubjectDetail, formatDate } from '../api/registry';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { HomeScreenProps } from '../navigation/types';
+import type { PersonRow, SubjectDetail } from '../types';
 
 /** Flat map placeholder — matches the prototype's stylised grid + pin. */
-function MapPreview({ onPress, addressLine, mapLabel }) {
+function MapPreview({ onPress, addressLine, mapLabel }: { onPress: () => void; addressLine: string; mapLabel: string }) {
   const { colors, fs, radius } = useTheme();
   return (
     <Card style={{ overflow: 'hidden' }} radius={radius.xl}>
@@ -52,7 +54,7 @@ function MapPreview({ onPress, addressLine, mapLabel }) {
 }
 
 /** Single-slice donut standing in for the partner capital breakdown. */
-function CapitalDonut({ label, percent }) {
+function CapitalDonut({ label, percent }: { label: string; percent: string }) {
   const { colors, fonts, fs } = useTheme();
   return (
     <Card style={{ padding: 18, gap: 16, alignItems: 'center' }}>
@@ -73,7 +75,7 @@ function CapitalDonut({ label, percent }) {
   );
 }
 
-function ListCard({ children }) {
+function ListCard({ children }: { children: React.ReactNode }) {
   return <Card style={{ overflow: 'hidden' }}>{children}</Card>;
 }
 
@@ -99,14 +101,14 @@ function DetailSkeleton() {
   );
 }
 
-export default function DetailScreen({ navigation, route }) {
+export default function DetailScreen({ navigation, route }: HomeScreenProps<'Detail'>) {
   const subject = route.params.subject;
   const { colors, fonts, fs, lang } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
   const { isFavourite, toggleFavourite, restoreFavourite, showToast } = useAppStore();
 
-  const [detail, setDetail] = useState(null);
+  const [detail, setDetail] = useState<SubjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -149,7 +151,7 @@ export default function DetailScreen({ navigation, route }) {
   };
 
   const addressLine = [subject.addr, subject.region].filter(Boolean).join(', ');
-  const relatedPersons =
+  const relatedPersons: PersonRow[] =
     detail?.representatives?.length
       ? detail.representatives
       : subject.head
