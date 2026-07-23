@@ -182,10 +182,13 @@ export interface EmptyStateProps {
   title: string;
   body: string;
   size?: number;
+  /** When set, renders a primary button below the body (e.g. retry). */
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
-export function EmptyState({ icon, title, body, size = 92 }: EmptyStateProps) {
-  const { colors, fonts, fs } = useTheme();
+export function EmptyState({ icon, title, body, size = 92, actionLabel, onAction }: EmptyStateProps) {
+  const { colors, fonts, fs, radius } = useTheme();
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', gap: 14, paddingVertical: 56, paddingHorizontal: 30 }}>
       <View
@@ -204,6 +207,25 @@ export function EmptyState({ icon, title, body, size = 92 }: EmptyStateProps) {
       <Text style={{ fontSize: fs(14), color: colors.muted, lineHeight: fs(21), textAlign: 'center', maxWidth: 240 }}>
         {body}
       </Text>
+      {actionLabel && onAction ? (
+        <Pressable
+          onPress={onAction}
+          style={({ pressed }) => ({
+            marginTop: 4,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            height: 44,
+            paddingHorizontal: 22,
+            borderRadius: radius.pill,
+            backgroundColor: colors.brand,
+            opacity: pressed ? 0.85 : 1,
+          })}
+        >
+          <Icon name="refresh" size={17} color="#fff" />
+          <Text style={{ fontFamily: fonts.heading, fontSize: fs(15), color: '#fff' }}>{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

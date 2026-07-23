@@ -1,11 +1,11 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 
 import ChartExportSheet from '../components/ChartExportSheet';
 import Icon from '../components/Icon';
 import ScreenHeader, { FlagChip } from '../components/ScreenHeader';
-import { Card, HeroGradient } from '../components/primitives';
+import { Card, EmptyState, HeroGradient, Skeleton } from '../components/primitives';
 import { GroupedBarChart, HorizontalBars, Legend, LineChart, PieChart, StackedBarChart } from '../components/charts';
 import useChartData from '../hooks/useChartData';
 import { regionLabel } from '../data/regions';
@@ -76,6 +76,32 @@ const iconButton: ViewStyle = {
   justifyContent: 'center',
 };
 
+/** Placeholder card shown while the chart bundle loads — mirrors ChartCard's shape. */
+function ChartCardSkeleton() {
+  const { colors, radius } = useTheme();
+  return (
+    <Card style={{ overflow: 'hidden' }} radius={radius.xl}>
+      <HeroGradient>
+        <View style={{ paddingVertical: 12, paddingHorizontal: 15, gap: 6 }}>
+          <View style={{ height: 12, width: '70%', borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.35)' }} />
+          <View style={{ height: 12, width: '45%', borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.25)' }} />
+        </View>
+      </HeroGradient>
+      <View style={{ padding: 14, backgroundColor: colors.card, gap: 12 }}>
+        <View style={{ height: 150, borderRadius: 10, backgroundColor: colors.line }} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {[70, 90, 60, 80].map((w) => (
+            <View key={w} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 11, height: 11, borderRadius: 2, backgroundColor: colors.line2 }} />
+              <Skeleton width={w} height={10} tone="field" />
+            </View>
+          ))}
+        </View>
+      </View>
+    </Card>
+  );
+}
+
 /** Reads a `{legend_title, 2014: n, …}` row set into years + stacked values. */
 function pivotByYear(rows: ApiRecord[], labelKey: string, labelKeyEn: string, lang: Lang) {
   const years = rows.length
@@ -95,7 +121,7 @@ export default function ChartsScreen() {
   const t = getStrings(lang);
 
   // Cached per language — instant on tab revisits and language toggles.
-  const { data, loading } = useChartData(lang);
+  const { data, loading, error, reload } = useChartData(lang);
   const [flipped, setFlipped] = useState<Record<string, boolean>>({});
   const [exportChart, setExportChart] = useState<string | null>(null);
   // One capture target per chart card, so export snapshots the right one.
@@ -232,16 +258,26 @@ export default function ChartsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 108, gap: 14 }}>
         {loading ? (
-          <ActivityIndicator color={colors.brand} style={{ marginTop: 40 }} />
+          <>
+            <ChartCardSkeleton />
+            <ChartCardSkeleton />
+            <ChartCardSkeleton />
+          </>
+        ) : error ? (
+          <Card style={{ paddingVertical: 30, marginTop: 20 }}>
+            <EmptyState
+              icon="bars"
+              title={t.networkError}
+              body={t.emptyBody}
+              actionLabel={t.retry}
+              onAction={reload}
+            />
+          </Card>
         ) : (
           <>
             {data?.birthDeath?.length ? (
               <ChartCard
-                title={
-                  lang === 'en'
-                    ? 'Enterprise births and deaths'
-                    : 'საწარმოთა დაბადება და გარდაცვალება'
-                }
+                title={t.chartBirthDeath}
                 onExport={() => setExportChart('birthDeath')}
                 captureRef={refFor('birthDeath')}
               >
@@ -260,15 +296,7 @@ export default function ChartsScreen() {
             {naceSeries ? (
               <ChartCard
                 // Flip toggles the data (births ⇄ deaths); the chart stays a line chart.
-                title={
-                  flipped.nace
-                    ? lang === 'en'
-                      ? 'Enterprise deaths by economic activity'
-                      : 'საწარმოთა გარდაცვალება ეკონომიკური საქმიანობის სახეების მიხედვით'
-                    : lang === 'en'
-                      ? 'Enterprise births by economic activity'
-                      : 'საწარმოთა დაბადება ეკონომიკური საქმიანობის სახეების მიხედვით'
-                }
+                title={flipped.nace ? t.chartNaceDeath : t.chartNaceBirth}
                 onFlip={() => toggle('nace')}
                 onExport={() => setExportChart('nace')}
                 captureRef={refFor('nace')}
@@ -281,15 +309,7 @@ export default function ChartsScreen() {
             {regionStack ? (
               <ChartCard
                 // Flip toggles births ⇄ deaths; the stacked-bar structure stays.
-                title={
-                  flipped.region
-                    ? lang === 'en'
-                      ? 'Enterprise deaths by region'
-                      : 'საწარმოთა გარდაცვალება რეგიონების მიხედვით'
-                    : lang === 'en'
-                      ? 'Enterprise births by region'
-                      : 'საწარმოთა დაბადება რეგიონების მიხედვით'
-                }
+                title={flipped.region ? t.chartRegionDeath : t.chartRegionBirth}
                 onFlip={() => toggle('region')}
                 onExport={() => setExportChart('region')}
                 captureRef={refFor('region')}
@@ -305,15 +325,7 @@ export default function ChartsScreen() {
 
             {pieSlices ? (
               <ChartCard
-                title={
-                  flipped.pie
-                    ? lang === 'en'
-                      ? 'Distribution of enterprise deaths by region'
-                      : 'გარდაცვლილ საწარმოთა განაწილება რეგიონების მიხედვით'
-                    : lang === 'en'
-                      ? 'Distribution of enterprise births by region'
-                      : 'დაბადებულ საწარმოთა განაწილება რეგიონების მიხედვით'
-                }
+                title={flipped.pie ? t.chartPieDeath : t.chartPieBirth}
                 onFlip={() => toggle('pie')}
                 onExport={() => setExportChart('pie')}
                 captureRef={refFor('pie')}
@@ -336,11 +348,7 @@ export default function ChartsScreen() {
 
             {sectorBars ? (
               <ChartCard
-                title={
-                  lang === 'en'
-                    ? 'Enterprise births by sector (latest year, %)'
-                    : 'საწარმოთა დაბადება დარგების მიხედვით (%)'
-                }
+                title={t.chartSectorBars}
                 onExport={() => setExportChart('sectorBars')}
                 captureRef={refFor('sectorBars')}
               >
@@ -350,15 +358,7 @@ export default function ChartsScreen() {
 
             {sectorPivot ? (
               <ChartCard
-                title={
-                  flipped.sector
-                    ? lang === 'en'
-                      ? 'Share of enterprise deaths by sector'
-                      : 'საწარმოთა გარდაცვალების წილი დარგების მიხედვით'
-                    : lang === 'en'
-                      ? 'Share of enterprise births by sector'
-                      : 'საწარმოთა დაბადების წილი დარგების მიხედვით'
-                }
+                title={flipped.sector ? t.chartSectorDeath : t.chartSectorBirth}
                 onFlip={() => toggle('sector')}
                 onExport={() => setExportChart('sector')}
                 captureRef={refFor('sector')}

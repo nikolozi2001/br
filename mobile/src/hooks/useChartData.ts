@@ -63,6 +63,11 @@ function writeCache(lang: Lang, data: ChartData) {
   AsyncStorage.setItem(storageKey(lang), JSON.stringify(entry)).catch(() => {});
 }
 
+/** An all-empty bundle means every endpoint failed — treat it as a network error. */
+function isEmptyBundle(data: ChartData): boolean {
+  return Object.values(data).every((arr) => arr.length === 0);
+}
+
 async function fetchAll(lang: Lang): Promise<ChartData> {
   const safe = <T>(p: Promise<T[]>): Promise<T[]> => p.catch(() => [] as T[]);
   const [
@@ -102,6 +107,8 @@ async function fetchAll(lang: Lang): Promise<ChartData> {
 export interface UseChartData {
   data: ChartData | null;
   loading: boolean;
+  /** True when the last load produced no data at all (network failure). */
+  error: boolean;
   reload: () => void;
 }
 
@@ -115,19 +122,17 @@ export default function useChartData(lang: Lang): UseChartData {
     return isFresh(mem) ? mem.data : null;
   });
   const [loading, setLoading] = useState(!data);
+  const [error, setError] = useState(false);
 
+  // Returns the fetched (or cached) bundle, or null when the fetch came back empty.
   const load = useCallback(
-    async (force: boolean) => {
+    async (force: boolean): Promise<ChartData | null> => {
       if (!force) {
         const cached = await readCache(lang);
-        if (cached) {
-          setData(cached);
-          setLoading(false);
-          return;
-        }
+        if (cached) return cached;
       }
-      setLoading(true);
       const fresh = await fetchAll(lang);
+      if (isEmptyBundle(fresh)) return null;
       writeCache(lang, fresh);
       return fresh;
     },
@@ -145,11 +150,12 @@ export default function useChartData(lang: Lang): UseChartData {
       setData(null);
       setLoading(true);
     }
-    void load(false).then((fresh) => {
-      if (fresh && !cancelled) {
-        setData(fresh);
-        setLoading(false);
-      }
+    setError(false);
+    void load(false).then((result) => {
+      if (cancelled) return;
+      if (result) setData(result);
+      else if (!isFresh(memory.get(lang))) setError(true);
+      setLoading(false);
     });
     return () => {
       cancelled = true;
@@ -158,8 +164,14 @@ export default function useChartData(lang: Lang): UseChartData {
 
   const reload = useCallback(() => {
     setLoading(true);
-    void load(true).then((fresh) => fresh && setData(fresh)).finally(() => setLoading(false));
+    setError(false);
+    void load(true)
+      .then((result) => {
+        if (result) setData(result);
+        else setError(true);
+      })
+      .finally(() => setLoading(false));
   }, [load]);
 
-  return { data, loading, reload };
+  return { data, loading, error, reload };
 }

@@ -112,6 +112,17 @@ const ka = {
   chartExport: 'გრაფიკის ექსპორტი',
   birth: 'დაბადება',
   death: 'გარდაცვალება',
+  // chart card titles (birth / death flip variants)
+  chartBirthDeath: 'საწარმოთა დაბადება და გარდაცვალება',
+  chartNaceBirth: 'საწარმოთა დაბადება ეკონომიკური საქმიანობის სახეების მიხედვით',
+  chartNaceDeath: 'საწარმოთა გარდაცვალება ეკონომიკური საქმიანობის სახეების მიხედვით',
+  chartRegionBirth: 'საწარმოთა დაბადება რეგიონების მიხედვით',
+  chartRegionDeath: 'საწარმოთა გარდაცვალება რეგიონების მიხედვით',
+  chartPieBirth: 'დაბადებულ საწარმოთა განაწილება რეგიონების მიხედვით',
+  chartPieDeath: 'გარდაცვლილ საწარმოთა განაწილება რეგიონების მიხედვით',
+  chartSectorBars: 'საწარმოთა დაბადება დარგების მიხედვით (%)',
+  chartSectorBirth: 'საწარმოთა დაბადების წილი დარგების მიხედვით',
+  chartSectorDeath: 'საწარმოთა გარდაცვალების წილი დარგების მიხედვით',
 
   // settings
   settingsTitle: 'პარამეტრები',
@@ -168,6 +179,7 @@ const ka = {
   openingPrint: 'იხსნება AirPrint…',
   openingShare: 'იხსნება გაზიარება…',
   networkError: 'კავშირი ვერ დამყარდა',
+  retry: 'ხელახლა ცდა',
 };
 
 const en = {
@@ -270,6 +282,16 @@ const en = {
   chartExport: 'Export chart',
   birth: 'Births',
   death: 'Deaths',
+  chartBirthDeath: 'Enterprise births and deaths',
+  chartNaceBirth: 'Enterprise births by economic activity',
+  chartNaceDeath: 'Enterprise deaths by economic activity',
+  chartRegionBirth: 'Enterprise births by region',
+  chartRegionDeath: 'Enterprise deaths by region',
+  chartPieBirth: 'Distribution of enterprise births by region',
+  chartPieDeath: 'Distribution of enterprise deaths by region',
+  chartSectorBars: 'Enterprise births by sector (latest year, %)',
+  chartSectorBirth: 'Share of enterprise births by sector',
+  chartSectorDeath: 'Share of enterprise deaths by sector',
 
   settingsTitle: 'Settings',
   settingsSubtitle: 'Application configuration',
@@ -323,6 +345,7 @@ const en = {
   openingPrint: 'Opening AirPrint…',
   openingShare: 'Opening share sheet…',
   networkError: 'Could not reach the server',
+  retry: 'Try again',
 };
 
 export type Strings = typeof ka;

@@ -148,6 +148,8 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
 
   const [detail, setDetail] = useState<SubjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   // Prefer coords from the search row; otherwise resolve them by tax id.
   const [coords, setCoords] = useState<Coords | null>(
@@ -157,12 +159,16 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(false);
     fetchSubjectDetail(subject.statId ?? subject.id, lang)
       .then((data) => {
         if (!cancelled) setDetail(data);
       })
       .catch(() => {
-        if (!cancelled) setDetail(null);
+        if (!cancelled) {
+          setDetail(null);
+          setError(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -170,7 +176,7 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
     return () => {
       cancelled = true;
     };
-  }, [subject.statId, subject.id, lang]);
+  }, [subject.statId, subject.id, lang, reloadKey]);
 
   // The search endpoint omits X/Y unless coord-filtered — resolve them here.
   useEffect(() => {
@@ -447,7 +453,15 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
               </View>
             ) : null}
 
-            {!detail ? <EmptyState icon="search" title={t.networkError} body={t.emptyBody} /> : null}
+            {error ? (
+              <EmptyState
+                icon="search"
+                title={t.networkError}
+                body={t.emptyBody}
+                actionLabel={t.retry}
+                onAction={() => setReloadKey((k) => k + 1)}
+              />
+            ) : null}
           </>
         )}
       </ScrollView>
