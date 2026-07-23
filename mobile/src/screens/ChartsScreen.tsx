@@ -6,15 +6,17 @@ import ChartExportSheet from '../components/ChartExportSheet';
 import Icon from '../components/Icon';
 import ScreenHeader, { FlagChip } from '../components/ScreenHeader';
 import { Card, HeroGradient } from '../components/primitives';
-import { DataTable, GroupedBarChart, HorizontalBars, Legend, LineChart, PieChart, StackedBarChart } from '../components/charts';
+import { GroupedBarChart, HorizontalBars, Legend, LineChart, PieChart, StackedBarChart } from '../components/charts';
 import {
   fetchBirthDeath,
   fetchBirthDistribution,
   fetchBirthNace,
   fetchBirthRegion,
   fetchBirthSector,
+  fetchDeathDistribution,
   fetchDeathNace,
-  groupDigits,
+  fetchDeathRegion,
+  fetchDeathSector,
 } from '../api/registry';
 import { regionLabel } from '../data/regions';
 import { getStrings } from '../i18n/strings';
@@ -26,8 +28,11 @@ interface ChartData {
   nace: ApiRecord[];
   naceDeath: ApiRecord[];
   region: ApiRecord[];
+  regionDeath: ApiRecord[];
   distribution: ApiRecord[];
+  distributionDeath: ApiRecord[];
   sector: ApiRecord[];
+  sectorDeath: ApiRecord[];
 }
 
 interface NaceSeries {
@@ -131,12 +136,39 @@ export default function ChartsScreen() {
       safe(fetchBirthNace(lang)),
       safe(fetchDeathNace(lang)),
       safe(fetchBirthRegion(lang)),
+      safe(fetchDeathRegion(lang)),
       safe(fetchBirthDistribution(lang)),
+      safe(fetchDeathDistribution(lang)),
       safe(fetchBirthSector(lang)),
+      safe(fetchDeathSector(lang)),
     ])
-      .then(([birthDeath, nace, naceDeath, region, distribution, sector]) => {
-        if (!cancelled) setData({ birthDeath, nace, naceDeath, region, distribution, sector });
-      })
+      .then(
+        ([
+          birthDeath,
+          nace,
+          naceDeath,
+          region,
+          regionDeath,
+          distribution,
+          distributionDeath,
+          sector,
+          sectorDeath,
+        ]) => {
+          if (!cancelled) {
+            setData({
+              birthDeath,
+              nace,
+              naceDeath,
+              region,
+              regionDeath,
+              distribution,
+              distributionDeath,
+              sector,
+              sectorDeath,
+            });
+          }
+        },
+      )
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -176,66 +208,84 @@ export default function ChartsScreen() {
   const naceDeathSeries = useMemo(() => buildNaceSeries(data?.naceDeath ?? []), [data, buildNaceSeries]);
   const naceSeries = flipped.nace ? naceDeathSeries : naceBirthSeries;
 
-  const regionStack = useMemo(() => {
-    const rows = data?.region ?? [];
-    if (!rows.length) return null;
-    // Region rows are per-year objects: { year, Tbilisi: n, Imereti: n, … }
-    const yearKey = Object.keys(rows[0]).find((k) => /year|წელი/i.test(k)) ?? 'year';
-    // Drop columns that are zero across every year (e.g. Abkhazia, Unknown).
-    const names = Object.keys(rows[0])
-      .filter((k) => k !== yearKey && typeof rows[0][k] === 'number')
-      .filter((k) => rows.some((r) => Number(r[k]) > 0));
-    const stack: StackedData = {
-      years: rows.map((r) => r[yearKey] as string | number),
-      segments: names.map((name, i) => ({
-        key: name,
-        label: regionLabel(name, lang),
-        color: chartColors.regions[i % chartColors.regions.length]!,
-      })),
-      values: rows.map((r) => names.map((n) => Number(r[n]) || 0)),
-    };
-    return stack;
-  }, [data, lang, chartColors]);
+  // Region stacked bars flip between births and deaths — one builder, both sets.
+  const buildRegionStack = React.useCallback(
+    (rows: ApiRecord[]): StackedData | null => {
+      if (!rows.length) return null;
+      // Region rows are per-year objects: { year, Tbilisi: n, Imereti: n, … }
+      const yearKey = Object.keys(rows[0]).find((k) => /year|წელი/i.test(k)) ?? 'year';
+      // Drop columns that are zero across every year (e.g. Abkhazia, Unknown).
+      const names = Object.keys(rows[0])
+        .filter((k) => k !== yearKey && typeof rows[0][k] === 'number')
+        .filter((k) => rows.some((r) => Number(r[k]) > 0));
+      return {
+        years: rows.map((r) => r[yearKey] as string | number),
+        segments: names.map((name, i) => ({
+          key: name,
+          label: regionLabel(name, lang),
+          color: chartColors.regions[i % chartColors.regions.length]!,
+        })),
+        values: rows.map((r) => names.map((n) => Number(r[n]) || 0)),
+      };
+    },
+    [lang, chartColors],
+  );
+
+  const regionBirthStack = useMemo(() => buildRegionStack(data?.region ?? []), [data, buildRegionStack]);
+  const regionDeathStack = useMemo(() => buildRegionStack(data?.regionDeath ?? []), [data, buildRegionStack]);
+  const regionStack = flipped.region ? regionDeathStack : regionBirthStack;
 
   // The distribution endpoint already returns percentages in `share`.
-  const pieSlices = useMemo(() => {
-    const rows = data?.distribution ?? [];
-    if (!rows.length) return null;
-    const sorted = [...rows].sort((a, b) => (Number(b.share) || 0) - (Number(a.share) || 0));
-    const top = sorted.slice(0, 6);
-    const restShare = sorted.slice(6).reduce((s, r) => s + (Number(r.share) || 0), 0);
-    const slices = top.map((r) => ({ label: String(r.name ?? ''), value: Number(r.share) || 0 }));
-    if (restShare > 0) slices.push({ label: lang === 'en' ? 'Other regions' : 'სხვა რეგიონები', value: restShare });
-    return slices.map(
-      (slice, i): PieSlice => ({
-        ...slice,
-        percent: `${slice.value.toFixed(1)}%`,
-        color: chartColors.pie[i % chartColors.pie.length]!,
-      }),
-    );
-  }, [data, lang, chartColors]);
+  const buildPieSlices = React.useCallback(
+    (rows: ApiRecord[]): PieSlice[] | null => {
+      if (!rows.length) return null;
+      const sorted = [...rows].sort((a, b) => (Number(b.share) || 0) - (Number(a.share) || 0));
+      const top = sorted.slice(0, 6);
+      const restShare = sorted.slice(6).reduce((s, r) => s + (Number(r.share) || 0), 0);
+      const slices = top.map((r) => ({ label: String(r.name ?? ''), value: Number(r.share) || 0 }));
+      if (restShare > 0) slices.push({ label: lang === 'en' ? 'Other regions' : 'სხვა რეგიონები', value: restShare });
+      return slices.map(
+        (slice, i): PieSlice => ({
+          ...slice,
+          percent: `${slice.value.toFixed(1)}%`,
+          color: chartColors.pie[i % chartColors.pie.length]!,
+        }),
+      );
+    },
+    [lang, chartColors],
+  );
 
-  const sectorPivot = useMemo(() => {
-    const rows = data?.sector ?? [];
-    if (!rows.length) return null;
-    const { years, segments, values } = pivotByYear(rows, 'legend_title', 'legend_title_en', lang);
-    const pivot: StackedData = {
-      years,
-      segments: segments.map((label, i) => ({
-        label,
-        color: chartColors.stacked100[i % chartColors.stacked100.length]!,
-      })),
-      values,
-    };
-    return pivot;
-  }, [data, lang, chartColors]);
+  const pieBirthSlices = useMemo(() => buildPieSlices(data?.distribution ?? []), [data, buildPieSlices]);
+  const pieDeathSlices = useMemo(() => buildPieSlices(data?.distributionDeath ?? []), [data, buildPieSlices]);
+  const pieSlices = flipped.pie ? pieDeathSlices : pieBirthSlices;
 
+  const buildSectorPivot = React.useCallback(
+    (rows: ApiRecord[]): StackedData | null => {
+      if (!rows.length) return null;
+      const { years, segments, values } = pivotByYear(rows, 'legend_title', 'legend_title_en', lang);
+      return {
+        years,
+        segments: segments.map((label, i) => ({
+          label,
+          color: chartColors.stacked100[i % chartColors.stacked100.length]!,
+        })),
+        values,
+      };
+    },
+    [lang, chartColors],
+  );
+
+  const sectorBirthPivot = useMemo(() => buildSectorPivot(data?.sector ?? []), [data, buildSectorPivot]);
+  const sectorDeathPivot = useMemo(() => buildSectorPivot(data?.sectorDeath ?? []), [data, buildSectorPivot]);
+  const sectorPivot = flipped.sector ? sectorDeathPivot : sectorBirthPivot;
+
+  // The "% by sector (latest year)" bars are always births — a separate card.
   const sectorBars = useMemo(() => {
-    if (!sectorPivot || !sectorPivot.years.length) return null;
-    const lastIndex = sectorPivot.years.length - 1;
-    const lastValues = sectorPivot.values[lastIndex] || [];
+    if (!sectorBirthPivot || !sectorBirthPivot.years.length) return null;
+    const lastIndex = sectorBirthPivot.years.length - 1;
+    const lastValues = sectorBirthPivot.values[lastIndex] || [];
     const total = lastValues.reduce((a, b) => a + b, 0) || 1;
-    return sectorPivot.segments
+    return sectorBirthPivot.segments
       .map(
         (segment, i): BarRow => ({
           label: segment.label,
@@ -246,7 +296,7 @@ export default function ChartsScreen() {
       )
       .sort((a, b) => b.value - a.value)
       .slice(0, 6);
-  }, [sectorPivot, chartColors]);
+  }, [sectorBirthPivot, chartColors]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -303,62 +353,59 @@ export default function ChartsScreen() {
 
             {regionStack ? (
               <ChartCard
-                title={lang === 'en' ? 'Enterprise births by region' : 'საწარმოთა დაბადება რეგიონების მიხედვით'}
+                // Flip toggles births ⇄ deaths; the stacked-bar structure stays.
+                title={
+                  flipped.region
+                    ? lang === 'en'
+                      ? 'Enterprise deaths by region'
+                      : 'საწარმოთა გარდაცვალება რეგიონების მიხედვით'
+                    : lang === 'en'
+                      ? 'Enterprise births by region'
+                      : 'საწარმოთა დაბადება რეგიონების მიხედვით'
+                }
                 flipped={flipped.region}
                 onFlip={() => toggle('region')}
                 onExport={() => setExportChart('region')}
                 captureRef={refFor('region')}
               >
-                {flipped.region ? (
-                  <DataTable
-                    columns={[t.region, regionStack.years.at(-1) ?? '']}
-                    rows={regionStack.segments.map((s, i) => [
-                      s.label,
-                      groupDigits(regionStack.values.at(-1)?.[i] ?? 0),
-                    ])}
-                  />
-                ) : (
-                  <>
-                    <StackedBarChart
-                      years={regionStack.years}
-                      values={regionStack.values}
-                      segments={regionStack.segments}
-                    />
-                    <Legend items={regionStack.segments} />
-                  </>
-                )}
+                <StackedBarChart
+                  years={regionStack.years}
+                  values={regionStack.values}
+                  segments={regionStack.segments}
+                />
+                <Legend items={regionStack.segments} />
               </ChartCard>
             ) : null}
 
             {pieSlices ? (
               <ChartCard
                 title={
-                  lang === 'en'
-                    ? 'Distribution of enterprise births by region'
-                    : 'დაბადებულ საწარმოთა განაწილება რეგიონების მიხედვით'
+                  flipped.pie
+                    ? lang === 'en'
+                      ? 'Distribution of enterprise deaths by region'
+                      : 'გარდაცვლილ საწარმოთა განაწილება რეგიონების მიხედვით'
+                    : lang === 'en'
+                      ? 'Distribution of enterprise births by region'
+                      : 'დაბადებულ საწარმოთა განაწილება რეგიონების მიხედვით'
                 }
                 flipped={flipped.pie}
                 onFlip={() => toggle('pie')}
                 onExport={() => setExportChart('pie')}
                 captureRef={refFor('pie')}
               >
-                {flipped.pie ? (
-                  <DataTable columns={[t.region, '%']} rows={pieSlices.map((s) => [s.label, s.percent])} />
-                ) : (
-                  <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <PieChart slices={pieSlices} />
-                    <View style={{ gap: 7, flex: 1, minWidth: 120 }}>
-                      {pieSlices.map((s) => (
-                        <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                          <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: s.color }} />
-                          <Text style={{ fontSize: fs(11.5), color: colors.muted, flex: 1 }} numberOfLines={1}>
-                            {`${s.label} · ${s.percent}`}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
+                <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <PieChart slices={pieSlices} />
+                  <View style={{ gap: 7, flex: 1, minWidth: 120 }}>
+                    {pieSlices.map((s) => (
+                      <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                        <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: s.color }} />
+                        <Text style={{ fontSize: fs(11.5), color: colors.muted, flex: 1 }} numberOfLines={1}>
+                          {`${s.label} · ${s.percent}`}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
-                )}
+                </View>
               </ChartCard>
             ) : null}
 
@@ -379,34 +426,26 @@ export default function ChartsScreen() {
             {sectorPivot ? (
               <ChartCard
                 title={
-                  lang === 'en'
-                    ? 'Share of enterprise births by sector'
-                    : 'საწარმოთა დაბადების წილი დარგების მიხედვით'
+                  flipped.sector
+                    ? lang === 'en'
+                      ? 'Share of enterprise deaths by sector'
+                      : 'საწარმოთა გარდაცვალების წილი დარგების მიხედვით'
+                    : lang === 'en'
+                      ? 'Share of enterprise births by sector'
+                      : 'საწარმოთა დაბადების წილი დარგების მიხედვით'
                 }
                 flipped={flipped.sector}
                 onFlip={() => toggle('sector')}
                 onExport={() => setExportChart('sector')}
                 captureRef={refFor('sector')}
               >
-                {flipped.sector ? (
-                  <DataTable
-                    columns={[t.activityName, sectorPivot.years.at(-1) ?? '']}
-                    rows={sectorPivot.segments.map((s, i) => [
-                      s.label,
-                      groupDigits(sectorPivot.values.at(-1)?.[i] ?? 0),
-                    ])}
-                  />
-                ) : (
-                  <>
-                    <StackedBarChart
-                      normalize
-                      years={sectorPivot.years}
-                      values={sectorPivot.values}
-                      segments={sectorPivot.segments}
-                    />
-                    <Legend items={sectorPivot.segments} />
-                  </>
-                )}
+                <StackedBarChart
+                  normalize
+                  years={sectorPivot.years}
+                  values={sectorPivot.values}
+                  segments={sectorPivot.segments}
+                />
+                <Legend items={sectorPivot.segments} />
               </ChartCard>
             ) : null}
           </>

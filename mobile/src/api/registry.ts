@@ -242,9 +242,9 @@ export async function fetchBirthDeath(lang: Lang): Promise<BirthDeathPoint[]> {
     .map((year) => ({ year, birth: num(birth[year]), death: num(death[year]) }));
 }
 
-/** One row per year, remaining keys are region names. */
-export async function fetchBirthRegion(lang: Lang): Promise<ApiRecord[]> {
-  const data = toArray(await apiGet('/enterprise-birth-region', { lang: apiLang(lang) }));
+/** One row per year, remaining keys are region names. Shared by birth/death. */
+async function fetchRegion(endpoint: string, lang: Lang): Promise<ApiRecord[]> {
+  const data = toArray(await apiGet(endpoint, { lang: apiLang(lang) }));
   return data.map((item) => {
     const copy = { ...item };
     delete copy.Unknown;
@@ -252,20 +252,31 @@ export async function fetchBirthRegion(lang: Lang): Promise<ApiRecord[]> {
   });
 }
 
+export const fetchBirthRegion = (lang: Lang) => fetchRegion('/enterprise-birth-region', lang);
+export const fetchDeathRegion = (lang: Lang) => fetchRegion('/enterprise-death-region', lang);
+
 /** One row per sector with a column per year; the `სულ` total row is dropped. */
-export async function fetchBirthSector(lang: Lang): Promise<ApiRecord[]> {
-  const data = toArray(await apiGet('/enterprise-birth-sector', { lang: apiLang(lang) }));
+async function fetchSector(endpoint: string, lang: Lang): Promise<ApiRecord[]> {
+  const data = toArray(await apiGet(endpoint, { lang: apiLang(lang) }));
   return data.filter((item) => item.legend_title !== 'სულ');
 }
 
-/** `[{name, name_en, share}]` — the region distribution pie. */
-export async function fetchBirthDistribution(lang: Lang): Promise<ApiRecord[]> {
-  const data = toArray(await apiGet('/enterprise-birth-distribution', { lang: apiLang(lang) }));
+export const fetchBirthSector = (lang: Lang) => fetchSector('/enterprise-birth-sector', lang);
+export const fetchDeathSector = (lang: Lang) => fetchSector('/enterprise-death-sector', lang);
+
+/** `[{name, name_en, share}]` — the region distribution pie. Shared by birth/death. */
+async function fetchDistribution(endpoint: string, lang: Lang): Promise<ApiRecord[]> {
+  const data = toArray(await apiGet(endpoint, { lang: apiLang(lang) }));
   return data.map((item) => ({
     ...item,
     name: lang === 'en' ? item.name_en || item.name : item.name,
   }));
 }
+
+export const fetchBirthDistribution = (lang: Lang) =>
+  fetchDistribution('/enterprise-birth-distribution', lang);
+export const fetchDeathDistribution = (lang: Lang) =>
+  fetchDistribution('/enterprise-death-distribution', lang);
 
 /** One row per NACE section with a column per year; the grand-total row (no
  * section name) is dropped so it doesn't dominate the chart. */
