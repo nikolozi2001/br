@@ -7,6 +7,7 @@ import { File, Paths } from 'expo-file-system';
 import BottomSheet, { SheetRow } from './BottomSheet';
 import { getStrings } from '../i18n/strings';
 import { groupDigits } from '../api/registry';
+import { writeXlsxAndShare } from '../utils/xlsx';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { Strings } from '../i18n/strings';
@@ -97,12 +98,12 @@ export default function ReportExportSheet({ visible, onClose, report, parsed }: 
       cancelLabel={t.cancel}
     >
       <SheetRow
-        badge="XLS"
+        badge="XLSX"
         badgeColor="#fff"
         badgeBg="#1d7044"
         title={t.excelTable}
-        subtitle=".xls"
-        onPress={guard(t.preparingXls, () => writeAndShare(`report-${report.id}.xls`, html, 'application/vnd.ms-excel'))}
+        subtitle=".xlsx"
+        onPress={guard(t.preparingXls, () => writeXlsxAndShare(`report-${report.id}.xlsx`, title, table.header, table.rows))}
       />
       <SheetRow
         badge="CSV"

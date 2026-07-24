@@ -13,6 +13,32 @@ npx expo start --ios
 
 Android-ისთვის `npx expo start --android`.
 
+## ხარისხის შემოწმება
+
+```bash
+npm run typecheck   # tsc --noEmit (strict)
+npm test            # Jest (jest-expo) — registry/reports/settings პარსერები
+```
+
+## Production build (EAS)
+
+`eas.json` შეიცავს `development` / `preview` / `production` პროფილებს:
+
+```bash
+npx eas build --profile preview --platform ios      # simulator build
+npx eas build --profile production --platform all
+```
+
+**Android + რუკა:** `react-native-maps` Expo Go-ში მუშაობს გასაღების გარეშე,
+მაგრამ Android standalone build-ისთვის საჭიროა Google Maps API key. დაამატეთ
+`app.json`-ში:
+
+```json
+"android": { "config": { "googleMaps": { "apiKey": "YOUR_KEY" } } }
+```
+
+iOS-ზე Apple Maps-ია — გასაღები არ სჭირდება.
+
 ## API
 
 ნაგულისხმევად აპლიკაცია მიმართავს `https://br-api.geostat.ge/api`-ს.
@@ -62,8 +88,8 @@ src/
 
 ## ექსპორტი
 
-- **CSV / XLS** — `expo-file-system`-ით იწერება cache-ში და იხსნება share sheet-ით.
-  XLS არის HTML-ცხრილი `.xls` გაფართოებით (Excel და Numbers ორივე ხსნის).
+- **XLSX / CSV** — `xlsx` (SheetJS)-ით იქმნება ნამდვილი `.xlsx` workbook, იწერება
+  binary-ად `expo-file-system`-ით და იხსნება share sheet-ით.
 - **PDF / ბეჭდვა** — `expo-print`.
 - **გრაფიკის PNG / JPEG** — `react-native-view-shot`-ით ბარათის სნეპშოტი.
   პროტოტიპის **SVG** ვარიანტი არ არის: ბარათი რასტერიზდება, ვექტორად აღდგენა

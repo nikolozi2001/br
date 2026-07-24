@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
   brand,
@@ -14,9 +13,7 @@ import {
   type Palette,
 } from './tokens';
 import type { FontSize, Lang } from '../types';
-
-// v2: default `defaultActiveOnly` flipped to false — bump resets stale v1 blobs.
-const STORAGE_KEY = 'br.settings.v2';
+import { loadSettings, saveSettings } from '../state/settingsStorage';
 
 export interface Settings {
   dark: boolean;
@@ -69,14 +66,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => {
-        if (cancelled || !raw) return;
-        try {
-          setSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) });
-        } catch {
-          // corrupted payload — fall back to defaults
-        }
+    loadSettings(DEFAULT_SETTINGS)
+      .then((loaded) => {
+        if (!cancelled) setSettings(loaded);
       })
       .finally(() => {
         if (!cancelled) setHydrated(true);
@@ -89,7 +81,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+      saveSettings(next);
       return next;
     });
   }, []);

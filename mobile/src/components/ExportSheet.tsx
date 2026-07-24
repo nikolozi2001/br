@@ -7,6 +7,7 @@ import { File, Paths } from 'expo-file-system';
 import BottomSheet, { SheetRow } from './BottomSheet';
 import { getStrings } from '../i18n/strings';
 import { groupDigits } from '../api/registry';
+import { writeXlsxAndShare, type Cell } from '../utils/xlsx';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { Strings } from '../i18n/strings';
@@ -38,6 +39,14 @@ function buildCsv(rows: Subject[], t: Strings): string {
   const body = rows.map((row) => COLUMNS.map(([field]) => escapeCsv(row[field])).join(',')).join('\n');
   // BOM so Excel detects UTF-8 and renders Georgian correctly.
   return `﻿${header}\n${body}`;
+}
+
+function xlsxHeader(t: Strings): Cell[] {
+  return COLUMNS.map(([, key]) => t[key] as string);
+}
+
+function xlsxRows(rows: Subject[]): Cell[][] {
+  return rows.map((row) => COLUMNS.map(([field]) => String(row[field] ?? '')));
 }
 
 function buildHtmlTable(rows: Subject[], t: Strings, title: string): string {
@@ -105,13 +114,13 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
       cancelLabel={t.cancel}
     >
       <SheetRow
-        badge="XLS"
+        badge="XLSX"
         badgeColor="#fff"
         badgeBg="#1d7044"
         title={t.excelTable}
-        subtitle=".xls"
+        subtitle=".xlsx"
         onPress={guard(t.preparingXls, () =>
-          writeAndShare('business-register.xls', buildHtmlTable(rows, t, title), 'application/vnd.ms-excel'),
+          writeXlsxAndShare('business-register.xlsx', title, xlsxHeader(t), xlsxRows(rows)),
         )}
       />
       <SheetRow
