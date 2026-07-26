@@ -68,6 +68,8 @@ export interface PartnerRow {
   shareValue: number;
   /** Reporting period, e.g. "2015-12". */
   date: string;
+  /** Individual's id, when the partner is a natural person — enables the involvement lookup. */
+  personId?: number;
 }
 
 /** Partner shares grouped into one pie chart per reporting period. */

@@ -174,12 +174,14 @@ export async function fetchSubjectDetail(
 
   const toPartnerRow = (p: ApiRecord): PartnerRow => {
     const shareValue = Number(p.Share ?? p.Share_Percent) || 0;
+    const personId = Number(p.Person_ID);
     return {
       person: str(p.Full_Name || p.Partner || p.Name),
       share: `${shareValue}%`,
       shareValue,
       // `Date` is a reporting period like "2015-12"; keep it raw for grouping.
       date: str(p.Date || p.Reg_Date || p.Start_Date),
+      personId: Number.isFinite(personId) && personId > 0 ? personId : undefined,
     };
   };
 

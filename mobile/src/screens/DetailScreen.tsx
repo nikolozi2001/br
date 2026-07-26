@@ -169,9 +169,15 @@ function PartnerPeriodCard({ period, title, onExport, captureRef }: PartnerPerio
 }
 
 /** Flat person / share / date table for the partner details (from `/api/partners-vw`). */
-function PartnerDetailsTable({ rows }: { rows: PartnerRow[] }) {
-  const { colors, fonts, fs } = useTheme();
-  const t = getStrings(useTheme().lang);
+function PartnerDetailsTable({
+  rows,
+  onPersonPress,
+}: {
+  rows: PartnerRow[];
+  onPersonPress: (personId: number, name: string) => void;
+}) {
+  const { colors, fonts, fs, lang } = useTheme();
+  const t = getStrings(lang);
   return (
     <Card style={{ overflow: 'hidden' }}>
       <HeroGradient>
@@ -185,26 +191,32 @@ function PartnerDetailsTable({ rows }: { rows: PartnerRow[] }) {
           </Text>
         </View>
       </HeroGradient>
-      {rows.map((r, i) => (
-        <View
-          key={`${r.person}-${r.date}-${i}`}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-            paddingVertical: 12,
-            paddingHorizontal: 15,
-            borderTopWidth: i === 0 ? 0 : 1,
-            borderTopColor: colors.line3,
-          }}
-        >
-          <Text style={{ flex: 1, fontSize: fs(14), color: colors.brand, fontWeight: '600' }}>{r.person}</Text>
-          <Text style={{ width: 52, fontSize: fs(14), color: colors.ink, textAlign: 'right' }}>{r.shareValue}</Text>
-          <Text style={{ width: 66, fontSize: fs(12), color: colors.faint, textAlign: 'right' }}>
-            {formatPeriod(r.date)}
-          </Text>
-        </View>
-      ))}
+      {rows.map((r, i) => {
+        const tappable = r.personId != null;
+        return (
+          <Pressable
+            key={`${r.person}-${r.date}-${i}`}
+            disabled={!tappable}
+            onPress={() => onPersonPress(r.personId!, r.person)}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+              paddingVertical: 12,
+              paddingHorizontal: 15,
+              borderTopWidth: i === 0 ? 0 : 1,
+              borderTopColor: colors.line3,
+              backgroundColor: pressed && tappable ? colors.line3 : 'transparent',
+            })}
+          >
+            <Text style={{ flex: 1, fontSize: fs(14), color: colors.brand, fontWeight: '600' }}>{r.person}</Text>
+            <Text style={{ width: 52, fontSize: fs(14), color: colors.ink, textAlign: 'right' }}>{r.shareValue}</Text>
+            <Text style={{ width: 66, fontSize: fs(12), color: colors.faint, textAlign: 'right' }}>
+              {formatPeriod(r.date)}
+            </Text>
+          </Pressable>
+        );
+      })}
     </Card>
   );
 }
@@ -520,7 +532,10 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
             {detail?.partnersDetail?.length ? (
               <View style={{ gap: 8 }}>
                 <SectionLabel>{t.partnerDetails}</SectionLabel>
-                <PartnerDetailsTable rows={detail.partnersDetail} />
+                <PartnerDetailsTable
+                  rows={detail.partnersDetail}
+                  onPersonPress={(personId, name) => setInvolvement({ personId, name })}
+                />
               </View>
             ) : null}
 
