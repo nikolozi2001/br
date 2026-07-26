@@ -164,26 +164,42 @@ export async function searchSubjects(form: SearchForm, opts: SearchOptions): Pro
 
 /* ── Subject detail ────────────────────────────────────────────────────────── */
 
-/** Runs the four detail endpoints in parallel; any failure degrades to []. */
+/** A positive `Person_ID` when the row is a natural person, else undefined. */
+function personIdOf(record: ApiRecord): number | undefined {
+  const id = Number(record.Person_ID);
+  return Number.isFinite(id) && id > 0 ? id : undefined;
+}
+
+/** Normalises a partner row from `/api/partners` or `/api/partners-vw`. */
+export function toPartnerRow(p: ApiRecord): PartnerRow {
+  const shareValue = Number(p.Share ?? p.Share_Percent) || 0;
+  return {
+    person: str(p.Full_Name || p.Partner || p.Name),
+    share: `${shareValue}%`,
+    shareValue,
+    // `Date` is a reporting period like "2015-12"; keep it raw for grouping.
+    date: str(p.Date || p.Reg_Date || p.Start_Date),
+    personId: personIdOf(p),
+  };
+}
+
+/** Normalises a representative row from `/api/representatives`. */
+export function toRepresentativeRow(r: ApiRecord): PersonRow {
+  return {
+    person: str(r.Full_Name || r.Person || r.Name),
+    role: str(r.Role || r.Position || r.Representative_Type),
+    date: formatDate(r.Reg_Date || r.Start_Date || r.Date),
+    personId: personIdOf(r),
+  };
+}
+
+/** Runs the five detail endpoints in parallel; any failure degrades to []. */
 export async function fetchSubjectDetail(
   statId: number | string,
   lang: Lang,
 ): Promise<SubjectDetail> {
   const settle = (p: Promise<unknown>): Promise<ApiRecord[]> =>
     p.then((v) => toArray(v)).catch(() => [] as ApiRecord[]);
-
-  const toPartnerRow = (p: ApiRecord): PartnerRow => {
-    const shareValue = Number(p.Share ?? p.Share_Percent) || 0;
-    const personId = Number(p.Person_ID);
-    return {
-      person: str(p.Full_Name || p.Partner || p.Name),
-      share: `${shareValue}%`,
-      shareValue,
-      // `Date` is a reporting period like "2015-12"; keep it raw for grouping.
-      date: str(p.Date || p.Reg_Date || p.Start_Date),
-      personId: Number.isFinite(personId) && personId > 0 ? personId : undefined,
-    };
-  };
 
   const [representatives, partners, partnersVw, addressHistory, nameHistory] = await Promise.all([
     settle(apiGet('/representatives', { statId, lang: apiLang(lang) })),
@@ -195,15 +211,7 @@ export async function fetchSubjectDetail(
   ]);
 
   return {
-    representatives: representatives.map((r): PersonRow => {
-      const personId = Number(r.Person_ID);
-      return {
-        person: str(r.Full_Name || r.Person || r.Name),
-        role: str(r.Role || r.Position || r.Representative_Type),
-        date: formatDate(r.Reg_Date || r.Start_Date || r.Date),
-        personId: Number.isFinite(personId) && personId > 0 ? personId : undefined,
-      };
-    }),
+    representatives: representatives.map(toRepresentativeRow),
     partners: partners.map(toPartnerRow),
     partnersDetail: partnersVw.map(toPartnerRow),
     addressHistory: addressHistory.map(
@@ -237,25 +245,51 @@ export async function fetchCoordinates(taxId: string, lang: Lang): Promise<Coord
   return { lat: Number(c.X), lng: Number(c.Y), region: str(c.Region) };
 }
 
+/** Fetches a single subject by its legal code (identification number) for drill-down navigation. */
+export async function fetchSubjectByLegalCode(legalCode: string, lang: Lang): Promise<Subject | null> {
+  if (!legalCode) return null;
+  const { results } = await searchSubjects({ id: legalCode } as SearchForm, { lang, limit: 1 });
+  return results[0] ?? null;
+}
+
 /** "2020-10" → "01/10/2020", matching the web involvement modal; passes other shapes through. */
-function formatMonthlyDate(value: unknown): string {
+export function formatMonthlyDate(value: unknown): string {
   const raw = str(value);
   const m = /^(\d{4})-(\d{2})$/.exec(raw);
   return m ? `01/${m[2]}/${m[1]}` : formatDate(value) || raw;
 }
 
+/** "2015-12" → "12/2015" without Date parsing (avoids month drift across timezones). */
+export function formatPeriod(value: unknown): string {
+  const raw = str(value);
+  const m = /^(\d{4})-(\d{2})$/.exec(raw);
+  return m ? `${m[2]}/${m[1]}` : formatDate(value) || raw;
+}
+
+/** Normalises an involvement row from `/api/legal-unit-web`. */
+export function toInvolvementRow(r: ApiRecord): PersonInvolvementRow {
+  return {
+    company: str(r.Full_Name || r.Name),
+    role: str(r.Position || r.Role),
+    date: formatMonthlyDate(r.Date),
+    statId: str(r.Stat_ID),
+    legalCode: str(r.Legal_Code),
+  };
+}
+
+// Involvement history is read-only reference data — cache it for the session so
+// re-tapping the same person is instant and avoids duplicate requests.
+const involvementCache = new Map<string, PersonInvolvementRow[]>();
+
 /** A person's involvement history across companies (`/api/legal-unit-web?personId=`). */
 export async function fetchPersonInvolvement(personId: number, lang: Lang): Promise<PersonInvolvementRow[]> {
+  const key = `${personId}:${lang}`;
+  const cached = involvementCache.get(key);
+  if (cached) return cached;
   const data = toArray(await apiGet('/legal-unit-web', { personId, lang: apiLang(lang) }));
-  return data.map(
-    (r): PersonInvolvementRow => ({
-      company: str(r.Full_Name || r.Name),
-      role: str(r.Position || r.Role),
-      date: formatMonthlyDate(r.Date),
-      statId: str(r.Stat_ID),
-      legalCode: str(r.Legal_Code),
-    }),
-  );
+  const rows = data.map(toInvolvementRow);
+  involvementCache.set(key, rows);
+  return rows;
 }
 
 /* ── Reports ───────────────────────────────────────────────────────────────── */

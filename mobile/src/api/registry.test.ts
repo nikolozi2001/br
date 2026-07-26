@@ -74,3 +74,73 @@ describe('groupPartnerPeriods', () => {
     expect(groupPartnerPeriods([], ['#111'])).toEqual([]);
   });
 });
+
+import {
+  formatMonthlyDate,
+  formatPeriod,
+  toInvolvementRow,
+  toPartnerRow,
+  toRepresentativeRow,
+} from './registry';
+
+describe('formatMonthlyDate', () => {
+  it('formats a YYYY-MM period as 01/MM/YYYY', () => {
+    expect(formatMonthlyDate('2020-10')).toBe('01/10/2020');
+    expect(formatMonthlyDate('2015-06')).toBe('01/06/2015');
+  });
+  it('passes non-period values through', () => {
+    expect(formatMonthlyDate('')).toBe('');
+    expect(formatMonthlyDate('—')).toBe('—');
+  });
+});
+
+describe('formatPeriod', () => {
+  it('formats a YYYY-MM period as MM/YYYY without timezone drift', () => {
+    expect(formatPeriod('2015-12')).toBe('12/2015');
+    expect(formatPeriod('2014-01')).toBe('01/2014');
+  });
+  it('passes non-period values through', () => {
+    expect(formatPeriod('')).toBe('');
+    expect(formatPeriod('n/a')).toBe('n/a');
+  });
+});
+
+describe('toPartnerRow', () => {
+  it('extracts a positive Person_ID', () => {
+    const row = toPartnerRow({ Name: 'A', Share: 55, Date: '2015-12', Person_ID: 983138 });
+    expect(row).toMatchObject({ person: 'A', shareValue: 55, share: '55%', date: '2015-12', personId: 983138 });
+  });
+  it('omits personId for a company partner (null/zero id)', () => {
+    expect(toPartnerRow({ Name: 'Co', Share: 100, Date: '2013-07', Reg_Company_ID: 5 }).personId).toBeUndefined();
+    expect(toPartnerRow({ Name: 'Co', Share: 100, Person_ID: 0 }).personId).toBeUndefined();
+  });
+  it('defaults a missing share to 0', () => {
+    expect(toPartnerRow({ Name: 'A' }).shareValue).toBe(0);
+  });
+});
+
+describe('toRepresentativeRow', () => {
+  it('maps position and person id', () => {
+    const row = toRepresentativeRow({ Full_Name: 'X', Position: 'დირექტორი', Date: '2015-12', Person_ID: 22 });
+    expect(row).toMatchObject({ person: 'X', role: 'დირექტორი', personId: 22 });
+  });
+});
+
+describe('toInvolvementRow', () => {
+  it('maps company, role, formatted date and codes', () => {
+    const row = toInvolvementRow({
+      Full_Name: 'შპს ემბრიო',
+      Position: 'პარტნიორი',
+      Date: '2020-10',
+      Stat_ID: 21150413,
+      Legal_Code: '404854485',
+    });
+    expect(row).toEqual({
+      company: 'შპს ემბრიო',
+      role: 'პარტნიორი',
+      date: '01/10/2020',
+      statId: '21150413',
+      legalCode: '404854485',
+    });
+  });
+});

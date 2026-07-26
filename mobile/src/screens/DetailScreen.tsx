@@ -10,7 +10,15 @@ import SubjectShareSheet from '../components/SubjectShareSheet';
 import { PieChart } from '../components/charts';
 import { buildPieSvg } from '../utils/pieSvg';
 import { Card, DataRow, EmptyState, HeroGradient, RoundButton, SectionLabel, Skeleton } from '../components/primitives';
-import { fetchCoordinates, fetchSubjectDetail, formatDate, formatLongDate, groupPartnerPeriods } from '../api/registry';
+import {
+  fetchCoordinates,
+  fetchSubjectByLegalCode,
+  fetchSubjectDetail,
+  formatDate,
+  formatLongDate,
+  formatPeriod,
+  groupPartnerPeriods,
+} from '../api/registry';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -20,12 +28,6 @@ import type { PartnerPeriod, PartnerRow, PersonRow, SubjectDetail } from '../typ
 interface Coords {
   lat: number;
   lng: number;
-}
-
-/** "2015-12" → "12/2015" without Date parsing (avoids month drift across timezones). */
-function formatPeriod(value: string): string {
-  const m = /^(\d{4})-(\d{2})$/.exec(value);
-  return m ? `${m[2]}/${m[1]}` : formatDate(value) || value;
 }
 
 /** Real map when coordinates are known, otherwise the prototype's stylised placeholder. */
@@ -352,6 +354,20 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
   // The related person whose involvement history is open, if any.
   const [involvement, setInvolvement] = useState<{ personId: number; name: string } | null>(null);
 
+  // Drill-down from an involvement row into that company's own detail screen.
+  const openCompany = async (legalCode: string, name: string) => {
+    if (!legalCode || legalCode === subject.code) return; // ignore the subject we're already on
+    setInvolvement(null);
+    showToast(t.openingSubject(name));
+    try {
+      const found = await fetchSubjectByLegalCode(legalCode, lang);
+      if (found) navigation.push('Detail', { subject: found });
+      else showToast(t.emptyTitle);
+    } catch (err) {
+      showToast((err as Error)?.message || t.networkError);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <HeroGradient>
@@ -608,6 +624,7 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
         onClose={() => setInvolvement(null)}
         personId={involvement?.personId ?? null}
         personName={involvement?.name ?? ''}
+        onOpenCompany={openCompany}
       />
     </View>
   );

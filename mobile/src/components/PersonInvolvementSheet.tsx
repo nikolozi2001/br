@@ -17,13 +17,21 @@ export interface PersonInvolvementSheetProps {
   /** The person to look up; the sheet only fetches when this is set. */
   personId: number | null;
   personName: string;
+  /** Drill-down: open a listed company's own detail screen. */
+  onOpenCompany?: (legalCode: string, name: string) => void;
 }
 
 /**
  * Modal listing every company a person is (or was) involved in, from
  * `/api/legal-unit-web?personId=` — the app's take on the web involvement popup.
  */
-export default function PersonInvolvementSheet({ visible, onClose, personId, personName }: PersonInvolvementSheetProps) {
+export default function PersonInvolvementSheet({
+  visible,
+  onClose,
+  personId,
+  personName,
+  onOpenCompany,
+}: PersonInvolvementSheetProps) {
   const { colors, fonts, fs, lang, radius, shadow } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
@@ -142,27 +150,34 @@ export default function PersonInvolvementSheet({ visible, onClose, personId, per
             </View>
           ) : (
             <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
-              {rows.map((r, i) => (
-                <View
-                  key={`${r.statId}-${r.role}-${r.date}-${i}`}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    paddingVertical: 14,
-                    paddingHorizontal: 18,
-                    borderTopWidth: i === 0 ? 0 : 1,
-                    borderTopColor: colors.line3,
-                  }}
-                >
-                  <View style={{ gap: 2, flex: 1 }}>
-                    <Text style={{ fontSize: fs(15), color: colors.brand, fontWeight: '600' }}>{r.company}</Text>
-                    <Text style={{ fontSize: fs(12), color: colors.muted }}>{r.role}</Text>
-                  </View>
-                  <Text style={{ fontSize: fs(12), color: colors.faint }}>{r.date}</Text>
-                </View>
-              ))}
+              {rows.map((r, i) => {
+                const tappable = Boolean(onOpenCompany && r.legalCode);
+                return (
+                  <Pressable
+                    key={`${r.statId}-${r.role}-${r.date}-${i}`}
+                    disabled={!tappable}
+                    onPress={() => onOpenCompany?.(r.legalCode, r.company)}
+                    style={({ pressed }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      paddingVertical: 14,
+                      paddingHorizontal: 18,
+                      borderTopWidth: i === 0 ? 0 : 1,
+                      borderTopColor: colors.line3,
+                      backgroundColor: pressed && tappable ? colors.line3 : 'transparent',
+                    })}
+                  >
+                    <View style={{ gap: 2, flex: 1 }}>
+                      <Text style={{ fontSize: fs(15), color: colors.brand, fontWeight: '600' }}>{r.company}</Text>
+                      <Text style={{ fontSize: fs(12), color: colors.muted }}>{r.role}</Text>
+                    </View>
+                    <Text style={{ fontSize: fs(12), color: colors.faint }}>{r.date}</Text>
+                    {tappable ? <Icon name="chevronRight" size={16} color={colors.faint} /> : null}
+                  </Pressable>
+                );
+              })}
             </ScrollView>
           )}
         </View>
