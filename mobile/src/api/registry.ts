@@ -9,6 +9,7 @@ import type {
   Option,
   PartnerPeriod,
   PartnerRow,
+  PersonInvolvementRow,
   PersonRow,
   PieSlice,
   SearchForm,
@@ -179,13 +180,15 @@ export async function fetchSubjectDetail(
   ]);
 
   return {
-    representatives: representatives.map(
-      (r): PersonRow => ({
+    representatives: representatives.map((r): PersonRow => {
+      const personId = Number(r.Person_ID);
+      return {
         person: str(r.Full_Name || r.Person || r.Name),
         role: str(r.Role || r.Position || r.Representative_Type),
         date: formatDate(r.Reg_Date || r.Start_Date || r.Date),
-      }),
-    ),
+        personId: Number.isFinite(personId) && personId > 0 ? personId : undefined,
+      };
+    }),
     partners: partners.map((p): PartnerRow => {
       const shareValue = Number(p.Share ?? p.Share_Percent) || 0;
       return {
@@ -225,6 +228,27 @@ export async function fetchCoordinates(taxId: string, lang: Lang): Promise<Coord
   const c = data[0];
   if (!c) return null;
   return { lat: Number(c.X), lng: Number(c.Y), region: str(c.Region) };
+}
+
+/** "2020-10" → "01/10/2020", matching the web involvement modal; passes other shapes through. */
+function formatMonthlyDate(value: unknown): string {
+  const raw = str(value);
+  const m = /^(\d{4})-(\d{2})$/.exec(raw);
+  return m ? `01/${m[2]}/${m[1]}` : formatDate(value) || raw;
+}
+
+/** A person's involvement history across companies (`/api/legal-unit-web?personId=`). */
+export async function fetchPersonInvolvement(personId: number, lang: Lang): Promise<PersonInvolvementRow[]> {
+  const data = toArray(await apiGet('/legal-unit-web', { personId, lang: apiLang(lang) }));
+  return data.map(
+    (r): PersonInvolvementRow => ({
+      company: str(r.Full_Name || r.Name),
+      role: str(r.Position || r.Role),
+      date: formatMonthlyDate(r.Date),
+      statId: str(r.Stat_ID),
+      legalCode: str(r.Legal_Code),
+    }),
+  );
 }
 
 /* ── Reports ───────────────────────────────────────────────────────────────── */

@@ -5,6 +5,7 @@ import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 
 import Icon from '../components/Icon';
 import ChartExportSheet from '../components/ChartExportSheet';
+import PersonInvolvementSheet from '../components/PersonInvolvementSheet';
 import SubjectShareSheet from '../components/SubjectShareSheet';
 import { PieChart } from '../components/charts';
 import { buildPieSvg } from '../utils/pieSvg';
@@ -289,6 +290,9 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
   };
   const exportedPeriod = partnerPeriods.find((p) => p.date === exportPeriod) ?? null;
 
+  // The related person whose involvement history is open, if any.
+  const [involvement, setInvolvement] = useState<{ personId: number; name: string } | null>(null);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <HeroGradient>
@@ -420,26 +424,33 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
               <View style={{ gap: 8 }}>
                 <SectionLabel>{t.relatedPersons}</SectionLabel>
                 <ListCard>
-                  {relatedPersons.map((p, i) => (
-                    <View
-                      key={`${p.person}-${i}`}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        padding: 15,
-                        borderTopWidth: i === 0 ? 0 : 1,
-                        borderTopColor: colors.line3,
-                      }}
-                    >
-                      <View style={{ gap: 2, flex: 1 }}>
-                        <Text style={{ fontSize: fs(15), color: colors.brand, fontWeight: '600' }}>{p.person}</Text>
-                        <Text style={{ fontSize: fs(12), color: colors.muted }}>{p.role}</Text>
-                      </View>
-                      <Text style={{ fontSize: fs(12), color: colors.faint }}>{p.date}</Text>
-                    </View>
-                  ))}
+                  {relatedPersons.map((p, i) => {
+                    const tappable = p.personId != null;
+                    return (
+                      <Pressable
+                        key={`${p.person}-${i}`}
+                        disabled={!tappable}
+                        onPress={() => setInvolvement({ personId: p.personId!, name: p.person })}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          padding: 15,
+                          borderTopWidth: i === 0 ? 0 : 1,
+                          borderTopColor: colors.line3,
+                          backgroundColor: pressed && tappable ? colors.line3 : 'transparent',
+                        })}
+                      >
+                        <View style={{ gap: 2, flex: 1 }}>
+                          <Text style={{ fontSize: fs(15), color: colors.brand, fontWeight: '600' }}>{p.person}</Text>
+                          <Text style={{ fontSize: fs(12), color: colors.muted }}>{p.role}</Text>
+                        </View>
+                        <Text style={{ fontSize: fs(12), color: colors.faint }}>{p.date}</Text>
+                        {tappable ? <Icon name="chevronRight" size={16} color={colors.faint} /> : null}
+                      </Pressable>
+                    );
+                  })}
                 </ListCard>
               </View>
             ) : null}
@@ -521,6 +532,13 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
         svg={
           exportedPeriod ? buildPieSvg(exportedPeriod.slices, `${t.partnerShares}, ${exportedPeriod.date}`) : null
         }
+      />
+
+      <PersonInvolvementSheet
+        visible={Boolean(involvement)}
+        onClose={() => setInvolvement(null)}
+        personId={involvement?.personId ?? null}
+        personName={involvement?.name ?? ''}
       />
     </View>
   );

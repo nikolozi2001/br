@@ -47,6 +47,17 @@ export interface PersonRow {
   person: string;
   role: string;
   date: string;
+  /** Individual's id, when the row is a natural person — enables the involvement lookup. */
+  personId?: number;
+}
+
+/** One row of a person's involvement history (`/api/legal-unit-web?personId=`). */
+export interface PersonInvolvementRow {
+  company: string;
+  role: string;
+  date: string;
+  statId: string;
+  legalCode: string;
 }
 
 export interface PartnerRow {
