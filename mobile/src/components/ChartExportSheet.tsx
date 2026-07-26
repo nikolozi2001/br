@@ -32,9 +32,22 @@ export interface ChartExportSheetProps {
   onClose: () => void;
   /** The chart card to rasterise; null while no card is selected. */
   viewRef: CaptureRef | null;
+  /**
+   * A real (vector) SVG string for the chart. When provided, an SVG row is
+   * offered — used by charts whose geometry we can re-serialise (partner pies).
+   */
+  svg?: string | null;
 }
 
-export default function ChartExportSheet({ visible, onClose, viewRef }: ChartExportSheetProps) {
+async function writeSvgAndShare(svg: string) {
+  const file = new File(Paths.cache, 'chart.svg');
+  if (file.exists) file.delete();
+  file.create();
+  file.write(svg);
+  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType: 'image/svg+xml', UTI: 'public.svg-image' });
+}
+
+export default function ChartExportSheet({ visible, onClose, viewRef, svg }: ChartExportSheetProps) {
   const { colors, lang } = useTheme();
   const t = getStrings(lang);
   const { showToast } = useAppStore();
@@ -81,6 +94,24 @@ export default function ChartExportSheet({ visible, onClose, viewRef }: ChartExp
         subtitle=".jpg"
         onPress={guard(t.preparingJpeg, (ref) => captureAndShare(ref, 'jpg', 'image/jpeg'))}
       />
+      {svg ? (
+        <SheetRow
+          badge="SVG"
+          badgeColor="#6d28d9"
+          badgeBg="#ede9fe"
+          title={t.svgImage}
+          subtitle=".svg"
+          onPress={async () => {
+            onClose();
+            showToast(t.preparingSvg);
+            try {
+              await writeSvgAndShare(svg);
+            } catch (err) {
+              showToast((err as Error)?.message || t.networkError);
+            }
+          }}
+        />
+      ) : null}
       <SheetRow
         badge="PDF"
         badgeColor="#c81723"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import Svg, { G, Line, Path, Polyline, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G, Line, Path, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 
 import { useTheme } from '../theme/ThemeProvider';
 import type { BarRow, BirthDeathPoint, LegendItem, PieSlice, Series } from '../types';
@@ -223,26 +223,33 @@ export function PieChart({ slices, size = 130 }: { slices: PieSlice[]; size?: nu
   const cy = 70;
   const r = 66;
   const totalValue = slices.reduce((sum, s) => sum + s.value, 0) || 1;
+  // A slice covering the whole circle can't be drawn as an SVG arc (start point
+  // equals end point → degenerate path), so render it as a full circle instead.
+  const fullSlice = slices.find((s) => s.value >= totalValue);
   let angle = -Math.PI / 2;
 
   return (
     <Svg viewBox="0 0 140 140" width={size} height={size}>
-      {slices.map((slice, index) => {
-        const sweep = (slice.value / totalValue) * 2 * Math.PI;
-        const x1 = cx + r * Math.cos(angle);
-        const y1 = cy + r * Math.sin(angle);
-        angle += sweep;
-        const x2 = cx + r * Math.cos(angle);
-        const y2 = cy + r * Math.sin(angle);
-        const largeArc = sweep > Math.PI ? 1 : 0;
-        return (
-          <Path
-            key={`${slice.label}-${index}`}
-            d={`M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`}
-            fill={slice.color}
-          />
-        );
-      })}
+      {fullSlice ? (
+        <Circle cx={cx} cy={cy} r={r} fill={fullSlice.color} />
+      ) : (
+        slices.map((slice, index) => {
+          const sweep = (slice.value / totalValue) * 2 * Math.PI;
+          const x1 = cx + r * Math.cos(angle);
+          const y1 = cy + r * Math.sin(angle);
+          angle += sweep;
+          const x2 = cx + r * Math.cos(angle);
+          const y2 = cy + r * Math.sin(angle);
+          const largeArc = sweep > Math.PI ? 1 : 0;
+          return (
+            <Path
+              key={`${slice.label}-${index}`}
+              d={`M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`}
+              fill={slice.color}
+            />
+          );
+        })
+      )}
     </Svg>
   );
 }

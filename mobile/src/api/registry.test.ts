@@ -44,3 +44,33 @@ describe('formatLongDate', () => {
     expect(formatLongDate('', 'en')).toBe('');
   });
 });
+
+import { groupPartnerPeriods } from './registry';
+import type { PartnerRow } from '../types';
+
+describe('groupPartnerPeriods', () => {
+  const rows: PartnerRow[] = [
+    { person: 'A', share: '55%', shareValue: 55, date: '2015-12' },
+    { person: 'B', share: '45%', shareValue: 45, date: '2015-12' },
+    { person: 'A', share: '55%', shareValue: 55, date: '2014-06' },
+    { person: 'B', share: '45%', shareValue: 45, date: '2014-06' },
+  ];
+
+  it('groups by period, newest first', () => {
+    const periods = groupPartnerPeriods(rows, ['#111', '#222']);
+    expect(periods.map((p) => p.date)).toEqual(['2015-12', '2014-06']);
+    expect(periods[0].slices).toHaveLength(2);
+  });
+
+  it('gives each partner a stable colour across periods', () => {
+    const periods = groupPartnerPeriods(rows, ['#111', '#222']);
+    const colorA1 = periods[0].slices.find((s) => s.label === 'A')!.color;
+    const colorA2 = periods[1].slices.find((s) => s.label === 'A')!.color;
+    expect(colorA1).toBe(colorA2);
+    expect(colorA1).toBe('#111');
+  });
+
+  it('returns empty array for no partners', () => {
+    expect(groupPartnerPeriods([], ['#111'])).toEqual([]);
+  });
+});

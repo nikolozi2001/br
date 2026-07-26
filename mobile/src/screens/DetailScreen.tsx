@@ -1,18 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 
 import Icon from '../components/Icon';
+import ChartExportSheet from '../components/ChartExportSheet';
 import SubjectShareSheet from '../components/SubjectShareSheet';
+import { PieChart } from '../components/charts';
+import { buildPieSvg } from '../utils/pieSvg';
 import { Card, DataRow, EmptyState, HeroGradient, RoundButton, SectionLabel, Skeleton } from '../components/primitives';
-import { fetchCoordinates, fetchSubjectDetail, formatDate, formatLongDate } from '../api/registry';
+import { fetchCoordinates, fetchSubjectDetail, formatDate, formatLongDate, groupPartnerPeriods } from '../api/registry';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { HomeScreenProps } from '../navigation/types';
-import type { PersonRow, SubjectDetail } from '../types';
+import type { PartnerPeriod, PersonRow, SubjectDetail } from '../types';
 
 interface Coords {
   lat: number;
@@ -91,23 +93,69 @@ function MapPreview({
   );
 }
 
-/** Single-slice donut standing in for the partner capital breakdown. */
-function CapitalDonut({ label, percent }: { label: string; percent: string }) {
-  const { colors, fonts, fs } = useTheme();
+/** One partner-share pie for a single reporting period, mirroring the web report. */
+interface PartnerPeriodCardProps {
+  period: PartnerPeriod;
+  title: string;
+  onExport: () => void;
+  captureRef: React.RefObject<View | null>;
+}
+
+function PartnerPeriodCard({ period, title, onExport, captureRef }: PartnerPeriodCardProps) {
+  const { colors, fonts, fs, radius } = useTheme();
   return (
-    <Card style={{ padding: 18, gap: 16, alignItems: 'center' }}>
-      <View style={{ width: 120, height: 120, alignItems: 'center', justifyContent: 'center' }}>
-        <Svg width={120} height={120} viewBox="0 0 120 120">
-          <Circle cx={60} cy={60} r={60} fill={colors.brand} />
-          <Circle cx={60} cy={60} r={30} fill={colors.card} />
-        </Svg>
-        <View style={{ position: 'absolute' }}>
-          <Text style={{ fontFamily: fonts.heading, fontSize: fs(15), color: colors.brand }}>{percent}</Text>
+    <Card ref={captureRef} collapsable={false} style={{ overflow: 'hidden' }} radius={radius.xl}>
+      <HeroGradient>
+        <View
+          style={{
+            paddingVertical: 12,
+            paddingHorizontal: 15,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <Text style={{ flex: 1, fontFamily: fonts.heading, fontSize: fs(14), color: '#fff' }}>
+            {`${title}, ${period.date}`}
+          </Text>
+          <Pressable
+            onPress={onExport}
+            hitSlop={8}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              backgroundColor: 'rgba(255,255,255,0.18)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="download" size={17} color="#fff" />
+          </Pressable>
         </View>
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: colors.brand }} />
-        <Text style={{ fontSize: fs(13), color: colors.ink }}>{`${label} · ${percent}`}</Text>
+      </HeroGradient>
+      <View
+        style={{
+          padding: 14,
+          backgroundColor: colors.card,
+          flexDirection: 'row',
+          gap: 16,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
+        <PieChart slices={period.slices} />
+        <View style={{ gap: 8, flex: 1, minWidth: 130 }}>
+          {period.slices.map((slice) => (
+            <View key={slice.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: slice.color }} />
+              <Text style={{ fontSize: fs(13), color: colors.ink, flex: 1 }} numberOfLines={2}>
+                {slice.label}
+              </Text>
+              <Text style={{ fontSize: fs(13), color: colors.muted, fontWeight: '600' }}>{slice.percent}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </Card>
   );
@@ -141,7 +189,7 @@ function DetailSkeleton() {
 
 export default function DetailScreen({ navigation, route }: HomeScreenProps<'Detail'>) {
   const subject = route.params.subject;
-  const { colors, fonts, fs, lang } = useTheme();
+  const { chartColors, colors, fonts, fs, lang } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
   const { isFavourite, toggleFavourite, restoreFavourite, showToast } = useAppStore();
@@ -227,7 +275,19 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
       : subject.head
         ? [{ person: subject.head, role: t.director, date: formatDate(subject.regDate) }]
         : [];
-  const partners = detail?.partners?.length ? detail.partners : [];
+  const partnerPeriods = useMemo(
+    () => groupPartnerPeriods(detail?.partners ?? [], chartColors.pie),
+    [detail?.partners, chartColors],
+  );
+
+  // Per-period capture targets, so exporting snapshots the right pie card.
+  const [exportPeriod, setExportPeriod] = useState<string | null>(null);
+  const periodRefs = useRef<Record<string, React.RefObject<View | null>>>({});
+  const periodRefFor = (date: string) => {
+    if (!periodRefs.current[date]) periodRefs.current[date] = React.createRef();
+    return periodRefs.current[date];
+  };
+  const exportedPeriod = partnerPeriods.find((p) => p.date === exportPeriod) ?? null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -384,34 +444,20 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
               </View>
             ) : null}
 
-            <View style={{ gap: 8 }}>
-              <SectionLabel>{t.partners}</SectionLabel>
-              <CapitalDonut label={t.localCapital} percent="100%" />
-              {partners.length > 0 ? (
-                <ListCard>
-                  {partners.map((p, i) => (
-                    <View
-                      key={`${p.person}-${i}`}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        padding: 15,
-                        borderTopWidth: i === 0 ? 0 : 1,
-                        borderTopColor: colors.line3,
-                      }}
-                    >
-                      <View style={{ gap: 2, flex: 1 }}>
-                        <Text style={{ fontSize: fs(15), color: colors.ink, fontWeight: '600' }}>{p.person}</Text>
-                        <Text style={{ fontSize: fs(12), color: colors.muted }}>{`${t.share} ${p.share}`}</Text>
-                      </View>
-                      <Text style={{ fontSize: fs(12), color: colors.faint }}>{p.date}</Text>
-                    </View>
-                  ))}
-                </ListCard>
-              ) : null}
-            </View>
+            {partnerPeriods.length > 0 ? (
+              <View style={{ gap: 8 }}>
+                <SectionLabel>{t.partners}</SectionLabel>
+                {partnerPeriods.map((period) => (
+                  <PartnerPeriodCard
+                    key={period.date}
+                    period={period}
+                    title={t.partnerShares}
+                    captureRef={periodRefFor(period.date)}
+                    onExport={() => setExportPeriod(period.date)}
+                  />
+                ))}
+              </View>
+            ) : null}
 
             {detail?.addressHistory?.length ? (
               <View style={{ gap: 8 }}>
@@ -467,6 +513,15 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
       </ScrollView>
 
       <SubjectShareSheet visible={shareOpen} onClose={() => setShareOpen(false)} subject={subject} />
+
+      <ChartExportSheet
+        visible={Boolean(exportPeriod)}
+        onClose={() => setExportPeriod(null)}
+        viewRef={exportPeriod ? periodRefFor(exportPeriod) : null}
+        svg={
+          exportedPeriod ? buildPieSvg(exportedPeriod.slices, `${t.partnerShares}, ${exportedPeriod.date}`) : null
+        }
+      />
     </View>
   );
 }

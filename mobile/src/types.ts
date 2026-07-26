@@ -51,8 +51,18 @@ export interface PersonRow {
 
 export interface PartnerRow {
   person: string;
+  /** Formatted share, e.g. "55%". */
   share: string;
+  /** Numeric share for pie slices. */
+  shareValue: number;
+  /** Reporting period, e.g. "2015-12". */
   date: string;
+}
+
+/** Partner shares grouped into one pie chart per reporting period. */
+export interface PartnerPeriod {
+  date: string;
+  slices: PieSlice[];
 }
 
 export interface AddressHistoryRow {

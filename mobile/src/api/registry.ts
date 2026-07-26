@@ -7,8 +7,10 @@ import type {
   Lang,
   NameHistoryRow,
   Option,
+  PartnerPeriod,
   PartnerRow,
   PersonRow,
+  PieSlice,
   SearchForm,
   SearchResponse,
   Subject,
@@ -184,13 +186,16 @@ export async function fetchSubjectDetail(
         date: formatDate(r.Reg_Date || r.Start_Date || r.Date),
       }),
     ),
-    partners: partners.map(
-      (p): PartnerRow => ({
+    partners: partners.map((p): PartnerRow => {
+      const shareValue = Number(p.Share ?? p.Share_Percent) || 0;
+      return {
         person: str(p.Full_Name || p.Partner || p.Name),
-        share: p.Share != null ? `${p.Share}%` : str(p.Share_Percent),
-        date: formatDate(p.Reg_Date || p.Start_Date || p.Date),
-      }),
-    ),
+        share: `${shareValue}%`,
+        shareValue,
+        // `Date` is a reporting period like "2015-12"; keep it raw for grouping.
+        date: str(p.Date || p.Reg_Date || p.Start_Date),
+      };
+    }),
     addressHistory: addressHistory.map(
       (a): AddressHistoryRow => ({
         addr: str(a.Address),
@@ -317,6 +322,40 @@ export function formatLongDate(value: unknown, lang: Lang): string {
   if (Number.isNaN(d.getTime())) return String(value);
   const months = lang === 'en' ? MONTHS_EN : MONTHS_KA;
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/**
+ * Groups partner rows into one pie per reporting period (newest first), giving
+ * each partner a stable colour across every period — mirrors the web report.
+ */
+export function groupPartnerPeriods(partners: PartnerRow[], palette: string[]): PartnerPeriod[] {
+  const colorByName = new Map<string, string>();
+  for (const p of partners) {
+    if (p.person && !colorByName.has(p.person)) {
+      colorByName.set(p.person, palette[colorByName.size % palette.length] ?? palette[0] ?? '#0080be');
+    }
+  }
+
+  const byDate = new Map<string, PartnerRow[]>();
+  for (const p of partners) {
+    const list = byDate.get(p.date) ?? [];
+    list.push(p);
+    byDate.set(p.date, list);
+  }
+
+  return [...byDate.entries()]
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .map(([date, rows]) => ({
+      date,
+      slices: rows.map(
+        (r): PieSlice => ({
+          label: r.person,
+          value: r.shareValue,
+          percent: r.share,
+          color: colorByName.get(r.person) ?? '#0080be',
+        }),
+      ),
+    }));
 }
 
 /** Thin-space digit grouping, as in the prototype's `grp()`. */
