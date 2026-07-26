@@ -172,9 +172,22 @@ export async function fetchSubjectDetail(
   const settle = (p: Promise<unknown>): Promise<ApiRecord[]> =>
     p.then((v) => toArray(v)).catch(() => [] as ApiRecord[]);
 
-  const [representatives, partners, addressHistory, nameHistory] = await Promise.all([
+  const toPartnerRow = (p: ApiRecord): PartnerRow => {
+    const shareValue = Number(p.Share ?? p.Share_Percent) || 0;
+    return {
+      person: str(p.Full_Name || p.Partner || p.Name),
+      share: `${shareValue}%`,
+      shareValue,
+      // `Date` is a reporting period like "2015-12"; keep it raw for grouping.
+      date: str(p.Date || p.Reg_Date || p.Start_Date),
+    };
+  };
+
+  const [representatives, partners, partnersVw, addressHistory, nameHistory] = await Promise.all([
     settle(apiGet('/representatives', { statId, lang: apiLang(lang) })),
     settle(apiGet('/partners', { statId, lang: apiLang(lang) })),
+    // `/partners-vw` feeds the flat "partner details" table — same rows, cleaner order.
+    settle(apiGet('/partners-vw', { statId })),
     settle(apiGet('/address-web', { statId })),
     settle(apiGet('/full-name-web', { statId })),
   ]);
@@ -189,16 +202,8 @@ export async function fetchSubjectDetail(
         personId: Number.isFinite(personId) && personId > 0 ? personId : undefined,
       };
     }),
-    partners: partners.map((p): PartnerRow => {
-      const shareValue = Number(p.Share ?? p.Share_Percent) || 0;
-      return {
-        person: str(p.Full_Name || p.Partner || p.Name),
-        share: `${shareValue}%`,
-        shareValue,
-        // `Date` is a reporting period like "2015-12"; keep it raw for grouping.
-        date: str(p.Date || p.Reg_Date || p.Start_Date),
-      };
-    }),
+    partners: partners.map(toPartnerRow),
+    partnersDetail: partnersVw.map(toPartnerRow),
     addressHistory: addressHistory.map(
       (a): AddressHistoryRow => ({
         addr: str(a.Address),

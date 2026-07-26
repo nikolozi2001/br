@@ -15,11 +15,17 @@ import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { HomeScreenProps } from '../navigation/types';
-import type { PartnerPeriod, PersonRow, SubjectDetail } from '../types';
+import type { PartnerPeriod, PartnerRow, PersonRow, SubjectDetail } from '../types';
 
 interface Coords {
   lat: number;
   lng: number;
+}
+
+/** "2015-12" → "12/2015" without Date parsing (avoids month drift across timezones). */
+function formatPeriod(value: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(value);
+  return m ? `${m[2]}/${m[1]}` : formatDate(value) || value;
 }
 
 /** Real map when coordinates are known, otherwise the prototype's stylised placeholder. */
@@ -158,6 +164,47 @@ function PartnerPeriodCard({ period, title, onExport, captureRef }: PartnerPerio
           ))}
         </View>
       </View>
+    </Card>
+  );
+}
+
+/** Flat person / share / date table for the partner details (from `/api/partners-vw`). */
+function PartnerDetailsTable({ rows }: { rows: PartnerRow[] }) {
+  const { colors, fonts, fs } = useTheme();
+  const t = getStrings(useTheme().lang);
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <HeroGradient>
+        <View style={{ flexDirection: 'row', paddingVertical: 11, paddingHorizontal: 15, gap: 10 }}>
+          <Text style={{ flex: 1, fontFamily: fonts.heading, fontSize: fs(12.5), color: '#fff' }}>{t.colPerson}</Text>
+          <Text style={{ width: 52, fontFamily: fonts.heading, fontSize: fs(12.5), color: '#fff', textAlign: 'right' }}>
+            {t.colShare}
+          </Text>
+          <Text style={{ width: 66, fontFamily: fonts.heading, fontSize: fs(12.5), color: '#fff', textAlign: 'right' }}>
+            {t.colDate}
+          </Text>
+        </View>
+      </HeroGradient>
+      {rows.map((r, i) => (
+        <View
+          key={`${r.person}-${r.date}-${i}`}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            paddingVertical: 12,
+            paddingHorizontal: 15,
+            borderTopWidth: i === 0 ? 0 : 1,
+            borderTopColor: colors.line3,
+          }}
+        >
+          <Text style={{ flex: 1, fontSize: fs(14), color: colors.brand, fontWeight: '600' }}>{r.person}</Text>
+          <Text style={{ width: 52, fontSize: fs(14), color: colors.ink, textAlign: 'right' }}>{r.shareValue}</Text>
+          <Text style={{ width: 66, fontSize: fs(12), color: colors.faint, textAlign: 'right' }}>
+            {formatPeriod(r.date)}
+          </Text>
+        </View>
+      ))}
     </Card>
   );
 }
@@ -467,6 +514,13 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
                     onExport={() => setExportPeriod(period.date)}
                   />
                 ))}
+              </View>
+            ) : null}
+
+            {detail?.partnersDetail?.length ? (
+              <View style={{ gap: 8 }}>
+                <SectionLabel>{t.partnerDetails}</SectionLabel>
+                <PartnerDetailsTable rows={detail.partnersDetail} />
               </View>
             ) : null}
 

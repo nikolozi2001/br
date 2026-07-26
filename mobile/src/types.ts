@@ -91,7 +91,10 @@ export interface NameHistoryRow {
 
 export interface SubjectDetail {
   representatives: PersonRow[];
+  /** Grouped into per-period pie charts (from `/api/partners`). */
   partners: PartnerRow[];
+  /** Flat, ordered partner rows for the details table (from `/api/partners-vw`). */
+  partnersDetail: PartnerRow[];
   addressHistory: AddressHistoryRow[];
   nameHistory: NameHistoryRow[];
 }
