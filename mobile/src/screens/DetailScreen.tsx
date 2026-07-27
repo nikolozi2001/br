@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
@@ -14,6 +14,7 @@ import {
   fetchCoordinates,
   fetchSubjectByLegalCode,
   fetchSubjectDetail,
+  fetchSubjectPartners,
   formatDate,
   formatLongDate,
   formatPeriod,
@@ -23,7 +24,7 @@ import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { HomeScreenProps } from '../navigation/types';
-import type { PartnerPeriod, PartnerRow, PersonRow, SubjectDetail } from '../types';
+import type { PartnerPeriod, PartnerRow, PersonRow, SubjectDetail, SubjectPartners } from '../types';
 
 interface Coords {
   lat: number;
@@ -307,6 +308,31 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
     };
   }, [subject.statId, subject.id, lang, reloadKey]);
 
+  // Partner data loads on its own so its slower endpoints don't block the screen.
+  const [partnerData, setPartnerData] = useState<SubjectPartners | null>(null);
+  const [partnersLoading, setPartnersLoading] = useState(true);
+  const [partnersError, setPartnersError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPartnersLoading(true);
+    setPartnersError(false);
+    setPartnerData(null);
+    fetchSubjectPartners(subject.statId ?? subject.id, lang)
+      .then((data) => {
+        if (!cancelled) setPartnerData(data);
+      })
+      .catch(() => {
+        if (!cancelled) setPartnersError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setPartnersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [subject.statId, subject.id, lang, reloadKey]);
+
   // The search endpoint omits X/Y unless coord-filtered — resolve them here.
   useEffect(() => {
     if (coords || !subject.code) return;
@@ -357,8 +383,8 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
         ? [{ person: subject.head, role: t.director, date: formatDate(subject.regDate) }]
         : [];
   const partnerPeriods = useMemo(
-    () => groupPartnerPeriods(detail?.partners ?? [], chartColors.pie),
-    [detail?.partners, chartColors],
+    () => groupPartnerPeriods(partnerData?.partners ?? [], chartColors.pie),
+    [partnerData?.partners, chartColors],
   );
 
   // Per-period capture targets, so exporting snapshots the right pie card.
@@ -543,30 +569,55 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
               </View>
             ) : null}
 
-            {partnerPeriods.length > 0 ? (
+            {partnersLoading ? (
               <View style={{ gap: 8 }}>
                 <SectionLabel>{t.partners}</SectionLabel>
-                {partnerPeriods.map((period) => (
-                  <PartnerPeriodCard
-                    key={period.date}
-                    period={period}
-                    title={t.partnerShares}
-                    captureRef={periodRefFor(period.date)}
-                    onExport={() => setExportPeriod(period.date)}
-                  />
-                ))}
+                <Card style={{ padding: 22, alignItems: 'center', gap: 12 }}>
+                  <ActivityIndicator color={colors.brand} />
+                  <Text style={{ fontSize: fs(13), color: colors.muted }}>{t.partnersLoading}</Text>
+                </Card>
               </View>
-            ) : null}
-
-            {detail?.partnersDetail?.length ? (
+            ) : partnersError ? (
               <View style={{ gap: 8 }}>
-                <SectionLabel>{t.partnerDetails}</SectionLabel>
-                <PartnerDetailsTable
-                  rows={detail.partnersDetail}
-                  onPersonPress={(personId, name) => setInvolvement({ personId, name })}
-                />
+                <SectionLabel>{t.partners}</SectionLabel>
+                <Card style={{ padding: 20, alignItems: 'center', gap: 12 }}>
+                  <Text style={{ fontSize: fs(13), color: colors.muted }}>{t.networkError}</Text>
+                  <Pressable
+                    onPress={() => setReloadKey((k) => k + 1)}
+                    style={{ paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8, backgroundColor: colors.brand }}
+                  >
+                    <Text style={{ fontSize: fs(13), color: '#fff', fontWeight: '600' }}>{t.retry}</Text>
+                  </Pressable>
+                </Card>
               </View>
-            ) : null}
+            ) : (
+              <>
+                {partnerPeriods.length > 0 ? (
+                  <View style={{ gap: 8 }}>
+                    <SectionLabel>{t.partners}</SectionLabel>
+                    {partnerPeriods.map((period) => (
+                      <PartnerPeriodCard
+                        key={period.date}
+                        period={period}
+                        title={t.partnerShares}
+                        captureRef={periodRefFor(period.date)}
+                        onExport={() => setExportPeriod(period.date)}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+
+                {partnerData?.partnersDetail?.length ? (
+                  <View style={{ gap: 8 }}>
+                    <SectionLabel>{t.partnerDetails}</SectionLabel>
+                    <PartnerDetailsTable
+                      rows={partnerData.partnersDetail}
+                      onPersonPress={(personId, name) => setInvolvement({ personId, name })}
+                    />
+                  </View>
+                ) : null}
+              </>
+            )}
 
             {detail?.addressHistory?.length ? (
               <View style={{ gap: 8 }}>

@@ -16,6 +16,7 @@ import type {
   SearchResponse,
   Subject,
   SubjectDetail,
+  SubjectPartners,
 } from '../types';
 
 const str = (value: unknown): string => (value == null ? '' : String(value));
@@ -193,27 +194,22 @@ export function toRepresentativeRow(r: ApiRecord): PersonRow {
   };
 }
 
-/** Runs the five detail endpoints in parallel; any failure degrades to []. */
-export async function fetchSubjectDetail(
-  statId: number | string,
-  lang: Lang,
-): Promise<SubjectDetail> {
-  const settle = (p: Promise<unknown>): Promise<ApiRecord[]> =>
-    p.then((v) => toArray(v)).catch(() => [] as ApiRecord[]);
+const settleRows = (p: Promise<unknown>): Promise<ApiRecord[]> =>
+  p.then((v) => toArray(v)).catch(() => [] as ApiRecord[]);
 
-  const [representatives, partners, partnersVw, addressHistory, nameHistory] = await Promise.all([
-    settle(apiGet('/representatives', { statId, lang: apiLang(lang) })),
-    settle(apiGet('/partners', { statId, lang: apiLang(lang) })),
-    // `/partners-vw` feeds the flat "partner details" table — same rows, cleaner order.
-    settle(apiGet('/partners-vw', { statId })),
-    settle(apiGet('/address-web', { statId })),
-    settle(apiGet('/full-name-web', { statId })),
+/**
+ * Core detail (representatives, address & name history) — the fast endpoints that
+ * gate the screen. Partner data loads separately via {@link fetchSubjectPartners}.
+ */
+export async function fetchSubjectDetail(statId: number | string, lang: Lang): Promise<SubjectDetail> {
+  const [representatives, addressHistory, nameHistory] = await Promise.all([
+    settleRows(apiGet('/representatives', { statId, lang: apiLang(lang) })),
+    settleRows(apiGet('/address-web', { statId })),
+    settleRows(apiGet('/full-name-web', { statId })),
   ]);
 
   return {
     representatives: representatives.map(toRepresentativeRow),
-    partners: partners.map(toPartnerRow),
-    partnersDetail: partnersVw.map(toPartnerRow),
     addressHistory: addressHistory.map(
       (a): AddressHistoryRow => ({
         addr: str(a.Address),
@@ -229,6 +225,19 @@ export async function fetchSubjectDetail(
         date: formatDate(n.Reg_Date || n.Date),
       }),
     ),
+  };
+}
+
+/** Partner data (pie charts + details table) — fetched on its own so slow rows don't block the screen. */
+export async function fetchSubjectPartners(statId: number | string, lang: Lang): Promise<SubjectPartners> {
+  const [partners, partnersVw] = await Promise.all([
+    settleRows(apiGet('/partners', { statId, lang: apiLang(lang) })),
+    // `/partners-vw` feeds the flat "partner details" table — same rows, cleaner order.
+    settleRows(apiGet('/partners-vw', { statId })),
+  ]);
+  return {
+    partners: partners.map(toPartnerRow),
+    partnersDetail: partnersVw.map(toPartnerRow),
   };
 }
 

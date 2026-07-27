@@ -93,12 +93,16 @@ export interface NameHistoryRow {
 
 export interface SubjectDetail {
   representatives: PersonRow[];
+  addressHistory: AddressHistoryRow[];
+  nameHistory: NameHistoryRow[];
+}
+
+/** Partner data, fetched separately so its slower endpoints don't block the core detail. */
+export interface SubjectPartners {
   /** Grouped into per-period pie charts (from `/api/partners`). */
   partners: PartnerRow[];
   /** Flat, ordered partner rows for the details table (from `/api/partners-vw`). */
   partnersDetail: PartnerRow[];
-  addressHistory: AddressHistoryRow[];
-  nameHistory: NameHistoryRow[];
 }
 
 /** The search form backing SearchScreen and SearchStore. */
