@@ -29,15 +29,10 @@ npx eas build --profile preview --platform ios      # simulator build
 npx eas build --profile production --platform all
 ```
 
-**Android + რუკა:** `react-native-maps` Expo Go-ში მუშაობს გასაღების გარეშე,
-მაგრამ Android standalone build-ისთვის საჭიროა Google Maps API key. დაამატეთ
-`app.json`-ში:
-
-```json
-"android": { "config": { "googleMaps": { "apiKey": "YOUR_KEY" } } }
-```
-
-iOS-ზე Apple Maps-ია — გასაღები არ სჭირდება.
+**რუკა:** DetailScreen-ის რუკა Leaflet + OpenStreetMap-ია, ჩაშენებული `WebView`-ში
+(`react-native-webview`) — ზუსტად ისე, როგორც ვებ-რეგისტრი. **API key არ სჭირდება,
+billing account არ სჭირდება**, ერთნაირად მუშაობს iOS-ზეც და Android-ზეც. tiles
+იტვირთება `tile.openstreetmap.org`-დან (ინტერნეტი საჭიროა, როგორც დანარჩენი აპისთვის).
 
 ## API
 

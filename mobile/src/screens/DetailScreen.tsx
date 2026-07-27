@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 
 import Icon from '../components/Icon';
 import ChartExportSheet from '../components/ChartExportSheet';
@@ -30,19 +30,44 @@ interface Coords {
   lng: number;
 }
 
+/**
+ * Leaflet + OpenStreetMap map, rendered in a WebView exactly like the web
+ * register — free and key-less on both platforms (no native Google Maps).
+ * The map is display-only; interaction happens via the "open in maps" overlay.
+ */
+function leafletHtml(lat: number, lng: number): string {
+  return `<!doctype html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>html,body,#map{height:100%;margin:0;padding:0;background:#e8eef3}</style>
+</head><body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+  });
+  var map=L.map('map',{zoomControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false,tap:false})
+    .setView([${lat},${lng}],15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  L.marker([${lat},${lng}]).addTo(map);
+</script>
+</body></html>`;
+}
+
 /** Real map when coordinates are known, otherwise the prototype's stylised placeholder. */
 function MapPreview({
   onPress,
   addressLine,
   mapLabel,
   coords,
-  name,
 }: {
   onPress: () => void;
   addressLine: string;
   mapLabel: string;
   coords: Coords | null;
-  name: string;
 }) {
   const { colors, fs, radius } = useTheme();
 
@@ -50,19 +75,13 @@ function MapPreview({
     <Card style={{ overflow: 'hidden' }} radius={radius.xl}>
       {coords ? (
         <View style={{ height: 170 }}>
-          <MapView
-            provider={PROVIDER_DEFAULT}
-            style={{ flex: 1 }}
+          <WebView
+            style={{ flex: 1, backgroundColor: colors.mapBg }}
             pointerEvents="none"
-            initialRegion={{
-              latitude: coords.lat,
-              longitude: coords.lng,
-              latitudeDelta: 0.012,
-              longitudeDelta: 0.012,
-            }}
-          >
-            <Marker coordinate={{ latitude: coords.lat, longitude: coords.lng }} title={name} description={addressLine} />
-          </MapView>
+            originWhitelist={['*']}
+            scrollEnabled={false}
+            source={{ html: leafletHtml(coords.lat, coords.lng) }}
+          />
           <Pressable
             onPress={onPress}
             style={{
@@ -486,13 +505,7 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
 
             <View style={{ gap: 8 }}>
               <SectionLabel>{t.location}</SectionLabel>
-              <MapPreview
-                onPress={openMap}
-                addressLine={addressLine}
-                mapLabel={t.viewOnMap}
-                coords={coords}
-                name={subject.name}
-              />
+              <MapPreview onPress={openMap} addressLine={addressLine} mapLabel={t.viewOnMap} coords={coords} />
             </View>
 
             {relatedPersons.length > 0 ? (
