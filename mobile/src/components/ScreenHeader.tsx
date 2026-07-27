@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GeostatLogoSvg from '../../assets/svg/geostat_logo.svg';
@@ -24,6 +24,26 @@ export function GeostatLogo({ height, color = '#ffffff' }: { height: number; col
       fill={color}
       style={{ transform: [{ scaleY: -1 }] }}
     />
+  );
+}
+
+/** Full-width Geostat logo banner (geostat.ge) on a faint translucent-white wash for contrast. */
+export function SakstatLogo() {
+  return (
+    <View
+      style={{
+        backgroundColor: 'rgba(255,255,255,0.88)',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+      }}
+    >
+      <Image
+        source={require('../../assets/geostat-logo.png')}
+        resizeMode="contain"
+        style={{ width: '100%', height: 52 }}
+      />
+    </View>
   );
 }
 
@@ -58,32 +78,35 @@ export interface ScreenHeaderProps {
   logoHeight?: number;
 }
 
-export default function ScreenHeader({ title, subtitle, actions, logoHeight = 44 }: ScreenHeaderProps) {
+export default function ScreenHeader({ title, subtitle, actions }: ScreenHeaderProps) {
   const { fonts, fs } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
     <HeroGradient>
+      <View style={{ paddingTop: insets.top + 10, paddingHorizontal: 16 }}>
+        <SakstatLogo />
+      </View>
       <View
         style={{
-          paddingTop: insets.top + 10,
           paddingHorizontal: 16,
-          paddingBottom: 8,
+          paddingTop: 12,
+          paddingBottom: 14,
           flexDirection: 'row',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'space-between',
+          gap: 12,
         }}
       >
-        <GeostatLogo height={logoHeight} />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{actions}</View>
-      </View>
-      <View style={{ paddingHorizontal: 16, paddingTop: 2, paddingBottom: 14 }}>
-        <Text style={{ fontFamily: fonts.heading, fontSize: fs(23), color: '#fff', letterSpacing: -0.35 }}>
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text style={{ marginTop: 4, fontSize: fs(13), color: 'rgba(255,255,255,0.82)' }}>{subtitle}</Text>
-        ) : null}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: fonts.heading, fontSize: fs(23), color: '#fff', letterSpacing: -0.35 }}>
+            {title}
+          </Text>
+          {subtitle ? (
+            <Text style={{ marginTop: 4, fontSize: fs(13), color: 'rgba(255,255,255,0.82)' }}>{subtitle}</Text>
+          ) : null}
+        </View>
+        {actions ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{actions}</View> : null}
       </View>
     </HeroGradient>
   );
