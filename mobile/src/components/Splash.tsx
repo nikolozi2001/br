@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Text, View } from 'react-native';
+import { Animated, Easing, Image, Text, View } from 'react-native';
 
-import { GeostatLogo } from './ScreenHeader';
 import { getStrings } from '../i18n/strings';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -44,35 +43,27 @@ export default function Splash({ onDone }: { onDone: () => void }) {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: colors.brand,
+        backgroundColor: '#ffffff',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 22,
         opacity: fade,
       }}
     >
-      <View
-        style={{
-          width: 220,
-          height: 96,
-          borderRadius: 24,
-          backgroundColor: '#fff',
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 20,
-        }}
-      >
-        <GeostatLogo height={30} color={colors.brand} />
-      </View>
+      <Image
+        source={require('../../assets/splash-icon.png')}
+        resizeMode="contain"
+        style={{ width: 240, height: 150 }}
+      />
       <View style={{ alignItems: 'center', gap: 6 }}>
-        <Text style={{ fontFamily: fonts.heading, fontSize: fs(20), color: '#fff' }}>{t.appName}</Text>
-        <Text style={{ fontSize: fs(12.5), color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>{t.appOwner}</Text>
+        <Text style={{ fontFamily: fonts.heading, fontSize: fs(20), color: colors.ink }}>{t.appName}</Text>
+        <Text style={{ fontSize: fs(12.5), color: colors.muted, textAlign: 'center' }}>{t.appOwner}</Text>
       </View>
       <View style={{ position: 'absolute', bottom: 46, flexDirection: 'row', gap: 6 }}>
         {dots.map((dot, i) => (
           <Animated.View
             key={i}
-            style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff', opacity: dot }}
+            style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.brand, opacity: dot }}
           />
         ))}
       </View>

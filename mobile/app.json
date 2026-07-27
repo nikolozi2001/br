@@ -14,7 +14,7 @@
     "android": {
       "package": "ge.geostat.businessregister",
       "adaptiveIcon": {
-        "backgroundColor": "#0080BE",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -30,11 +30,11 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "backgroundColor": "#0080BE",
-          "imageWidth": 180,
+          "backgroundColor": "#ffffff",
+          "imageWidth": 200,
           "dark": {
             "image": "./assets/splash-icon.png",
-            "backgroundColor": "#006A9E"
+            "backgroundColor": "#ffffff"
           }
         }
       ]
