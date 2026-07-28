@@ -28,6 +28,12 @@ export const selectStyles = {
       ? "#E6F4FA"
       : "white",
     color: state.isSelected ? "white" : "#000000",
+    // Bold the "select group" action rows (values used only in the legal-form dropdown)
+    fontWeight:
+      state.data?.value === "__select_all__" ||
+      state.data?.value === "__select_business__"
+        ? 700
+        : "normal",
     "&:hover": {
       backgroundColor: state.isSelected
         ? "#0080BE"

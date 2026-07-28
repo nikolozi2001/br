@@ -8,21 +8,51 @@ export function BasicInfoSection({
   t,
   isEnglish 
 }) {
-  // Create "Select All" option
+  // Pseudo-option values for the "select group" action rows
   const SELECT_ALL_VALUE = "__select_all__";
+  const SELECT_BUSINESS_VALUE = "__select_business__";
+
+  // Legal-form IDs that count as "business entities":
+  // შპს(1), სს(2), სპს(3), კს(4), კოოპერატივი(5), იმ(30), უცხოური საწარმოს ფილიალი(39)
+  const BUSINESS_ENTITY_IDS = ["1", "2", "3", "4", "5", "30", "39"];
+
   const selectAllOption = {
     value: SELECT_ALL_VALUE,
     label: isEnglish ? "✓ Select All" : "✓ ყველას არჩევა"
   };
+  const selectBusinessOption = {
+    value: SELECT_BUSINESS_VALUE,
+    label: isEnglish ? "✓ Select Business Entities" : "✓ ბიზნეს სუბიექტების არჩევა"
+  };
+
+  // Mark business-entity options with a suffix so they're identifiable in the list
+  const businessSuffix = isEnglish ? " (B.E.)" : " (ბ.ს.)";
+  const decoratedOptions = organizationalLegalFormOptions.map((option) =>
+    BUSINESS_ENTITY_IDS.includes(option.value)
+      ? { ...option, label: `${option.label}${businessSuffix}` }
+      : option
+  );
+
+  // The subset of business-entity options that actually exist in the loaded list
+  const businessOptions = decoratedOptions.filter((option) =>
+    BUSINESS_ENTITY_IDS.includes(option.value)
+  );
 
   // Check if all options are selected
-  const allSelected = organizationalLegalFormOptions.length > 0 && 
-    formData.organizationalLegalForm.length === organizationalLegalFormOptions.length;
+  const allSelected = decoratedOptions.length > 0 &&
+    formData.organizationalLegalForm.length === decoratedOptions.length;
 
-  // Options with "Select All" at the top
-  const optionsWithSelectAll = [selectAllOption, ...organizationalLegalFormOptions];
+  // Check if exactly the business entities are selected
+  const businessSelected = businessOptions.length > 0 &&
+    formData.organizationalLegalForm.length === businessOptions.length &&
+    businessOptions.every((option) =>
+      formData.organizationalLegalForm.includes(option.value)
+    );
 
-  // Handle change with "Select All" logic
+  // Options with the two action rows at the top
+  const optionsWithSelectAll = [selectAllOption, selectBusinessOption, ...decoratedOptions];
+
+  // Handle change with "Select All" / "Select Business" logic
   const handleSelectChange = (selectedOptions) => {
     if (!selectedOptions) {
       handleLegalFormChange([]);
@@ -30,29 +60,38 @@ export function BasicInfoSection({
     }
 
     const hasSelectAll = selectedOptions.some(opt => opt.value === SELECT_ALL_VALUE);
-    const prevHadSelectAll = allSelected;
+    const hasBusiness = selectedOptions.some(opt => opt.value === SELECT_BUSINESS_VALUE);
 
-    if (hasSelectAll && !prevHadSelectAll) {
+    if (hasBusiness && !businessSelected) {
+      // "Select Business Entities" was just clicked - select the business set
+      handleLegalFormChange(businessOptions);
+    } else if (!hasBusiness && businessSelected) {
+      // "Select Business Entities" was deselected - clear all
+      handleLegalFormChange([]);
+    } else if (hasSelectAll && !allSelected) {
       // "Select All" was just clicked - select all options
-      handleLegalFormChange(organizationalLegalFormOptions);
-    } else if (!hasSelectAll && prevHadSelectAll) {
+      handleLegalFormChange(decoratedOptions);
+    } else if (!hasSelectAll && allSelected) {
       // "Select All" was deselected - clear all
       handleLegalFormChange([]);
     } else {
-      // Normal selection - filter out the "Select All" option
-      const filtered = selectedOptions.filter(opt => opt.value !== SELECT_ALL_VALUE);
+      // Normal selection - filter out both action rows
+      const filtered = selectedOptions.filter(
+        opt => opt.value !== SELECT_ALL_VALUE && opt.value !== SELECT_BUSINESS_VALUE
+      );
       handleLegalFormChange(filtered);
     }
   };
 
-  // Current value - add "Select All" if all are selected
+  // Current value - prepend the matching action row when its set is fully selected
+  const selectedItems = decoratedOptions.filter((option) =>
+    formData.organizationalLegalForm.includes(option.value)
+  );
   const currentValue = allSelected
-    ? [selectAllOption, ...organizationalLegalFormOptions.filter((option) =>
-        formData.organizationalLegalForm.includes(option.value)
-      )]
-    : organizationalLegalFormOptions.filter((option) =>
-        formData.organizationalLegalForm.includes(option.value)
-      );
+    ? [selectAllOption, ...selectedItems]
+    : businessSelected
+      ? [selectBusinessOption, ...selectedItems]
+      : selectedItems;
 
   return (
     <>
