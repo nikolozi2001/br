@@ -37,7 +37,8 @@
       "Bash(curl -s \"http://localhost:5173/\")",
       "mcp__Claude_in_Chrome__read_page",
       "Skill(fewer-permission-prompts)",
-      "Skill(fewer-permission-prompts:*)"
+      "Skill(fewer-permission-prompts:*)",
+      "PowerShell($ports=@\\(5173,5001,3000\\); foreach\\($p in $ports\\){ $c=Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue; if\\($c\\){\"Port $p LISTENING\"}else{\"Port $p not listening\"} })"
     ]
   }
 }

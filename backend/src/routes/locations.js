@@ -93,7 +93,7 @@ router.get("/code/:code", async (req, res) => {
                     [Mountainous]
                 FROM [register].[CL].[${tableName}]
                 WHERE Location_Code LIKE @code
-                AND Location_Code NOT LIKE '% % %'
+                AND RTRIM(Location_Code) NOT LIKE '% % %'
                 ORDER BY [Location_Code] ASC
             `);
     res.json(result.recordset);
