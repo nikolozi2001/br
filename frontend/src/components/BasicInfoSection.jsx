@@ -22,7 +22,7 @@ export function BasicInfoSection({
   };
   const selectBusinessOption = {
     value: SELECT_BUSINESS_VALUE,
-    label: isEnglish ? "✓ Select Business Entities" : "✓ ბიზნეს სუბიექტების არჩევა"
+    label: isEnglish ? "✓ Select Business (B.E.) Entities" : "✓ ბიზნეს სუბიექტების (ბ.ს.) არჩევა"
   };
 
   // Mark business-entity options with a suffix so they're identifiable in the list
