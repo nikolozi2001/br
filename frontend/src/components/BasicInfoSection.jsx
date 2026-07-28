@@ -18,29 +18,24 @@ export function BasicInfoSection({
 
   const selectAllOption = {
     value: SELECT_ALL_VALUE,
-    label: isEnglish ? "✓ Select All" : "✓ ყველას არჩევა"
+    label: isEnglish ? "✓ Select All Entities" : "✓ ყველა სუბიექტის არჩევა"
   };
   const selectBusinessOption = {
     value: SELECT_BUSINESS_VALUE,
-    label: isEnglish ? "✓ Select Business (B.E.) Entities" : "✓ ბიზნეს სუბიექტების (ბ.ს.) არჩევა"
+    label: isEnglish ? "✓ Select Business Entities" : "✓ ბიზნეს სუბიექტების არჩევა"
   };
 
-  // Mark business-entity options with a suffix so they're identifiable in the list
-  const businessSuffix = isEnglish ? " (B.E.)" : " (ბ.ს.)";
-  const decoratedOptions = organizationalLegalFormOptions.map((option) =>
+  // Split the loaded forms into the business-entity group and the rest
+  const businessOptions = organizationalLegalFormOptions.filter((option) =>
     BUSINESS_ENTITY_IDS.includes(option.value)
-      ? { ...option, label: `${option.label}${businessSuffix}` }
-      : option
   );
-
-  // The subset of business-entity options that actually exist in the loaded list
-  const businessOptions = decoratedOptions.filter((option) =>
-    BUSINESS_ENTITY_IDS.includes(option.value)
+  const otherOptions = organizationalLegalFormOptions.filter((option) =>
+    !BUSINESS_ENTITY_IDS.includes(option.value)
   );
 
   // Check if all options are selected
-  const allSelected = decoratedOptions.length > 0 &&
-    formData.organizationalLegalForm.length === decoratedOptions.length;
+  const allSelected = organizationalLegalFormOptions.length > 0 &&
+    formData.organizationalLegalForm.length === organizationalLegalFormOptions.length;
 
   // Check if exactly the business entities are selected
   const businessSelected = businessOptions.length > 0 &&
@@ -49,8 +44,20 @@ export function BasicInfoSection({
       formData.organizationalLegalForm.includes(option.value)
     );
 
-  // Options with the two action rows at the top
-  const optionsWithSelectAll = [selectAllOption, selectBusinessOption, ...decoratedOptions];
+  // Grouped options: two action rows on top, then the business group, then the rest.
+  // The group headings identify the business entities — no per-item tag needed.
+  const groupedOptions = [
+    selectAllOption,
+    selectBusinessOption,
+    {
+      label: isEnglish ? "Business Entities" : "ბიზნეს სუბიექტები",
+      options: businessOptions,
+    },
+    {
+      label: isEnglish ? "Other Entities" : "სხვა სუბიექტები",
+      options: otherOptions,
+    },
+  ];
 
   // Handle change with "Select All" / "Select Business" logic
   const handleSelectChange = (selectedOptions) => {
@@ -70,7 +77,7 @@ export function BasicInfoSection({
       handleLegalFormChange([]);
     } else if (hasSelectAll && !allSelected) {
       // "Select All" was just clicked - select all options
-      handleLegalFormChange(decoratedOptions);
+      handleLegalFormChange(organizationalLegalFormOptions);
     } else if (!hasSelectAll && allSelected) {
       // "Select All" was deselected - clear all
       handleLegalFormChange([]);
@@ -84,7 +91,7 @@ export function BasicInfoSection({
   };
 
   // Current value - prepend the matching action row when its set is fully selected
-  const selectedItems = decoratedOptions.filter((option) =>
+  const selectedItems = organizationalLegalFormOptions.filter((option) =>
     formData.organizationalLegalForm.includes(option.value)
   );
   const currentValue = allSelected
@@ -132,7 +139,7 @@ export function BasicInfoSection({
           placeholder={t.organizationalLegalForm}
           value={currentValue}
           onChange={handleSelectChange}
-          options={optionsWithSelectAll}
+          options={groupedOptions}
           className="sm:col-span-2"
           isMulti
         />

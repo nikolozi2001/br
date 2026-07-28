@@ -40,6 +40,16 @@ export const selectStyles = {
         : "#E6F4FA",
     },
   }),
+  groupHeading: (base) => ({
+    ...base,
+    color: "#0080BE",
+    fontWeight: 700,
+    fontSize: "0.8rem",
+    textTransform: "none",
+    borderTop: "1px solid #E5E7EB",
+    paddingTop: "8px",
+    marginTop: "2px",
+  }),
   multiValue: (base) => ({
     ...base,
     backgroundColor: "#E6F4FA",
