@@ -16,7 +16,6 @@
     },
     "android": {
       "package": "ge.geostat.businessregister",
-      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
