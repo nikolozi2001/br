@@ -1,5 +1,6 @@
 import React from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import Constants from 'expo-constants';
 
 import Icon from '../components/Icon';
 import ScreenHeader, { FlagChip } from '../components/ScreenHeader';
@@ -11,6 +12,9 @@ import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { SettingsScreenProps } from '../navigation/types';
 import type { FontSize, Lang } from '../types';
+
+/** `expo.version` from app.json, embedded in the binary at build time. */
+const APP_VERSION = Constants.expoConfig?.version ?? '—';
 
 function Row({ children, last = false, onPress }: { children: React.ReactNode; last?: boolean; onPress?: () => void }) {
   const { colors } = useTheme();
@@ -136,7 +140,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps<'Sett
           <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
             <Row>
               <Text style={{ fontSize: fs(15), color: colors.ink }}>{t.version}</Text>
-              <Text style={{ fontSize: fs(14), color: colors.faint }}>1.0.0</Text>
+              <Text style={{ fontSize: fs(14), color: colors.faint }}>{APP_VERSION}</Text>
             </Row>
             <Row onPress={() => Linking.openURL('https://geostat.ge')}>
               <Text style={{ fontSize: fs(15), color: colors.ink }}>{t.dataSource}</Text>
