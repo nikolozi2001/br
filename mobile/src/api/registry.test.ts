@@ -1,4 +1,4 @@
-import { formatDate, formatLongDate, groupDigits } from './registry';
+import { fetchReport, formatDate, formatLongDate, groupDigits } from './registry';
 
 describe('groupDigits', () => {
   it('groups thousands with a thin space', () => {
@@ -142,5 +142,42 @@ describe('toInvolvementRow', () => {
       statId: '21150413',
       legalCode: '404854485',
     });
+  });
+});
+
+describe('fetchReport', () => {
+  const mockJson = (payload: unknown) => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => payload,
+    }) as unknown as typeof fetch;
+  };
+
+  it('passes a bare recordset through (reports 1, 3–10)', async () => {
+    mockJson([{ ID: 1, Registered_Qty: 10 }]);
+    await expect(fetchReport(3, 'ka')).resolves.toEqual([{ ID: 1, Registered_Qty: 10 }]);
+  });
+
+  it('unwraps report 2 and folds its totals into a totals row', async () => {
+    mockJson({
+      totals: { total_registered: 1133623, total_active: 280811 },
+      rows: [{ ID: 1, Legal_Form: 'შპს', Registered_Qty: 386266, Active_Qty: 80153 }],
+    });
+
+    const rows = await fetchReport(2, 'ka');
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ ID: 1, Legal_Form: 'შპს' });
+    expect(rows[1]).toEqual({
+      data_type: 'totals',
+      Registered_Qty: 1133623,
+      Active_Qty: 280811,
+    });
+  });
+
+  it('keeps the rows when the envelope has no totals', async () => {
+    mockJson({ rows: [{ ID: 1 }] });
+    await expect(fetchReport(2, 'ka')).resolves.toEqual([{ ID: 1 }]);
   });
 });

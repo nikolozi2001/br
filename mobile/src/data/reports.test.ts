@@ -78,3 +78,51 @@ describe('parseMatrixReport', () => {
     expect(parseMatrixReport([])).toEqual({ columns: [], items: [] });
   });
 });
+
+describe('parseCountsReport — embedded grand total (report 1)', () => {
+  const report1 = getReport(1)!; // NACE — nameColumn Activity_Name, codeColumn Activity_Code
+
+  const total = (name: string) => ({
+    Activity_Code: null,
+    Activity_Name: name,
+    Registered_Qty: 1133623,
+    pct: 100,
+    Active_Qty: 280811,
+    pct_act: 100,
+  });
+  const detail = {
+    Activity_Code: 'A',
+    Activity_Name: 'სოფლის მეურნეობა',
+    Registered_Qty: 12031,
+    pct: 1.061287570912,
+    Active_Qty: 3431,
+    pct_act: 1.2,
+  };
+
+  it.each([['სულ'], ['TOTAL']])('lifts the codeless 100%% row (%s) out of the list', (label) => {
+    const parsed = parseCountsReport([total(label), detail], report1);
+
+    expect(parsed.items).toHaveLength(1);
+    expect(parsed.items[0].code).toBe('A');
+    // Not 2 267 246 — the total row must not be summed in as a category.
+    expect(parsed.totalReg).toBe(1133623);
+    expect(parsed.totalAct).toBe(280811);
+  });
+
+  it('rounds server percentages to one decimal', () => {
+    const parsed = parseCountsReport([total('სულ'), detail], report1);
+    expect(parsed.items[0].regP).toBe('1.1%');
+    expect(parsed.items[0].actP).toBe('1.2%');
+  });
+
+  it('keeps every row when no grand total is present (reports 3–5)', () => {
+    const report4 = getReport(4)!;
+    const rows = [
+      { Location_Code: '15', Location_Name: 'აჭარა', Registered_Qty: 114568, Active_Qty: 32604 },
+      { Location_Code: '26', Location_Name: 'იმერეთი', Registered_Qty: 133029, Active_Qty: 29837 },
+    ];
+    const parsed = parseCountsReport(rows, report4);
+    expect(parsed.items).toHaveLength(2);
+    expect(parsed.totalReg).toBe(247597);
+  });
+});

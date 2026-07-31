@@ -109,16 +109,35 @@ const num = (value: unknown): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/** One decimal, matching the web report tables (`34.1%`, `0.0%`). */
+const pct = (value: number): string => `${value.toFixed(1)}%`;
+
+const codeOf = (row: ApiRecord, report: ReportMeta): string =>
+  String(row[report.codeColumn ?? 'ID'] ?? row.ID ?? '').trim();
+
 /**
- * Normalises a `counts`-shaped recordset. Report 2 mixes a `totals` row into the
- * result set; it is pulled out rather than rendered as a category.
+ * A grand-total line rather than a category. Report 2's envelope totals arrive
+ * tagged `data_type: 'totals'` (see `fetchReport`), while report 1 ships its
+ * "სულ" / "TOTAL" line inside the recordset with no code and 100% — matching on
+ * the numbers rather than the label keeps this language-independent.
+ */
+function isTotalsRow(row: ApiRecord, report: ReportMeta): boolean {
+  if (row.data_type === 'totals') return true;
+  const percent = row.Registered_Percent ?? row.pct;
+  return !codeOf(row, report) && percent != null && num(percent) === 100;
+}
+
+/**
+ * Normalises a `counts`-shaped recordset. Reports that carry a grand total pull
+ * it out for the header banner rather than rendering it as a category — leaving
+ * it in would double the totals and duplicate the row in the list.
  */
 export function parseCountsReport(rows: ApiRecord[], report: ReportMeta): CountsReport {
-  const detail = rows.filter((r) => r.data_type !== 'totals');
-  const totalsRow = rows.find((r) => r.data_type === 'totals');
+  const detail = rows.filter((r) => !isTotalsRow(r, report));
+  const totalsRow = rows.find((r) => isTotalsRow(r, report));
 
   const items = detail.map((r) => ({
-    code: String(r[report.codeColumn ?? 'ID'] ?? r.ID ?? ''),
+    code: codeOf(r, report),
     name: String(r[report.nameColumn ?? ''] ?? ''),
     reg: num(r.Registered_Qty),
     act: num(r.Active_Qty),
@@ -132,8 +151,8 @@ export function parseCountsReport(rows: ApiRecord[], report: ReportMeta): Counts
   return {
     items: items.map((item) => ({
       ...item,
-      regP: item.regP != null ? `${item.regP}%` : totalReg ? `${((item.reg / totalReg) * 100).toFixed(1)}%` : '',
-      actP: item.actP != null ? `${item.actP}%` : totalAct ? `${((item.act / totalAct) * 100).toFixed(1)}%` : '',
+      regP: item.regP != null ? pct(num(item.regP)) : totalReg ? pct((item.reg / totalReg) * 100) : '',
+      actP: item.actP != null ? pct(num(item.actP)) : totalAct ? pct((item.act / totalAct) * 100) : '',
     })),
     totalReg,
     totalAct,

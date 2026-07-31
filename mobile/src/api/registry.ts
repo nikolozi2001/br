@@ -303,9 +303,33 @@ export async function fetchPersonInvolvement(personId: number, lang: Lang): Prom
 
 /* ── Reports ───────────────────────────────────────────────────────────────── */
 
+/**
+ * Report 2 answers with `{ totals: {…}, rows: [...] }` rather than a bare
+ * recordset. The totals are folded back in as the `data_type: 'totals'` row
+ * `parseCountsReport` looks for, so every report reaches the parser as one
+ * flat recordset.
+ */
+function toReportRows(payload: unknown): ApiRecord[] {
+  const envelope = payload as { rows?: unknown; totals?: ApiRecord } | null;
+  if (!envelope || typeof envelope !== 'object' || !Array.isArray(envelope.rows)) {
+    return toArray(payload);
+  }
+  const rows = envelope.rows as ApiRecord[];
+  const { totals } = envelope;
+  if (!totals) return rows;
+  return [
+    ...rows,
+    {
+      data_type: 'totals',
+      Registered_Qty: totals.total_registered,
+      Active_Qty: totals.total_active,
+    },
+  ];
+}
+
 export async function fetchReport(n: number, lang: Lang): Promise<ApiRecord[]> {
   const payload = await apiGet(`/report${n}`, { lang: apiLang(lang) }, { timeout: 60000 });
-  return toArray(payload);
+  return toReportRows(payload);
 }
 
 /* ── Charts ────────────────────────────────────────────────────────────────── */
