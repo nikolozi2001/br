@@ -117,10 +117,6 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps<'Sett
           <SectionLabel>{t.searchSection}</SectionLabel>
           <Card style={{ paddingHorizontal: 15, paddingVertical: 2 }}>
             <Row>
-              <Text style={{ fontSize: fs(15), color: colors.ink, flex: 1 }}>{t.defaultActiveOnly}</Text>
-              <Toggle value={settings.defaultActiveOnly} onChange={(v) => update({ defaultActiveOnly: v })} />
-            </Row>
-            <Row>
               <Text style={{ fontSize: fs(15), color: colors.ink, flex: 1 }}>{t.saveHistory}</Text>
               <Toggle value={settings.saveHistory} onChange={(v) => update({ saveHistory: v })} />
             </Row>

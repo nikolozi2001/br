@@ -21,7 +21,7 @@ const emptyForm: SearchForm = {
   ownership: null,
   size: null,
   addrType: 'jur',
-  activeOnly: true,
+  activeOnly: false,
 };
 
 interface LoadOptions {
@@ -56,7 +56,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const { lang, settings } = useTheme();
   const { pushRecent } = useAppStore();
 
-  const [form, setForm] = useState<SearchForm>({ ...emptyForm, activeOnly: settings.defaultActiveOnly });
+  const [form, setForm] = useState<SearchForm>(emptyForm);
   const [results, setResults] = useState<Subject[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -68,18 +68,13 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   const requestId = useRef(0);
 
-  // Keep the untouched form in sync with the "active only by default" setting.
-  useEffect(() => {
-    setForm((prev) => (prev.dirty ? prev : { ...prev, activeOnly: settings.defaultActiveOnly }));
-  }, [settings.defaultActiveOnly]);
-
   const patchForm = useCallback((patch: Partial<SearchForm>) => {
     setForm((prev) => ({ ...prev, ...patch, dirty: true }));
   }, []);
 
   const resetForm = useCallback(() => {
-    setForm({ ...emptyForm, activeOnly: settings.defaultActiveOnly });
-  }, [settings.defaultActiveOnly]);
+    setForm(emptyForm);
+  }, []);
 
   const load = useCallback(
     async (nextPage: number, { append, currentSortBy, currentSortDir, formOverride }: LoadOptions) => {

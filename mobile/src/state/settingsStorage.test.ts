@@ -5,7 +5,6 @@ const DEFAULTS: Settings = {
   themeMode: 'system',
   fontSize: 'normal',
   lang: 'ka',
-  defaultActiveOnly: false,
   saveHistory: true,
 };
 
@@ -15,7 +14,6 @@ describe('migrateSettings', () => {
       themeMode: 'dark',
       fontSize: 'large',
       lang: 'en',
-      defaultActiveOnly: true,
       saveHistory: false,
     };
     expect(migrateSettings(stored, DEFAULTS)).toEqual(stored);
@@ -28,7 +26,6 @@ describe('migrateSettings', () => {
       themeMode: 'light',
       fontSize: 'normal',
       lang: 'en',
-      defaultActiveOnly: false,
       saveHistory: true,
     });
   });

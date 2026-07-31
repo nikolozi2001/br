@@ -10,7 +10,7 @@ const KEY = 'br.settings';
 /** Superseded keys, oldest → newest; newer values win during consolidation. */
 const LEGACY_KEYS = ['br.settings.v1', 'br.settings.v2'];
 
-const KNOWN_FIELDS: (keyof Settings)[] = ['themeMode', 'fontSize', 'lang', 'defaultActiveOnly', 'saveHistory'];
+const KNOWN_FIELDS: (keyof Settings)[] = ['themeMode', 'fontSize', 'lang', 'saveHistory'];
 
 const THEME_MODES: Settings['themeMode'][] = ['system', 'light', 'dark'];
 

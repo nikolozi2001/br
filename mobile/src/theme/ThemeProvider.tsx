@@ -20,7 +20,6 @@ export interface Settings {
   themeMode: ThemeMode;
   fontSize: FontSize;
   lang: Lang;
-  defaultActiveOnly: boolean;
   saveHistory: boolean;
 }
 
@@ -28,7 +27,6 @@ const DEFAULT_SETTINGS: Settings = {
   themeMode: 'system',
   fontSize: 'normal',
   lang: 'ka',
-  defaultActiveOnly: false,
   saveHistory: true,
 };
 
