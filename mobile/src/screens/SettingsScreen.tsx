@@ -65,7 +65,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps<'Sett
                 })}
               >
                 <View style={{ borderRadius: 5, overflow: 'hidden', borderWidth: 1, borderColor: colors.line2 }}>
-                  <FlagChip lang={option.value} width={32} height={22} />
+                  <FlagChip lang={option.value} width={33} height={22} />
                 </View>
                 <Text style={{ flex: 1, fontSize: fs(15), color: colors.ink }}>{option.label}</Text>
                 {lang === option.value ? <Icon name="check" size={20} color={colors.brand} width={2.5} /> : null}

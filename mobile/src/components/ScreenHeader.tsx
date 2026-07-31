@@ -47,9 +47,19 @@ export function SakstatLogo() {
   );
 }
 
-/** 38×26 rounded flag chip used in headers and the language setting. */
-export function FlagChip({ lang, width = 38, height = 26 }: { lang: Lang; width?: number; height?: number }) {
+/** Both flag artworks (geo 300×200, uk 60×40) are drawn 3:2. */
+const FLAG_RATIO = 3 / 2;
+
+/**
+ * 39×26 rounded flag chip used in headers and the language setting. The flag is
+ * sized from its own 3:2 ratio and centred by the container rather than left to
+ * `preserveAspectRatio`, which crops off-centre when the chip isn't exactly 3:2.
+ */
+export function FlagChip({ lang, width = 39, height = 26 }: { lang: Lang; width?: number; height?: number }) {
   const Flag = lang === 'en' ? UkFlag : GeoFlag;
+  const flagHeight = Math.max(height, width / FLAG_RATIO);
+  const flagWidth = flagHeight * FLAG_RATIO;
+
   return (
     <View
       style={{
@@ -59,9 +69,11 @@ export function FlagChip({ lang, width = 38, height = 26 }: { lang: Lang; width?
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.4)',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      <Flag width={width} height={height} preserveAspectRatio="xMidYMid slice" />
+      <Flag width={flagWidth} height={flagHeight} />
     </View>
   );
 }
