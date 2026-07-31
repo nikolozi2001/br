@@ -2,6 +2,8 @@
 
 export type Lang = 'ka' | 'en';
 export type FontSize = 'small' | 'normal' | 'large';
+/** `system` follows the device appearance; the others pin the palette. */
+export type ThemeMode = 'system' | 'light' | 'dark';
 export type AddressType = 'jur' | 'fakt';
 export type SortKey = 'name' | 'id' | 'date';
 

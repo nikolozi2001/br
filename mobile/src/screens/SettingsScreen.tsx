@@ -81,9 +81,17 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps<'Sett
             <Row>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Icon name="moon" size={19} color="#475569" />
-                <Text style={{ fontSize: fs(15), color: colors.ink }}>{t.darkMode}</Text>
+                <Text style={{ fontSize: fs(15), color: colors.ink }}>{t.theme}</Text>
               </View>
-              <Toggle value={settings.dark} onChange={(v) => update({ dark: v })} />
+              <Segmented
+                value={settings.themeMode}
+                onChange={(v) => update({ themeMode: v })}
+                options={[
+                  { value: 'system', label: t.themeSystem },
+                  { value: 'light', label: t.themeLight },
+                  { value: 'dark', label: t.themeDark },
+                ]}
+              />
             </Row>
             <Row last>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

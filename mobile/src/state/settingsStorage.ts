@@ -10,7 +10,23 @@ const KEY = 'br.settings';
 /** Superseded keys, oldest → newest; newer values win during consolidation. */
 const LEGACY_KEYS = ['br.settings.v1', 'br.settings.v2'];
 
-const KNOWN_FIELDS: (keyof Settings)[] = ['dark', 'fontSize', 'lang', 'defaultActiveOnly', 'saveHistory'];
+const KNOWN_FIELDS: (keyof Settings)[] = ['themeMode', 'fontSize', 'lang', 'defaultActiveOnly', 'saveHistory'];
+
+const THEME_MODES: Settings['themeMode'][] = ['system', 'light', 'dark'];
+
+/**
+ * `themeMode` replaced the old `dark` boolean. `dark: true` was a deliberate
+ * choice so it is kept as an explicit dark theme; `dark: false` was merely the
+ * old default, so those installs move to following the device appearance.
+ */
+function readThemeMode(obj: Record<string, unknown>): Settings['themeMode'] | undefined {
+  const mode = obj.themeMode;
+  if (typeof mode === 'string' && (THEME_MODES as string[]).includes(mode)) {
+    return mode as Settings['themeMode'];
+  }
+  if (typeof obj.dark === 'boolean') return obj.dark ? 'dark' : 'system';
+  return undefined;
+}
 
 function safeParse(raw: string | null): unknown {
   if (!raw) return null;
@@ -30,10 +46,13 @@ export function migrateSettings(raw: unknown, base: Settings): Settings {
   if (raw && typeof raw === 'object') {
     const obj = raw as Record<string, unknown>;
     for (const field of KNOWN_FIELDS) {
+      if (field === 'themeMode') continue;
       if (obj[field] !== undefined) {
         (merged as unknown as Record<string, unknown>)[field] = obj[field];
       }
     }
+    const themeMode = readThemeMode(obj);
+    if (themeMode) merged.themeMode = themeMode;
   }
   return merged;
 }

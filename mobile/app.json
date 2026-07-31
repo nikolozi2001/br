@@ -6,7 +6,7 @@
     "version": "4.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ge.geostat.businessregister",
@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "ge.geostat.businessregister",
+      "userInterfaceStyle": "automatic",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -29,6 +30,7 @@
     "plugins": [
       "expo-font",
       "expo-sharing",
+      "expo-system-ui",
       [
         "expo-splash-screen",
         {

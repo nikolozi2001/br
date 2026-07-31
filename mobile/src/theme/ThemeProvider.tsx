@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useColorScheme } from 'react-native';
 
 import {
   brand,
@@ -12,11 +13,11 @@ import {
   shadow,
   type Palette,
 } from './tokens';
-import type { FontSize, Lang } from '../types';
+import type { FontSize, Lang, ThemeMode } from '../types';
 import { loadSettings, saveSettings } from '../state/settingsStorage';
 
 export interface Settings {
-  dark: boolean;
+  themeMode: ThemeMode;
   fontSize: FontSize;
   lang: Lang;
   defaultActiveOnly: boolean;
@@ -24,7 +25,7 @@ export interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-  dark: false,
+  themeMode: 'system',
   fontSize: 'normal',
   lang: 'ka',
   defaultActiveOnly: false,
@@ -63,6 +64,8 @@ const ThemeContext = createContext<ThemeValue | null>(null);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
+  /** Re-renders whenever the device switches appearance. */
+  const systemScheme = useColorScheme();
 
   useEffect(() => {
     let cancelled = false;
@@ -87,14 +90,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<ThemeValue>(() => {
-    const palette = settings.dark ? darkPalette : lightPalette;
+    const dark = settings.themeMode === 'system' ? systemScheme === 'dark' : settings.themeMode === 'dark';
+    const palette = dark ? darkPalette : lightPalette;
     const scale = fontScales[settings.fontSize] ?? 1;
 
     return {
       hydrated,
       settings,
       update,
-      dark: settings.dark,
+      dark,
       lang: settings.lang,
       fs: (size: number) => Math.round(size * scale * 100) / 100,
       scale,
@@ -114,7 +118,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       shadow,
       chartColors,
     };
-  }, [settings, hydrated, update]);
+  }, [settings, hydrated, update, systemScheme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
