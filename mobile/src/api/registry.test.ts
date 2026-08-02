@@ -1,4 +1,5 @@
 import {
+  fetchLegalForms,
   fetchMunicipalities,
   fetchRegions,
   fetchReport,
@@ -249,5 +250,29 @@ describe('searchSubjects address filters', () => {
     expect(url).toContain('legalAddressRegion=15');
     expect(url).toContain('legalAddressCity=15+11');
     expect(url).not.toContain('Adjara');
+  });
+});
+
+describe('fetchLegalForms labels', () => {
+  const mockJson = (payload: unknown) => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => payload,
+    }) as unknown as typeof fetch;
+  };
+
+  it('joins the Georgian abbreviation with the full name', async () => {
+    mockJson([{ ID: 1, Abbreviation: 'შპს', Legal_Form: 'შეზღუდული პასუხისმგებლობის საზოგადოება' }]);
+    const [form] = await fetchLegalForms('ka');
+    expect(form.label).toBe('შპს - შეზღუდული პასუხისმგებლობის საზოგადოება');
+  });
+
+  it('does not repeat the English name that fills both columns', async () => {
+    mockJson([
+      { ID: 1, Abbreviation: 'Limited liability companies', Legal_Form: 'Limited liability companies' },
+    ]);
+    const [form] = await fetchLegalForms('en');
+    expect(form.label).toBe('Limited liability companies');
   });
 });

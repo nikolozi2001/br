@@ -27,16 +27,23 @@ const num = (value: unknown): number => {
 
 /* ── Lookups (picker option lists) ─────────────────────────────────────────── */
 
+/**
+ * `Abbreviation - Legal_Form` reads well in Georgian ("შპს - შეზღუდული…"), but
+ * the English table repeats the full name in both columns, so the two are only
+ * joined when they actually differ.
+ */
+function legalFormLabel(form: ApiRecord): string {
+  if (form.Name) return str(form.Name);
+  const abbreviation = str(form.Abbreviation).trim();
+  const full = str(form.Legal_Form).trim();
+  if (!abbreviation || abbreviation === full) return full || abbreviation;
+  return `${abbreviation} - ${full}`;
+}
+
 export async function fetchLegalForms(lang: Lang): Promise<Option[]> {
   const data = toArray(await apiGet('/legal-forms', { lang: apiLang(lang) }));
   return data
-    .map((form) => ({
-      value: str(form.ID ?? form.id),
-      label: str(
-        form.Name ||
-          (form.Abbreviation ? `${form.Abbreviation} - ${form.Legal_Form}` : form.Legal_Form),
-      ),
-    }))
+    .map((form) => ({ value: str(form.ID ?? form.id), label: legalFormLabel(form) }))
     .filter((o) => o.value && o.label);
 }
 
