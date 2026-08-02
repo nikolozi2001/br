@@ -12,6 +12,15 @@ import type { Option } from '../types';
  * scrim. Lists come from the backend lookup endpoints and can be long (NACE
  * codes, municipalities), so anything over 12 rows gets a filter box.
  */
+/** A row that picks a whole group at once ("select all", "select business entities"). */
+export interface PickerAction {
+  key: string;
+  label: string;
+  /** True when the picked set is exactly this group — tapping then clears it. */
+  active: boolean;
+  onPress: () => void;
+}
+
 export interface PickerSheetProps {
   visible: boolean;
   title: string;
@@ -24,6 +33,7 @@ export interface PickerSheetProps {
   clearLabel: string;
   selectedLabel: (n: number) => string;
   searchPlaceholder: string;
+  actions?: PickerAction[];
 }
 
 export default function PickerSheet({
@@ -38,6 +48,7 @@ export default function PickerSheet({
   clearLabel,
   selectedLabel,
   searchPlaceholder,
+  actions = [],
 }: PickerSheetProps) {
   const { colors, fs, radius } = useTheme();
   const [query, setQuery] = useState('');
@@ -77,6 +88,31 @@ export default function PickerSheet({
             color: colors.ink,
           }}
         />
+      ) : null}
+
+      {/* Group actions sit above the list and stay put while the list is filtered. */}
+      {actions.map((action) => (
+        <Pressable
+          key={action.key}
+          onPress={action.onPress}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            borderRadius: radius.lg,
+            backgroundColor: action.active ? colors.field : pressed ? colors.field : 'transparent',
+          })}
+        >
+          <Icon name="check" size={17} color={colors.brand} width={2.6} />
+          <Text style={{ fontSize: fs(15), flex: 1, color: colors.brand, fontWeight: '600' }}>
+            {action.label}
+          </Text>
+        </Pressable>
+      ))}
+      {actions.length > 0 ? (
+        <View style={{ height: 1, backgroundColor: colors.line, marginVertical: 6, marginHorizontal: 12 }} />
       ) : null}
 
       {selected.length > 0 ? (

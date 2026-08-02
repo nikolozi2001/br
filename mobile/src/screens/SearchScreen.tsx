@@ -12,8 +12,16 @@ import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useSearch } from '../state/SearchStore';
 import { useTheme } from '../theme/ThemeProvider';
+import type { PickerAction } from '../components/PickerSheet';
 import type { HomeScreenProps } from '../navigation/types';
 import type { Option, PickerKey } from '../types';
+
+/**
+ * Legal-form IDs that count as business entities, mirroring the web form
+ * (frontend/src/components/BasicInfoSection.jsx): შპს(1), სს(2), სპს(3),
+ * კს(4), კოოპერატივი(5), იმ(30), უცხოური საწარმოს ფილიალი(39).
+ */
+const BUSINESS_LEGAL_FORM_IDS = ['1', '2', '3', '4', '5', '30', '39'];
 
 export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) {
   const { colors, fonts, fs, lang, radius, shadow, update } = useTheme();
@@ -42,11 +50,51 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
     [lookups, t],
   );
 
+  const businessForms = useMemo(
+    () => lookups.legalForms.filter((o) => BUSINESS_LEGAL_FORM_IDS.includes(o.value)),
+    [lookups.legalForms],
+  );
+
+  /** True when the legal forms picked are exactly `group`, no more and no less. */
+  const isWholeGroup = (group: Option[]): boolean =>
+    group.length > 0 &&
+    group.length === form.legalForm.length &&
+    group.every((o) => form.legalForm.some((p) => p.value === o.value));
+
+  const allFormsPicked = isWholeGroup(lookups.legalForms);
+  const businessFormsPicked = isWholeGroup(businessForms);
+
+  /** Tapping a group row picks the whole group, or clears it when it's already the selection. */
+  const pickGroup = (group: Option[], picked: boolean) =>
+    patchForm({ legalForm: picked ? [] : group });
+
+  const legalFormActions: PickerAction[] = [
+    {
+      key: 'all',
+      label: t.selectAllEntities,
+      active: allFormsPicked,
+      onPress: () => pickGroup(lookups.legalForms, allFormsPicked),
+    },
+    {
+      key: 'business',
+      label: t.selectBusinessEntities,
+      active: businessFormsPicked,
+      onPress: () => pickGroup(businessForms, businessFormsPicked),
+    },
+  ];
+
   /** "Batumi +2" — the first pick plus a count, so the 44px field stays readable. */
   const summary = (picked: Option[]): string | undefined => {
     if (picked.length === 0) return undefined;
     if (picked.length === 1) return picked[0].label;
     return `${picked[0].label} ${t.morePicked(picked.length - 1)}`;
+  };
+
+  /** The legal-form field names the group instead of listing its members. */
+  const legalFormSummary = (): string | undefined => {
+    if (allFormsPicked) return t.allEntities;
+    if (businessFormsPicked) return t.businessEntities;
+    return summary(form.legalForm);
   };
 
   /** Adds or removes one option in a picker field. */
@@ -177,7 +225,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
               />
               <SelectField
                 label={t.legalForm}
-                value={summary(form.legalForm)}
+                value={legalFormSummary()}
                 placeholder={t.all}
                 onPress={() => setPicker('legalForm')}
               />
@@ -345,6 +393,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
         clearLabel={t.clear}
         selectedLabel={t.selectedCount}
         searchPlaceholder={t.search}
+        actions={picker === 'legalForm' ? legalFormActions : undefined}
         onToggle={(option) => {
           if (picker) toggle(picker, option);
         }}

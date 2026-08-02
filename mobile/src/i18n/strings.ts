@@ -49,6 +49,10 @@ const ka = {
   done: 'დასრულება',
   selectedCount: (n: number) => `არჩეულია ${n}`,
   morePicked: (n: number) => `+${n}`,
+  selectAllEntities: 'ყველა სუბიექტის არჩევა',
+  selectBusinessEntities: 'ბიზნეს სუბიექტების არჩევა',
+  allEntities: 'ყველა სუბიექტი',
+  businessEntities: 'ბიზნეს სუბიექტები',
 
   // results
   results: 'შედეგები',
@@ -237,6 +241,10 @@ const en = {
   done: 'Done',
   selectedCount: (n: number) => `${n} selected`,
   morePicked: (n: number) => `+${n}`,
+  selectAllEntities: 'Select All Entities',
+  selectBusinessEntities: 'Select Business Entities',
+  allEntities: 'All entities',
+  businessEntities: 'Business entities',
 
   results: 'Results',
   foundCount: (n: string | number) => `${n} subjects found`,
