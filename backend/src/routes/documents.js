@@ -39,6 +39,31 @@ const csvDate = (col) => `ISNULL('"' + CONVERT(NVARCHAR(10), ${col}, 120) + '"',
 
 // ─── Shared WHERE clause builder ──────────────────────────────────────────────
 
+/**
+ * Turns a repeated (`?p=a&p=b`), comma-joined (`?p=a,b`) or single (`?p=a`)
+ * query value into an ` AND col IN (@n0,@n1)` fragment. `map` converts each raw
+ * value; returning null/undefined drops it, and an empty result drops the whole
+ * clause so an unusable filter never narrows the search.
+ */
+function inClause(request, column, raw, name, type, map = (v) => v) {
+  if (raw === undefined || raw === null || raw === "") return "";
+  const values = (Array.isArray(raw) ? raw : String(raw).split(","))
+    .map((v) => String(v).trim())
+    .filter(Boolean)
+    .map(map)
+    .filter((v) => v !== null && v !== undefined);
+  if (!values.length) return "";
+  const params = values
+    .map((v, i) => { request.input(`${name}${i}`, type, v); return `@${name}${i}`; })
+    .join(",");
+  return ` AND ${column} IN (${params})`;
+}
+
+const toIntOrNull = (v) => {
+  const n = parseInt(v, 10);
+  return Number.isNaN(n) ? null : n;
+};
+
 function buildWhereClause(query, request) {
   const { identificationNumber, organizationName, legalForm, head, partner, ownershipType, isActive, x, y, size } = query;
   let where = " WHERE 1=1";
@@ -51,11 +76,7 @@ function buildWhereClause(query, request) {
     where += " AND (a.Full_Name LIKE @orgName OR a.Abbreviation LIKE @orgName)";
     request.input("orgName", sql.NVarChar, `%${organizationName}%`);
   }
-  if (legalForm) {
-    const forms = Array.isArray(legalForm) ? legalForm : [legalForm];
-    const params = forms.map((f, i) => { request.input(`lf${i}`, sql.SmallInt, f); return `@lf${i}`; }).join(",");
-    where += ` AND a.Legal_Form_ID IN (${params})`;
-  }
+  where += inClause(request, "a.Legal_Form_ID", legalForm, "lf", sql.SmallInt, toIntOrNull);
   if (head) {
     where += " AND a.Head LIKE @head";
     request.input("head", sql.NVarChar, `%${head}%`);
@@ -81,29 +102,16 @@ function buildWhereClause(query, request) {
     });
     if (conditions.length > 0) where += ` AND (${conditions.join(" OR ")})`;
   }
-  if (query.legalAddressRegion) { where += " AND Region_Code = @reg1";   request.input("reg1",  sql.NVarChar(50), query.legalAddressRegion); }
-  if (query.legalAddressCity)   { where += " AND City_Code = @city1";    request.input("city1", sql.NVarChar(50), query.legalAddressCity); }
+  // Location codes never contain a comma, so ?p=a,b splitting is safe for them too.
+  where += inClause(request, "Region_Code",  query.legalAddressRegion, "reg1",  sql.NVarChar(50));
+  where += inClause(request, "City_Code",    query.legalAddressCity,   "city1", sql.NVarChar(50));
   if (query.legalAddress)       { where += " AND Address LIKE @addr1";   request.input("addr1", sql.NVarChar,     `%${query.legalAddress}%`); }
-  if (query.factualAddressRegion) { where += " AND Region_Code2 = @reg2"; request.input("reg2",  sql.NVarChar(50), query.factualAddressRegion); }
-  if (query.factualAddressCity)   { where += " AND City_Code2 = @city2";  request.input("city2", sql.NVarChar(50), query.factualAddressCity); }
+  where += inClause(request, "Region_Code2", query.factualAddressRegion, "reg2",  sql.NVarChar(50));
+  where += inClause(request, "City_Code2",   query.factualAddressCity,   "city2", sql.NVarChar(50));
   if (query.factualAddress)       { where += " AND Address2 LIKE @addr2"; request.input("addr2", sql.NVarChar,     `%${query.factualAddress}%`); }
-  if (ownershipType) {
-    where += " AND Ownership_Type_ID = @ownType";
-    request.input("ownType", sql.Int, parseInt(ownershipType, 10));
-  }
-  if (size) {
-    // ?size=1&size=2 (array), ?size=1,2 (comma), ?size=1 (single) — ყველა ვარიანტი
-    const sizes = (Array.isArray(size) ? size : String(size).split(","))
-      .map(s => String(s).trim())
-      .filter(s => SIZE_MAP[s]);
-    if (sizes.length) {
-      const params = sizes.map((s, i) => {
-        request.input(`sizeT${i}`, sql.NVarChar, SIZE_MAP[s]);
-        return `@sizeT${i}`;
-      }).join(",");
-      where += ` AND Zoma IN (${params})`;
-    }
-  }
+  where += inClause(request, "Ownership_Type_ID", ownershipType, "ownType", sql.Int, toIntOrNull);
+  // ?size=1&size=2 (array), ?size=1,2 (comma), ?size=1 (single) — ყველა ვარიანტი
+  where += inClause(request, "Zoma", size, "sizeT", sql.NVarChar, (s) => SIZE_MAP[s] ?? null);
   if (isActive) {
     where += " AND ISActive = @isAct";
     request.input("isAct", sql.Int, isActive === "true" || isActive === "1" ? 1 : 0);
