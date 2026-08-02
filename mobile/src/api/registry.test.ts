@@ -233,15 +233,20 @@ describe('location lookups', () => {
 });
 
 describe('searchSubjects address filters', () => {
-  it('sends location codes rather than localised names', async () => {
+  const mockSearch = () => {
     const spy = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
     global.fetch = spy as unknown as typeof fetch;
+    return spy;
+  };
+
+  it('sends location codes rather than localised names', async () => {
+    const spy = mockSearch();
 
     await searchSubjects(
       {
         addrType: 'jur',
-        region: { value: '3', label: 'Adjara AR', code: '15' },
-        muni: { value: '41', label: 'City of Batumi', code: '15 11' },
+        region: [{ value: '3', label: 'Adjara AR', code: '15' }],
+        muni: [{ value: '41', label: 'City of Batumi', code: '15 11' }],
       } as SearchForm,
       { lang: 'en' },
     );
@@ -250,6 +255,72 @@ describe('searchSubjects address filters', () => {
     expect(url).toContain('legalAddressRegion=15');
     expect(url).toContain('legalAddressCity=15+11');
     expect(url).not.toContain('Adjara');
+  });
+
+  it('repeats the query key once per picked location', async () => {
+    const spy = mockSearch();
+
+    await searchSubjects(
+      {
+        addrType: 'fakt',
+        region: [
+          { value: '3', label: 'Adjara AR', code: '15' },
+          { value: '4', label: 'Guria', code: '23' },
+        ],
+      } as SearchForm,
+      { lang: 'en' },
+    );
+
+    const url = String(spy.mock.calls[0][0]);
+    expect(url).toContain('factualAddressRegion=15&factualAddressRegion=23');
+  });
+});
+
+describe('searchSubjects picker filters', () => {
+  it('sends every picked legal form, ownership type and size', async () => {
+    const spy = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+    global.fetch = spy as unknown as typeof fetch;
+
+    await searchSubjects(
+      {
+        addrType: 'jur',
+        legalForm: [
+          { value: '1', label: 'LLC' },
+          { value: '2', label: 'JSC' },
+        ],
+        ownership: [
+          { value: '1', label: 'Private' },
+          { value: '2', label: 'State' },
+        ],
+        size: [{ value: '3', label: 'Large' }],
+      } as SearchForm,
+      { lang: 'en' },
+    );
+
+    const url = String(spy.mock.calls[0][0]);
+    expect(url).toContain('legalForm=1&legalForm=2');
+    expect(url).toContain('ownershipType=1&ownershipType=2');
+    expect(url).toContain('size=3');
+  });
+
+  it('merges both NACE pickers into activityCode without duplicates', async () => {
+    const spy = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+    global.fetch = spy as unknown as typeof fetch;
+
+    await searchSubjects(
+      {
+        addrType: 'jur',
+        naceCode: [{ value: '01', label: '01' }],
+        naceName: [
+          { value: '01', label: '01 - Crop and animal production' },
+          { value: '62', label: '62 - Computer programming' },
+        ],
+      } as SearchForm,
+      { lang: 'en' },
+    );
+
+    const url = String(spy.mock.calls[0][0]);
+    expect(url).toContain('activityCode=01&activityCode=62');
   });
 });
 

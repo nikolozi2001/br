@@ -107,20 +107,23 @@ export interface SubjectPartners {
   partnersDetail: PartnerRow[];
 }
 
-/** The search form backing SearchScreen and SearchStore. */
+/**
+ * The search form backing SearchScreen and SearchStore. Every picker field is a
+ * list — each one accepts several values, which the backend ORs together.
+ */
 export interface SearchForm {
   id: string;
   name: string;
   head: string;
   partner: string;
-  legalForm: Option | null;
-  region: Option | null;
-  muni: Option | null;
+  legalForm: Option[];
+  region: Option[];
+  muni: Option[];
   address: string;
-  naceCode: Option | null;
-  naceName: Option | null;
-  ownership: Option | null;
-  size: Option | null;
+  naceCode: Option[];
+  naceName: Option[];
+  ownership: Option[];
+  size: Option[];
   addrType: AddressType;
   activeOnly: boolean;
   /** Set once the user edits anything, so settings changes stop overriding it. */

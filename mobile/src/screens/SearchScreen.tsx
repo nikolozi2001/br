@@ -21,7 +21,11 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
   const insets = useSafeAreaInsets();
   const { favouriteCount, recent, clearRecent } = useAppStore();
   const { form, patchForm, resetForm, runSearch, runSearchWith } = useSearch();
-  const lookups = useLookups(form.region?.code);
+  const regionCodes = useMemo(
+    () => form.region.map((r) => r.code?.trim() ?? '').filter(Boolean),
+    [form.region],
+  );
+  const lookups = useLookups(regionCodes);
 
   const [picker, setPicker] = useState<PickerKey | null>(null);
 
@@ -37,6 +41,31 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
     }),
     [lookups, t],
   );
+
+  /** "Batumi +2" — the first pick plus a count, so the 44px field stays readable. */
+  const summary = (picked: Option[]): string | undefined => {
+    if (picked.length === 0) return undefined;
+    if (picked.length === 1) return picked[0].label;
+    return `${picked[0].label} ${t.morePicked(picked.length - 1)}`;
+  };
+
+  /** Adds or removes one option in a picker field. */
+  const toggle = (key: PickerKey, option: Option) => {
+    const picked = form[key];
+    const next = picked.some((o) => o.value === option.value)
+      ? picked.filter((o) => o.value !== option.value)
+      : [...picked, option];
+
+    if (key === 'region') {
+      // Municipality codes start with their region's code ("15" → "15 11"), so
+      // dropping a region drops the municipalities that came with it.
+      const codes = next.map((r) => r.code?.trim() ?? '').filter(Boolean);
+      const muni = form.muni.filter((m) => codes.some((code) => (m.code ?? '').startsWith(code)));
+      patchForm({ region: next, muni });
+      return;
+    }
+    patchForm({ [key]: next });
+  };
 
   const submit = () => {
     runSearch();
@@ -148,7 +177,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
               />
               <SelectField
                 label={t.legalForm}
-                value={form.legalForm?.label}
+                value={summary(form.legalForm)}
                 placeholder={t.all}
                 onPress={() => setPicker('legalForm')}
               />
@@ -190,7 +219,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
                   style={{ flex: 1 }}
                   compact
                   label={t.region}
-                  value={form.region?.label}
+                  value={summary(form.region)}
                   placeholder={t.all}
                   onPress={() => setPicker('region')}
                 />
@@ -198,7 +227,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
                   style={{ flex: 1 }}
                   compact
                   label={t.municipality}
-                  value={form.muni?.label}
+                  value={summary(form.muni)}
                   placeholder={t.all}
                   onPress={() => setPicker('muni')}
                 />
@@ -218,13 +247,13 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
             <Card style={{ padding: 14, gap: 12 }}>
               <SelectField
                 label={t.activityCode}
-                value={form.naceCode?.label}
+                value={summary(form.naceCode)}
                 placeholder={t.choose}
                 onPress={() => setPicker('naceCode')}
               />
               <SelectField
                 label={t.activityName}
-                value={form.naceName?.label}
+                value={summary(form.naceName)}
                 placeholder={t.choose}
                 onPress={() => setPicker('naceName')}
               />
@@ -240,7 +269,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
                   style={{ flex: 1 }}
                   compact
                   label={t.ownership}
-                  value={form.ownership?.label}
+                  value={summary(form.ownership)}
                   placeholder={t.all}
                   onPress={() => setPicker('ownership')}
                 />
@@ -248,7 +277,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
                   style={{ flex: 1 }}
                   compact
                   label={t.businessSize}
-                  value={form.size?.label}
+                  value={summary(form.size)}
                   placeholder={t.all}
                   onPress={() => setPicker('size')}
                 />
@@ -311,17 +340,17 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
         visible={Boolean(picker)}
         title={active?.title ?? ''}
         options={active?.options ?? []}
-        selected={picker ? form[picker] : null}
-        cancelLabel={t.cancel}
+        selected={picker ? form[picker] : []}
+        doneLabel={t.done}
+        clearLabel={t.clear}
+        selectedLabel={t.selectedCount}
         searchPlaceholder={t.search}
-        onSelect={(option) => {
-          if (picker === 'region') {
-            // Municipalities belong to one region, so the old pick can't survive.
-            patchForm({ region: option, muni: null });
-          } else if (picker) {
-            patchForm({ [picker]: option });
-          }
-          setPicker(null);
+        onToggle={(option) => {
+          if (picker) toggle(picker, option);
+        }}
+        onClear={() => {
+          if (picker === 'region') patchForm({ region: [], muni: [] });
+          else if (picker) patchForm({ [picker]: [] });
         }}
         onClose={() => setPicker(null)}
       />

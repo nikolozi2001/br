@@ -28,8 +28,8 @@ export interface Lookups {
 
 const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> => p.catch(() => fallback);
 
-/** @param regionCode location code of the selected region, e.g. `15` for Adjara. */
-export default function useLookups(regionCode?: string): Lookups {
+/** @param regionCodes location codes of the selected regions, e.g. `['15']` for Adjara. */
+export default function useLookups(regionCodes: string[] = []): Lookups {
   const { lang } = useTheme();
   const [lookups, setLookups] = useState<Omit<Lookups, 'municipalities'>>({
     legalForms: [],
@@ -67,17 +67,21 @@ export default function useLookups(regionCode?: string): Lookups {
     };
   }, [lang]);
 
+  // Joined so a new array with the same codes doesn't refetch on every render.
+  const regionKey = regionCodes.join('|');
+
   useEffect(() => {
     let cancelled = false;
+    const codes = regionKey ? regionKey.split('|') : [];
 
-    safe(fetchMunicipalities(lang, regionCode), []).then((list) => {
-      if (!cancelled) setMunicipalities(list);
+    Promise.all(codes.map((code) => safe(fetchMunicipalities(lang, code), []))).then((lists) => {
+      if (!cancelled) setMunicipalities(lists.flat());
     });
 
     return () => {
       cancelled = true;
     };
-  }, [lang, regionCode]);
+  }, [lang, regionKey]);
 
   return { ...lookups, municipalities };
 }

@@ -146,6 +146,24 @@ export interface SearchOptions {
   signal?: AbortSignal;
 }
 
+/** Picker values as a repeated query param; `undefined` when nothing is picked. */
+function values(list: Option[] | undefined): string[] | undefined {
+  const picked = (list ?? []).map((o) => o.value).filter(Boolean);
+  return picked.length ? picked : undefined;
+}
+
+/** Same, for the location pickers, which filter on `code` rather than `value`. */
+function codes(list: Option[] | undefined): string[] | undefined {
+  const picked = (list ?? []).map((o) => o.code?.trim() ?? '').filter(Boolean);
+  return picked.length ? picked : undefined;
+}
+
+/** Union of the two NACE pickers — both carry an activity code. */
+function activityCodes(form: SearchForm): string[] | undefined {
+  const picked = [...(values(form.naceCode) ?? []), ...(values(form.naceName) ?? [])];
+  return picked.length ? [...new Set(picked)] : undefined;
+}
+
 export async function searchSubjects(form: SearchForm, opts: SearchOptions): Promise<SearchResponse> {
   const params: Record<string, string | number | string[] | undefined> = {
     lang: apiLang(opts.lang),
@@ -154,10 +172,10 @@ export async function searchSubjects(form: SearchForm, opts: SearchOptions): Pro
     head: form.head || undefined,
     partner: form.partner || undefined,
     isActive: form.activeOnly ? 'true' : undefined,
-    legalForm: form.legalForm?.value ? [form.legalForm.value] : undefined,
-    ownershipType: form.ownership?.value || undefined,
-    size: form.size?.value ? [form.size.value] : undefined,
-    activityCode: form.naceCode?.value ? [form.naceCode.value] : undefined,
+    legalForm: values(form.legalForm),
+    ownershipType: values(form.ownership),
+    size: values(form.size),
+    activityCode: activityCodes(form),
     page: opts.page,
     limit: opts.limit,
     sortBy: opts.sortBy,
@@ -167,12 +185,12 @@ export async function searchSubjects(form: SearchForm, opts: SearchOptions): Pro
   // The address filters match on location codes ("15", "15 11"), not on names —
   // names are localised, codes are not.
   if (form.addrType === 'fakt') {
-    params.factualAddressRegion = form.region?.code || undefined;
-    params.factualAddressCity = form.muni?.code || undefined;
+    params.factualAddressRegion = codes(form.region);
+    params.factualAddressCity = codes(form.muni);
     params.factualAddress = form.address || undefined;
   } else {
-    params.legalAddressRegion = form.region?.code || undefined;
-    params.legalAddressCity = form.muni?.code || undefined;
+    params.legalAddressRegion = codes(form.region);
+    params.legalAddressCity = codes(form.muni);
     params.legalAddress = form.address || undefined;
   }
 

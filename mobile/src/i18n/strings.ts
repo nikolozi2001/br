@@ -46,6 +46,9 @@ const ka = {
   search: 'ძიება',
   all: 'ყველა',
   choose: 'აირჩიეთ',
+  done: 'დასრულება',
+  selectedCount: (n: number) => `არჩეულია ${n}`,
+  morePicked: (n: number) => `+${n}`,
 
   // results
   results: 'შედეგები',
@@ -231,6 +234,9 @@ const en = {
   search: 'Search',
   all: 'All',
   choose: 'Select',
+  done: 'Done',
+  selectedCount: (n: number) => `${n} selected`,
+  morePicked: (n: number) => `+${n}`,
 
   results: 'Results',
   foundCount: (n: string | number) => `${n} subjects found`,

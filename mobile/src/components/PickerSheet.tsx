@@ -7,17 +7,22 @@ import Icon from './Icon';
 import type { Option } from '../types';
 
 /**
- * Option picker sheet. Lists come from the backend lookup endpoints and can be
- * long (NACE codes, municipalities), so anything over 12 rows gets a filter box.
+ * Multi-select option sheet. Tapping a row toggles it and leaves the sheet open,
+ * so several values can be picked in one go; the sheet closes from "Done" or the
+ * scrim. Lists come from the backend lookup endpoints and can be long (NACE
+ * codes, municipalities), so anything over 12 rows gets a filter box.
  */
 export interface PickerSheetProps {
   visible: boolean;
   title: string;
   options: Option[];
-  selected: Option | null;
-  onSelect: (option: Option) => void;
+  selected: Option[];
+  onToggle: (option: Option) => void;
+  onClear: () => void;
   onClose: () => void;
-  cancelLabel: string;
+  doneLabel: string;
+  clearLabel: string;
+  selectedLabel: (n: number) => string;
   searchPlaceholder: string;
 }
 
@@ -26,9 +31,12 @@ export default function PickerSheet({
   title,
   options,
   selected,
-  onSelect,
+  onToggle,
+  onClear,
   onClose,
-  cancelLabel,
+  doneLabel,
+  clearLabel,
+  selectedLabel,
   searchPlaceholder,
 }: PickerSheetProps) {
   const { colors, fs, radius } = useTheme();
@@ -40,19 +48,16 @@ export default function PickerSheet({
     return options.filter((o) => o.label.toLowerCase().includes(q));
   }, [options, query]);
 
+  const selectedValues = useMemo(() => new Set(selected.map((o) => o.value)), [selected]);
   const showFilter = options.length > 12;
 
+  const close = () => {
+    setQuery('');
+    onClose();
+  };
+
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={() => {
-        setQuery('');
-        onClose();
-      }}
-      title={title}
-      cancelLabel={cancelLabel}
-      scroll
-    >
+    <BottomSheet visible={visible} onClose={close} title={title} cancelLabel={doneLabel} scroll>
       {showFilter ? (
         <TextInput
           value={query}
@@ -74,19 +79,34 @@ export default function PickerSheet({
         />
       ) : null}
 
+      {selected.length > 0 ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 12,
+            paddingBottom: 8,
+          }}
+        >
+          <Text style={{ fontSize: fs(12), color: colors.muted, fontWeight: '600' }}>
+            {selectedLabel(selected.length)}
+          </Text>
+          <Pressable onPress={onClear} hitSlop={8}>
+            <Text style={{ fontSize: fs(12), color: colors.red, fontWeight: '600' }}>{clearLabel}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       {filtered.map((option) => {
-        const isCurrent = selected?.value === option.value;
+        const isCurrent = selectedValues.has(option.value);
         return (
           <Pressable
             key={option.value}
-            onPress={() => {
-              setQuery('');
-              onSelect(option);
-            }}
+            onPress={() => onToggle(option)}
             style={({ pressed }) => ({
               flexDirection: 'row',
               alignItems: 'center',
-              justifyContent: 'space-between',
               gap: 12,
               paddingVertical: 13,
               paddingHorizontal: 12,
@@ -94,6 +114,20 @@ export default function PickerSheet({
               backgroundColor: pressed ? colors.field : 'transparent',
             })}
           >
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 6,
+                borderWidth: isCurrent ? 0 : 1.5,
+                borderColor: colors.line2,
+                backgroundColor: isCurrent ? colors.brand : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {isCurrent ? <Icon name="check" size={15} color="#fff" width={2.6} /> : null}
+            </View>
             <Text
               style={{
                 fontSize: fs(15),
@@ -104,7 +138,6 @@ export default function PickerSheet({
             >
               {option.label}
             </Text>
-            {isCurrent ? <Icon name="check" size={19} color={colors.brand} width={2.5} /> : null}
           </Pressable>
         );
       })}
