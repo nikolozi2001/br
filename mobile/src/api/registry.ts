@@ -40,20 +40,36 @@ export async function fetchLegalForms(lang: Lang): Promise<Option[]> {
     .filter((o) => o.value && o.label);
 }
 
+const toLocationOption = (l: ApiRecord): Option => ({
+  value: str(l.ID),
+  label: str(l.Location_Name),
+  code: str(l.Location_Code).trim(),
+});
+
+/**
+ * Georgia's regions. `/locations` is the country list (Level 1) — the regions
+ * are Level 2, which is what `/locations/regions` returns.
+ */
 export async function fetchRegions(lang: Lang): Promise<Option[]> {
-  const data = toArray(await apiGet('/locations', { lang: apiLang(lang) }));
+  const data = toArray(await apiGet('/locations/regions', { lang: apiLang(lang) }));
   return data
     .filter((l) => !l.Inactive)
-    .map((l) => ({ value: str(l.ID), label: str(l.Location_Name), code: str(l.Location_Code) }))
+    .map(toLocationOption)
     .filter((o) => o.label);
 }
 
-export async function fetchMunicipalities(lang: Lang, regionId?: string): Promise<Option[]> {
-  const data = toArray(await apiGet('/locations/regions', { lang: apiLang(lang) }));
+/**
+ * Municipalities of one region, looked up by the region's location code
+ * ("15" → "15 11", "15 23", …). Without a region there is nothing to list.
+ */
+export async function fetchMunicipalities(lang: Lang, regionCode?: string): Promise<Option[]> {
+  const code = regionCode?.trim();
+  if (!code) return [];
+  const data = toArray(await apiGet(`/locations/code/${encodeURIComponent(code)}`, { lang: apiLang(lang) }));
   return data
-    .filter((l) => !l.Inactive && (!regionId || str(l.Parent_ID) === regionId))
-    .map((l) => ({ value: str(l.ID), label: str(l.Location_Name), code: str(l.Location_Code) }))
-    .filter((o) => o.label);
+    .filter((l) => !l.Inactive)
+    .map(toLocationOption)
+    .filter((o) => o.label && o.code !== code);
 }
 
 export async function fetchActivities(lang: Lang): Promise<{ codes: Option[]; names: Option[] }> {
@@ -141,13 +157,15 @@ export async function searchSubjects(form: SearchForm, opts: SearchOptions): Pro
     sortDir: opts.sortDir,
   };
 
+  // The address filters match on location codes ("15", "15 11"), not on names —
+  // names are localised, codes are not.
   if (form.addrType === 'fakt') {
-    params.factualAddressRegion = form.region?.label || undefined;
-    params.factualAddressCity = form.muni?.label || undefined;
+    params.factualAddressRegion = form.region?.code || undefined;
+    params.factualAddressCity = form.muni?.code || undefined;
     params.factualAddress = form.address || undefined;
   } else {
-    params.legalAddressRegion = form.region?.label || undefined;
-    params.legalAddressCity = form.muni?.label || undefined;
+    params.legalAddressRegion = form.region?.code || undefined;
+    params.legalAddressCity = form.muni?.code || undefined;
     params.legalAddress = form.address || undefined;
   }
 

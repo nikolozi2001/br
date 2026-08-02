@@ -21,7 +21,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
   const insets = useSafeAreaInsets();
   const { favouriteCount, recent, clearRecent } = useAppStore();
   const { form, patchForm, resetForm, runSearch, runSearchWith } = useSearch();
-  const lookups = useLookups();
+  const lookups = useLookups(form.region?.code);
 
   const [picker, setPicker] = useState<PickerKey | null>(null);
 
@@ -315,7 +315,12 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
         cancelLabel={t.cancel}
         searchPlaceholder={t.search}
         onSelect={(option) => {
-          if (picker) patchForm({ [picker]: option });
+          if (picker === 'region') {
+            // Municipalities belong to one region, so the old pick can't survive.
+            patchForm({ region: option, muni: null });
+          } else if (picker) {
+            patchForm({ [picker]: option });
+          }
           setPicker(null);
         }}
         onClose={() => setPicker(null)}

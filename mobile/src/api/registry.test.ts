@@ -1,4 +1,13 @@
-import { fetchReport, formatDate, formatLongDate, groupDigits } from './registry';
+import {
+  fetchMunicipalities,
+  fetchRegions,
+  fetchReport,
+  formatDate,
+  formatLongDate,
+  groupDigits,
+  searchSubjects,
+} from './registry';
+import type { SearchForm } from '../types';
 
 describe('groupDigits', () => {
   it('groups thousands with a thin space', () => {
@@ -179,5 +188,66 @@ describe('fetchReport', () => {
   it('keeps the rows when the envelope has no totals', async () => {
     mockJson({ rows: [{ ID: 1 }] });
     await expect(fetchReport(2, 'ka')).resolves.toEqual([{ ID: 1 }]);
+  });
+});
+
+describe('location lookups', () => {
+  const mockJson = (payload: unknown) => {
+    const spy = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => payload });
+    global.fetch = spy as unknown as typeof fetch;
+    return spy;
+  };
+  const urlOf = (spy: jest.Mock) => String(spy.mock.calls[0][0]);
+
+  it('reads regions from /locations/regions, not the country list', async () => {
+    const spy = mockJson([
+      { ID: 3, Location_Code: '15 ', Location_Name: 'Adjara AR', Parent_ID: 1 },
+    ]);
+
+    const regions = await fetchRegions('en');
+
+    expect(urlOf(spy)).toContain('/locations/regions?lang=en');
+    expect(regions).toEqual([{ value: '3', label: 'Adjara AR', code: '15' }]);
+  });
+
+  it('asks for the municipalities of the given region code', async () => {
+    const spy = mockJson([
+      { ID: 3, Location_Code: '15', Location_Name: 'Adjara AR' },
+      { ID: 41, Location_Code: '15 11', Location_Name: 'City of Batumi' },
+      { ID: 42, Location_Code: '15 23', Location_Name: 'Keda municipality' },
+    ]);
+
+    const municipalities = await fetchMunicipalities('en', '15');
+
+    expect(urlOf(spy)).toContain('/locations/code/15?lang=en');
+    // The region itself comes back in the list and is not a municipality.
+    expect(municipalities.map((m) => m.code)).toEqual(['15 11', '15 23']);
+  });
+
+  it('has nothing to list until a region is picked', async () => {
+    const spy = mockJson([]);
+    await expect(fetchMunicipalities('en')).resolves.toEqual([]);
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('searchSubjects address filters', () => {
+  it('sends location codes rather than localised names', async () => {
+    const spy = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+    global.fetch = spy as unknown as typeof fetch;
+
+    await searchSubjects(
+      {
+        addrType: 'jur',
+        region: { value: '3', label: 'Adjara AR', code: '15' },
+        muni: { value: '41', label: 'City of Batumi', code: '15 11' },
+      } as SearchForm,
+      { lang: 'en' },
+    );
+
+    const url = String(spy.mock.calls[0][0]);
+    expect(url).toContain('legalAddressRegion=15');
+    expect(url).toContain('legalAddressCity=15+11');
+    expect(url).not.toContain('Adjara');
   });
 });

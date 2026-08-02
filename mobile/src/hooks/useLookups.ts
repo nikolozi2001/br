@@ -12,8 +12,9 @@ import { useTheme } from '../theme/ThemeProvider';
 import type { Option } from '../types';
 
 /**
- * Loads every picker's option list once per language. Failures resolve to an
- * empty list so a picker opens (empty) rather than the screen breaking.
+ * Loads every picker's option list once per language, plus the municipalities
+ * of the currently selected region. Failures resolve to an empty list so a
+ * picker opens (empty) rather than the screen breaking.
  */
 export interface Lookups {
   legalForms: Option[];
@@ -25,35 +26,35 @@ export interface Lookups {
   sizes: Option[];
 }
 
-export default function useLookups(): Lookups {
+const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> => p.catch(() => fallback);
+
+/** @param regionCode location code of the selected region, e.g. `15` for Adjara. */
+export default function useLookups(regionCode?: string): Lookups {
   const { lang } = useTheme();
-  const [lookups, setLookups] = useState<Lookups>({
+  const [lookups, setLookups] = useState<Omit<Lookups, 'municipalities'>>({
     legalForms: [],
     regions: [],
-    municipalities: [],
     naceCodes: [],
     naceNames: [],
     ownership: [],
     sizes: [],
   });
+  const [municipalities, setMunicipalities] = useState<Option[]>([]);
 
   useEffect(() => {
     let cancelled = false;
-    const safe = <T,>(p: Promise<T>, fallback: T): Promise<T> => p.catch(() => fallback);
 
     Promise.all([
       safe(fetchLegalForms(lang), []),
       safe(fetchRegions(lang), []),
-      safe(fetchMunicipalities(lang), []),
       safe(fetchActivities(lang), { codes: [], names: [] }),
       safe(fetchOwnershipTypes(lang), []),
       safe(fetchSizes(lang), []),
-    ]).then(([legalForms, regions, municipalities, activities, ownership, sizes]) => {
+    ]).then(([legalForms, regions, activities, ownership, sizes]) => {
       if (cancelled) return;
       setLookups({
         legalForms,
         regions,
-        municipalities,
         naceCodes: activities.codes,
         naceNames: activities.names,
         ownership,
@@ -66,5 +67,17 @@ export default function useLookups(): Lookups {
     };
   }, [lang]);
 
-  return lookups;
+  useEffect(() => {
+    let cancelled = false;
+
+    safe(fetchMunicipalities(lang, regionCode), []).then((list) => {
+      if (!cancelled) setMunicipalities(list);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, regionCode]);
+
+  return { ...lookups, municipalities };
 }
