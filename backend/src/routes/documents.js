@@ -122,6 +122,83 @@ function buildWhereClause(query, request) {
   return where;
 }
 
+// ─── English display values ───────────────────────────────────────────────────
+
+/**
+ * DocMain stores its display text in Georgian only; the English wording lives in
+ * parallel `*_EN` lookup tables (the same ones `/locations`, `/legal-forms` and
+ * friends already read). The joins run over the *page* rather than the filtered
+ * set — see the derived table in the route below — so localisation costs a
+ * handful of lookups instead of a join across every match.
+ *
+ * `Zoma` is the odd one out: DocMain holds the Georgian word, not the size id,
+ * so it goes through `Size` to reach `Size_EN`.
+ */
+const EN_JOINS = `
+  LEFT JOIN [register].[CL].[Legal_Forms_EN]      lf    ON lf.ID = p.Legal_Form_ID
+  LEFT JOIN [register].[CL].[Ownership_Types_EN]  ot    ON ot.ID = p.Ownership_Type_ID
+  LEFT JOIN [register].[CL].[Activities_NACE2_EN] ac    ON ac.ID = p.Activity_2_ID
+  LEFT JOIN [register].[CL].[Locations_EN]        reg   ON reg.Location_Code   = p.Region_Code
+  LEFT JOIN [register].[CL].[Locations_EN]        city  ON city.Location_Code  = p.City_Code
+  LEFT JOIN [register].[CL].[Locations_EN]        comm  ON comm.Location_Code  = p.Comunity_Code
+  LEFT JOIN [register].[CL].[Locations_EN]        vill  ON vill.Location_Code  = p.Village_Code
+  LEFT JOIN [register].[CL].[Locations_EN]        reg2  ON reg2.Location_Code  = p.Region_Code2
+  LEFT JOIN [register].[CL].[Locations_EN]        city2 ON city2.Location_Code = p.City_Code2
+  LEFT JOIN [register].[CL].[Locations_EN]        comm2 ON comm2.Location_Code = p.Comunity_Code2
+  LEFT JOIN [register].[CL].[Locations_EN]        vill2 ON vill2.Location_Code = p.Village_Code2
+  LEFT JOIN [register].[dbo].[Size]               szg   ON szg.zoma = p.Zoma
+  LEFT JOIN [register].[dbo].[Size_EN]            szen  ON szen.id  = szg.id
+`;
+
+const EN_COLUMNS = `
+  , lf.Legal_Form       AS Legal_Form_EN
+  , lf.Abbreviation     AS Abbreviation_EN
+  , ot.Ownership_Type   AS Ownership_Type_EN
+  , ac.Activity_Name    AS Activity_2_Name_EN
+  , reg.Location_Name   AS Region_name_EN
+  , city.Location_Name  AS City_name_EN
+  , comm.Location_Name  AS Community_name_EN
+  , vill.Location_Name  AS Village_name_EN
+  , reg2.Location_Name  AS Region_name2_EN
+  , city2.Location_Name AS City_name2_EN
+  , comm2.Location_Name AS Community_name2_EN
+  , vill2.Location_Name AS Village_name2_EN
+  , szen.zoma           AS Zoma_EN
+`;
+
+/** Georgian field ← its English counterpart in the aliased columns above. */
+const EN_FIELDS = {
+  Legal_Form:      "Legal_Form_EN",
+  Abbreviation:    "Abbreviation_EN",
+  Ownership_Type:  "Ownership_Type_EN",
+  Activity_2_Name: "Activity_2_Name_EN",
+  Region_name:     "Region_name_EN",
+  City_name:       "City_name_EN",
+  Community_name:  "Community_name_EN",
+  Village_name:    "Village_name_EN",
+  Region_name2:    "Region_name2_EN",
+  City_name2:      "City_name2_EN",
+  Community_name2: "Community_name2_EN",
+  Village_name2:   "Village_name2_EN",
+  Zoma:            "Zoma_EN",
+};
+
+/**
+ * Moves the `*_EN` values onto the field names the clients already read, then
+ * drops the extras. A missing translation leaves the Georgian text in place —
+ * a filled row in the wrong language beats an empty one.
+ */
+function toEnglish(row) {
+  for (const [field, source] of Object.entries(EN_FIELDS)) {
+    const value = row[source];
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      row[field] = value;
+    }
+    delete row[source];
+  }
+  return row;
+}
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 router.get("/legal_code/:legalCode", async (req, res) => {
@@ -172,18 +249,27 @@ router.get("/", async (req, res) => {
     // Sorting — column is whitelisted, direction is constrained; Legal_Code is the stable tiebreaker
     const sortColumn = SORT_COLUMN_MAP[req.query.sortBy] || "Legal_Code";
     const sortDir    = String(req.query.sortDir).toLowerCase() === "desc" ? "DESC" : "ASC";
-    const orderBy    = sortColumn === "Legal_Code"
-      ? `a.[Legal_Code] ${sortDir}`
-      : `a.[${sortColumn}] ${sortDir}, a.[Legal_Code] ASC`;
+    const orderByOn  = (alias) => sortColumn === "Legal_Code"
+      ? `${alias}.[Legal_Code] ${sortDir}`
+      : `${alias}.[${sortColumn}] ${sortDir}, ${alias}.[Legal_Code] ASC`;
 
     request.input("offset", sql.Int, offset);
     request.input("limit",  sql.Int, limitInt);
+
+    const page_ = `SELECT a.* FROM [register].[dbo].[DocMain] a ${whereClause} ORDER BY ${orderByOn("a")} OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
+
+    // The Georgian path is left exactly as it was — only `lang=en` pays for the
+    // lookups, and a derived table keeps them on one page of rows. The outer
+    // ORDER BY is required: a derived table carries no ordering of its own.
+    const english = req.query.lang === "en";
     const result = await request.query(
-      `SELECT a.* FROM [register].[dbo].[DocMain] a ${whereClause} ORDER BY ${orderBy} OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`
+      english
+        ? `SELECT p.* ${EN_COLUMNS} FROM (${page_}) p ${EN_JOINS} ORDER BY ${orderByOn("p")}`
+        : page_
     );
 
     res.json({
-      data: result.recordset,
+      data: english ? result.recordset.map(toEnglish) : result.recordset,
       pagination: { page: parseInt(page), limit: limitInt, total: totalRecords, totalPages: Math.ceil(totalRecords / limitInt) },
     });
   } catch (error) {
