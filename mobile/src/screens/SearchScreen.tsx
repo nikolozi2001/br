@@ -9,6 +9,7 @@ import { SelectField, Segmented, TextField } from '../components/Field';
 import { Card, RoundButton, SectionLabel, Toggle } from '../components/primitives';
 import useLookups from '../hooks/useLookups';
 import { getStrings } from '../i18n/strings';
+import { isWholeGroup, municipalitiesIn, summarise, togglePicked } from '../utils/pickers';
 import { useAppStore } from '../state/AppStore';
 import { useSearch } from '../state/SearchStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -55,14 +56,8 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
     [lookups.legalForms],
   );
 
-  /** True when the legal forms picked are exactly `group`, no more and no less. */
-  const isWholeGroup = (group: Option[]): boolean =>
-    group.length > 0 &&
-    group.length === form.legalForm.length &&
-    group.every((o) => form.legalForm.some((p) => p.value === o.value));
-
-  const allFormsPicked = isWholeGroup(lookups.legalForms);
-  const businessFormsPicked = isWholeGroup(businessForms);
+  const allFormsPicked = isWholeGroup(form.legalForm, lookups.legalForms);
+  const businessFormsPicked = isWholeGroup(form.legalForm, businessForms);
 
   /** Tapping a group row picks the whole group, or clears it when it's already the selection. */
   const pickGroup = (group: Option[], picked: boolean) =>
@@ -83,12 +78,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
     },
   ];
 
-  /** "Batumi +2" — the first pick plus a count, so the 44px field stays readable. */
-  const summary = (picked: Option[]): string | undefined => {
-    if (picked.length === 0) return undefined;
-    if (picked.length === 1) return picked[0].label;
-    return `${picked[0].label} ${t.morePicked(picked.length - 1)}`;
-  };
+  const summary = (picked: Option[]): string | undefined => summarise(picked, t.morePicked);
 
   /** The legal-form field names the group instead of listing its members. */
   const legalFormSummary = (): string | undefined => {
@@ -99,17 +89,10 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
 
   /** Adds or removes one option in a picker field. */
   const toggle = (key: PickerKey, option: Option) => {
-    const picked = form[key];
-    const next = picked.some((o) => o.value === option.value)
-      ? picked.filter((o) => o.value !== option.value)
-      : [...picked, option];
-
+    const next = togglePicked(form[key], option);
     if (key === 'region') {
-      // Municipality codes start with their region's code ("15" → "15 11"), so
-      // dropping a region drops the municipalities that came with it.
-      const codes = next.map((r) => r.code?.trim() ?? '').filter(Boolean);
-      const muni = form.muni.filter((m) => codes.some((code) => (m.code ?? '').startsWith(code)));
-      patchForm({ region: next, muni });
+      // Dropping a region drops the municipalities that came with it.
+      patchForm({ region: next, muni: municipalitiesIn(form.muni, next) });
       return;
     }
     patchForm({ [key]: next });
