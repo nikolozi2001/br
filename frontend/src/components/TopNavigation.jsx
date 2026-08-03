@@ -150,7 +150,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               {/* Left Side - Navigation Buttons */}
               <div
-                className="flex flex-wrap justify-center sm:justify-start"
+                className="flex flex-wrap justify-center sm:justify-start sm:self-end"
                 role="group"
               >
                 <Link
@@ -195,6 +195,34 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                   {currentLanguage.navigation.gis}
                 </a>
               </div>
+
+              {/* Center - Google Play download badge */}
+              <a
+                href="https://play.google.com/store/apps/details?id=ge.geostat.businessregister"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-[#0070aa] hover:bg-[#005580] text-white rounded-lg px-3 py-1.5 transition-colors shadow-sm"
+                aria-label={
+                  isEnglish
+                    ? "Download on Google Play"
+                    : "გადმოწერე Google Play-დან"
+                }
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5 shrink-0"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.397 12l2.5-2.491zM5.864 2.658L16.802 8.99l-2.302 2.302-8.636-8.635z" />
+                </svg>
+                <span className="flex flex-col leading-tight text-left whitespace-nowrap">
+                  <span className="text-[9px] opacity-90 uppercase tracking-wide">
+                    {isEnglish ? "Get it on" : "ხელმისაწვდომია"}
+                  </span>
+                  <span className="text-sm font-bold -mt-0.5">Google Play</span>
+                </span>
+              </a>
 
               {/* Right Side Group */}
               <div className="flex items-center gap-4 flex-wrap justify-center sm:justify-end">
