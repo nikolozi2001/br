@@ -5,17 +5,20 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import ErrorBoundary from './src/components/ErrorBoundary';
 import Splash from './src/components/Splash';
 import Toast from './src/components/Toast';
 import RootNavigator from './src/navigation/RootNavigator';
 import { AppStoreProvider } from './src/state/AppStore';
 import { SearchProvider } from './src/state/SearchStore';
+import { getStrings } from './src/i18n/strings';
 import { ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function Shell() {
-  const { colors, dark, hydrated } = useTheme();
+  const { colors, dark, hydrated, lang } = useTheme();
+  const t = getStrings(lang);
   const [splashDone, setSplashDone] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -32,12 +35,14 @@ function Shell() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style="light" />
-      <AppStoreProvider>
-        <SearchProvider>
-          <RootNavigator />
-          <Toast />
-        </SearchProvider>
-      </AppStoreProvider>
+      <ErrorBoundary labels={{ title: t.crashTitle, body: t.crashBody, retry: t.retry }}>
+        <AppStoreProvider>
+          <SearchProvider>
+            <RootNavigator />
+            <Toast />
+          </SearchProvider>
+        </AppStoreProvider>
+      </ErrorBoundary>
       {!splashDone ? <Splash onDone={() => setSplashDone(true)} /> : null}
     </View>
   );
