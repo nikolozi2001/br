@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '../theme/ThemeProvider';
 import BottomSheet from './BottomSheet';
@@ -67,8 +67,58 @@ export default function PickerSheet({
     onClose();
   };
 
+  const keyExtractor = useCallback((option: Option) => option.value, []);
+
+  const renderOption = useCallback(
+    ({ item }: { item: Option }) => {
+      const isCurrent = selectedValues.has(item.value);
+      return (
+        <Pressable
+          onPress={() => onToggle(item)}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+            paddingVertical: 13,
+            paddingHorizontal: 12,
+            borderRadius: radius.lg,
+            backgroundColor: pressed ? colors.field : 'transparent',
+          })}
+        >
+          <View
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              borderWidth: isCurrent ? 0 : 1.5,
+              borderColor: colors.line2,
+              backgroundColor: isCurrent ? colors.brand : 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {isCurrent ? <Icon name="check" size={15} color="#fff" width={2.6} /> : null}
+          </View>
+          <Text
+            style={{
+              fontSize: fs(15),
+              flex: 1,
+              color: isCurrent ? colors.brand : colors.ink,
+              fontWeight: isCurrent ? '600' : '500',
+            }}
+          >
+            {item.label}
+          </Text>
+        </Pressable>
+      );
+    },
+    [colors, fs, onToggle, radius, selectedValues],
+  );
+
+  // No `scroll` on the sheet: its body must not be a ScrollView, or the FlatList
+  // below would be nested in one and lose its virtualisation.
   return (
-    <BottomSheet visible={visible} onClose={close} title={title} cancelLabel={doneLabel} scroll>
+    <BottomSheet visible={visible} onClose={close} title={title} cancelLabel={doneLabel}>
       {showFilter ? (
         <TextInput
           value={query}
@@ -134,49 +184,19 @@ export default function PickerSheet({
         </View>
       ) : null}
 
-      {filtered.map((option) => {
-        const isCurrent = selectedValues.has(option.value);
-        return (
-          <Pressable
-            key={option.value}
-            onPress={() => onToggle(option)}
-            style={({ pressed }) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
-              paddingVertical: 13,
-              paddingHorizontal: 12,
-              borderRadius: radius.lg,
-              backgroundColor: pressed ? colors.field : 'transparent',
-            })}
-          >
-            <View
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: 6,
-                borderWidth: isCurrent ? 0 : 1.5,
-                borderColor: colors.line2,
-                backgroundColor: isCurrent ? colors.brand : 'transparent',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {isCurrent ? <Icon name="check" size={15} color="#fff" width={2.6} /> : null}
-            </View>
-            <Text
-              style={{
-                fontSize: fs(15),
-                flex: 1,
-                color: isCurrent ? colors.brand : colors.ink,
-                fontWeight: isCurrent ? '600' : '500',
-              }}
-            >
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+      {/* The NACE list is ~1700 rows, so the options are virtualised. Everything
+          above stays outside the list, where filtering cannot scroll it away. */}
+      <FlatList
+        data={filtered}
+        keyExtractor={keyExtractor}
+        renderItem={renderOption}
+        extraData={selectedValues}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={14}
+        windowSize={7}
+        removeClippedSubviews
+        style={{ maxHeight: 320 }}
+      />
     </BottomSheet>
   );
 }
