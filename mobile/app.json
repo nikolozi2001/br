@@ -38,7 +38,10 @@
         {
           "savePhotosPermission": "ბიზნეს რეგისტრი ინახავს გრაფიკებს თქვენს ფოტოებში.",
           "photosPermission": "ბიზნეს რეგისტრი ინახავს გრაფიკებს თქვენს ფოტოებში.",
-          "isAccessMediaLocationEnabled": false
+          "isAccessMediaLocationEnabled": false,
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ],
       [
@@ -58,6 +61,12 @@
       "eas": {
         "projectId": "c8cfed9d-082a-427d-81f3-46c50c185c46"
       }
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c8cfed9d-082a-427d-81f3-46c50c185c46"
     }
   }
 }
