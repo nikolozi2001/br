@@ -1,13 +1,12 @@
 import React from 'react';
 import { Share } from 'react-native';
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import { File, Paths } from 'expo-file-system';
 
 import BottomSheet, { SheetRow } from './BottomSheet';
 import { getStrings } from '../i18n/strings';
 import { groupDigits } from '../api/registry';
-import { writeXlsxAndShare, type Cell } from '../utils/xlsx';
+import { saveMessage, saveToDevice, saveTextToDevice, saveUriToDevice, type SaveResult } from '../utils/save';
+import { writeXlsx, XLSX_MIME, type Cell } from '../utils/xlsx';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { Strings } from '../i18n/strings';
@@ -64,21 +63,11 @@ function buildHtmlTable(rows: Subject[], t: Strings, title: string): string {
   </style></head><body><h1>${escapeHtml(title)}</h1><table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></body></html>`;
 }
 
-async function writeAndShare(filename: string, contents: string, mimeType: string): Promise<string> {
-  const file = new File(Paths.cache, filename);
-  if (file.exists) file.delete();
-  file.create();
-  file.write(contents);
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(file.uri, { mimeType, UTI: mimeType });
-  }
-  return file.uri;
-}
-
 /**
- * Export / share sheet for a result set. Everything here produces a real file —
- * CSV and .xls (an HTML table, which Excel and Numbers both open) are written to
- * the cache directory, PDF goes through expo-print.
+ * Export sheet for a result set. Every format is written as a real file and
+ * saved onto the device — the photo library, the folder the user picks on
+ * Android, or the app's folder in Files on iOS. Sharing is still offered, as its
+ * own row, for sending a copy somewhere.
  */
 export interface ExportSheetProps {
   visible: boolean;
@@ -105,6 +94,10 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
     }
   };
 
+  /** Same as `guard`, but reports where the file ended up. */
+  const save = (message: string, action: () => Promise<SaveResult>) =>
+    guard(message, async () => showToast(saveMessage(await action(), t)));
+
   return (
     <BottomSheet
       visible={visible}
@@ -119,8 +112,8 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
         badgeBg="#1d7044"
         title={t.excelTable}
         subtitle=".xlsx"
-        onPress={guard(t.preparingXls, () =>
-          writeXlsxAndShare('business-register.xlsx', title, xlsxHeader(t), xlsxRows(rows)),
+        onPress={save(t.preparingXls, () =>
+          saveToDevice(writeXlsx('business-register.xlsx', title, xlsxHeader(t), xlsxRows(rows)), XLSX_MIME),
         )}
       />
       <SheetRow
@@ -129,7 +122,9 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
         badgeBg={colors.brand}
         title={t.csvData}
         subtitle=".csv"
-        onPress={guard(t.preparingCsv, () => writeAndShare('business-register.csv', buildCsv(rows, t), 'text/csv'))}
+        onPress={save(t.preparingCsv, () =>
+          saveTextToDevice('business-register.csv', buildCsv(rows, t), 'text/csv'),
+        )}
       />
       <SheetRow
         badge="PDF"
@@ -137,9 +132,9 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
         badgeBg={colors.redDark}
         title={t.pdfDocument}
         subtitle=".pdf"
-        onPress={guard(t.preparingPdf, async () => {
+        onPress={save(t.preparingPdf, async () => {
           const { uri } = await Print.printToFileAsync({ html: buildHtmlTable(rows, t, title) });
-          if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
+          return saveUriToDevice(uri, 'business-register.pdf', 'application/pdf');
         })}
       />
       <SheetRow

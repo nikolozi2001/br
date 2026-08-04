@@ -9,6 +9,7 @@ import { GeostatLogo } from './ScreenHeader';
 import { HeroGradient } from './primitives';
 import { formatLongDate } from '../api/registry';
 import { getStrings } from '../i18n/strings';
+import { saveMessage, saveUriToDevice } from '../utils/save';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { Strings } from '../i18n/strings';
@@ -71,6 +72,18 @@ export default function SubjectShareSheet({ visible, onClose, subject }: Subject
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
   const { showToast } = useAppStore();
+
+  const savePdf = async () => {
+    onClose();
+    showToast(t.preparingPdf);
+    try {
+      const { uri } = await Print.printToFileAsync({ html: summaryHtml(subject, t, lang) });
+      const filename = `${subject.code || subject.id || 'subject'}.pdf`;
+      showToast(saveMessage(await saveUriToDevice(uri, filename, 'application/pdf'), t));
+    } catch (err) {
+      showToast((err as Error)?.message || t.networkError);
+    }
+  };
 
   const sharePdf = async () => {
     onClose();
@@ -142,7 +155,7 @@ export default function SubjectShareSheet({ visible, onClose, subject }: Subject
 
             <View style={{ flexDirection: 'row', gap: 9, marginTop: 4 }}>
               <Pressable
-                onPress={sharePdf}
+                onPress={savePdf}
                 style={({ pressed }) => ({
                   flex: 1,
                   height: 44,
@@ -155,8 +168,23 @@ export default function SubjectShareSheet({ visible, onClose, subject }: Subject
                   opacity: pressed ? 0.85 : 1,
                 })}
               >
-                <Icon name="share" size={16} color="#fff" />
-                <Text style={{ fontFamily: fonts.heading, fontSize: fs(14), color: '#fff' }}>{t.sharePdf}</Text>
+                <Icon name="download" size={16} color="#fff" />
+                <Text style={{ fontFamily: fonts.heading, fontSize: fs(14), color: '#fff' }}>{t.savePdf}</Text>
+              </Pressable>
+              <Pressable
+                onPress={sharePdf}
+                style={({ pressed }) => ({
+                  width: 44,
+                  height: 44,
+                  borderRadius: radius.lg,
+                  borderWidth: 1,
+                  borderColor: '#cdd8e3',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: pressed ? 0.7 : 1,
+                })}
+              >
+                <Icon name="share" size={16} color={colors.brand} />
               </Pressable>
               <Pressable
                 onPress={print}

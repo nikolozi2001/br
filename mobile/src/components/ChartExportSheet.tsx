@@ -2,6 +2,7 @@ import React from 'react';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
+import { saveMessage, saveToDevice, saveTextToDevice, saveUriToDevice, type SaveResult } from '../utils/save';
 import { captureRef } from 'react-native-view-shot';
 
 import type { View } from 'react-native';
@@ -11,14 +12,20 @@ import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 
-/** Rasterises the chart card, copies it into the cache, and opens the share sheet. */
 type CaptureRef = React.RefObject<View | null>;
 
-async function captureAndShare(viewRef: CaptureRef, format: 'png' | 'jpg', mimeType: string) {
+/** Rasterises the chart card into the cache under a readable name. */
+async function captureToFile(viewRef: CaptureRef, format: 'png' | 'jpg'): Promise<File> {
   const uri = await captureRef(viewRef, { format, quality: 0.95, result: 'tmpfile' });
   const target = new File(Paths.cache, `chart.${format}`);
   if (target.exists) target.delete();
-  new File(uri).copy(target);
+  await new File(uri).copy(target);
+  return target;
+}
+
+/** Hands the rasterised card to the share sheet, for sending it on. */
+async function captureAndShare(viewRef: CaptureRef, format: 'png' | 'jpg', mimeType: string) {
+  const target = await captureToFile(viewRef, format);
   if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(target.uri, { mimeType, UTI: mimeType });
 }
 
@@ -39,13 +46,7 @@ export interface ChartExportSheetProps {
   svg?: string | null;
 }
 
-async function writeSvgAndShare(svg: string) {
-  const file = new File(Paths.cache, 'chart.svg');
-  if (file.exists) file.delete();
-  file.create();
-  file.write(svg);
-  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType: 'image/svg+xml', UTI: 'public.svg-image' });
-}
+
 
 export default function ChartExportSheet({ visible, onClose, viewRef, svg }: ChartExportSheetProps) {
   const { colors, lang } = useTheme();
@@ -64,6 +65,10 @@ export default function ChartExportSheet({ visible, onClose, viewRef, svg }: Cha
       showToast((err as Error)?.message || t.networkError);
     }
   };
+
+  /** Same as `guard`, but reports where the file ended up. */
+  const save = (message: string, action: (ref: CaptureRef) => Promise<SaveResult>) =>
+    guard(message, async (ref) => showToast(saveMessage(await action(ref), t)));
 
   return (
     <BottomSheet visible={visible} onClose={onClose} title={t.chartExport} cancelLabel={t.cancel}>
@@ -84,7 +89,7 @@ export default function ChartExportSheet({ visible, onClose, viewRef, svg }: Cha
         badgeBg="#dcfce7"
         title={t.pngImage}
         subtitle=".png"
-        onPress={guard(t.preparingPng, (ref) => captureAndShare(ref, 'png', 'image/png'))}
+        onPress={save(t.preparingPng, async (ref) => saveToDevice(await captureToFile(ref, 'png'), 'image/png'))}
       />
       <SheetRow
         badge="JPG"
@@ -92,7 +97,7 @@ export default function ChartExportSheet({ visible, onClose, viewRef, svg }: Cha
         badgeBg="#dbeafe"
         title={t.jpegImage}
         subtitle=".jpg"
-        onPress={guard(t.preparingJpeg, (ref) => captureAndShare(ref, 'jpg', 'image/jpeg'))}
+        onPress={save(t.preparingJpeg, async (ref) => saveToDevice(await captureToFile(ref, 'jpg'), 'image/jpeg'))}
       />
       {svg ? (
         <SheetRow
@@ -105,7 +110,7 @@ export default function ChartExportSheet({ visible, onClose, viewRef, svg }: Cha
             onClose();
             showToast(t.preparingSvg);
             try {
-              await writeSvgAndShare(svg);
+              showToast(saveMessage(await saveTextToDevice('chart.svg', svg, 'image/svg+xml'), t));
             } catch (err) {
               showToast((err as Error)?.message || t.networkError);
             }
@@ -118,12 +123,21 @@ export default function ChartExportSheet({ visible, onClose, viewRef, svg }: Cha
         badgeBg="#fee2e2"
         title={t.pdfDocument}
         subtitle=".pdf"
-        divider={false}
-        onPress={guard(t.preparingPdf, async (ref) => {
+        onPress={save(t.preparingPdf, async (ref) => {
           const dataUri = await captureRef(ref, { format: 'png', quality: 1, result: 'data-uri' });
           const { uri } = await Print.printToFileAsync({ html: `<img src="${dataUri}" style="width:100%"/>` });
-          if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
+          return saveUriToDevice(uri, 'chart.pdf', 'application/pdf');
         })}
+      />
+      {/* The image rows save to the gallery now, so sharing gets its own row. */}
+      <SheetRow
+        icon="share"
+        badgeColor={colors.brand}
+        badgeBg={colors.tint.blue10}
+        title={t.shareEllipsis}
+        subtitle={t.shareTargets}
+        divider={false}
+        onPress={guard(t.openingShare, (ref) => captureAndShare(ref, 'png', 'image/png'))}
       />
     </BottomSheet>
   );

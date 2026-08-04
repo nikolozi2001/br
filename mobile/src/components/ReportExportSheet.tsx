@@ -1,13 +1,12 @@
 import React from 'react';
 import { Share } from 'react-native';
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import { File, Paths } from 'expo-file-system';
 
 import BottomSheet, { SheetRow } from './BottomSheet';
 import { getStrings } from '../i18n/strings';
 import { groupDigits } from '../api/registry';
-import { writeXlsxAndShare } from '../utils/xlsx';
+import { saveMessage, saveToDevice, saveTextToDevice, saveUriToDevice, type SaveResult } from '../utils/save';
+import { writeXlsx, XLSX_MIME } from '../utils/xlsx';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import type { Strings } from '../i18n/strings';
@@ -54,14 +53,6 @@ function buildHtml(title: string, table: Table): string {
   </table></body></html>`;
 }
 
-async function writeAndShare(filename: string, contents: string, mimeType: string) {
-  const file = new File(Paths.cache, filename);
-  if (file.exists) file.delete();
-  file.create();
-  file.write(contents);
-  if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { mimeType, UTI: mimeType });
-}
-
 export interface ReportExportSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -89,6 +80,10 @@ export default function ReportExportSheet({ visible, onClose, report, parsed }: 
     }
   };
 
+  /** Same as `guard`, but reports where the file ended up. */
+  const save = (message: string, action: () => Promise<SaveResult>) =>
+    guard(message, async () => showToast(saveMessage(await action(), t)));
+
   return (
     <BottomSheet
       visible={visible}
@@ -103,7 +98,9 @@ export default function ReportExportSheet({ visible, onClose, report, parsed }: 
         badgeBg="#1d7044"
         title={t.excelTable}
         subtitle=".xlsx"
-        onPress={guard(t.preparingXls, () => writeXlsxAndShare(`report-${report.id}.xlsx`, title, table.header, table.rows))}
+        onPress={save(t.preparingXls, () =>
+          saveToDevice(writeXlsx(`report-${report.id}.xlsx`, title, table.header, table.rows), XLSX_MIME),
+        )}
       />
       <SheetRow
         badge="CSV"
@@ -111,7 +108,7 @@ export default function ReportExportSheet({ visible, onClose, report, parsed }: 
         badgeBg={colors.brand}
         title={t.csvData}
         subtitle=".csv"
-        onPress={guard(t.preparingCsv, () => writeAndShare(`report-${report.id}.csv`, csv, 'text/csv'))}
+        onPress={save(t.preparingCsv, () => saveTextToDevice(`report-${report.id}.csv`, csv, 'text/csv'))}
       />
       <SheetRow
         badge="PDF"
@@ -119,9 +116,9 @@ export default function ReportExportSheet({ visible, onClose, report, parsed }: 
         badgeBg={colors.redDark}
         title={t.pdfDocument}
         subtitle=".pdf"
-        onPress={guard(t.preparingPdf, async () => {
+        onPress={save(t.preparingPdf, async () => {
           const { uri } = await Print.printToFileAsync({ html });
-          if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
+          return saveUriToDevice(uri, `report-${report.id}.pdf`, 'application/pdf');
         })}
       />
       <SheetRow

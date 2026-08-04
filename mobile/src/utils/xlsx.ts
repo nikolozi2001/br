@@ -1,21 +1,17 @@
 import * as XLSX from 'xlsx';
-import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
 
-const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+export const XLSX_UTI = 'org.openxmlformats.spreadsheetml.sheet';
 
 export type Cell = string | number;
 
 /**
- * Builds a real .xlsx workbook (SheetJS) from a header row + data rows, writes
- * it to the cache directory as binary, and opens the share sheet.
+ * Builds a real .xlsx workbook (SheetJS) from a header row + data rows and
+ * writes it to the cache as binary. What happens next — saving it to the device
+ * or handing it to the share sheet — is the caller's decision.
  */
-export async function writeXlsxAndShare(
-  filename: string,
-  sheetName: string,
-  header: Cell[],
-  rows: Cell[][],
-): Promise<string> {
+export function writeXlsx(filename: string, sheetName: string, header: Cell[], rows: Cell[][]): File {
   const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
   const workbook = XLSX.utils.book_new();
   // Sheet names are capped at 31 chars and can't contain []:*?/\.
@@ -28,9 +24,5 @@ export async function writeXlsxAndShare(
   if (file.exists) file.delete();
   file.create();
   file.write(new Uint8Array(output));
-
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(file.uri, { mimeType: XLSX_MIME, UTI: 'org.openxmlformats.spreadsheetml.sheet' });
-  }
-  return file.uri;
+  return file;
 }

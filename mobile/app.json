@@ -11,7 +11,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "ge.geostat.businessregister",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true
       }
     },
     "android": {
@@ -31,6 +33,14 @@
       "expo-font",
       "expo-sharing",
       "expo-system-ui",
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "ბიზნეს რეგისტრი ინახავს გრაფიკებს თქვენს ფოტოებში.",
+          "photosPermission": "ბიზნეს რეგისტრი ინახავს გრაფიკებს თქვენს ფოტოებში.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
       [
         "expo-splash-screen",
         {
