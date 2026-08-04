@@ -8,7 +8,13 @@ import {
   groupDigits,
   searchSubjects,
 } from './registry';
+import { clearLookupCache } from './lookupCache';
 import type { SearchForm } from '../types';
+
+// The lookup fetchers are cached, so each test needs to start from an empty one.
+beforeEach(async () => {
+  await clearLookupCache();
+});
 
 describe('groupDigits', () => {
   it('groups thousands with a thin space', () => {

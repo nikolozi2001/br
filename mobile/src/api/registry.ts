@@ -1,4 +1,5 @@
 import { apiGet, toArray } from './client';
+import { cachedLookup } from './lookupCache';
 import { apiLang } from '../i18n/strings';
 import type {
   AddressHistoryRow,
@@ -28,6 +29,12 @@ const num = (value: unknown): number => {
 /* ── Lookups (picker option lists) ─────────────────────────────────────────── */
 
 /**
+ * The picker lists are reference data that changes a few times a year, so each
+ * one is cached per language — see {@link cachedLookup}. Only the mapped
+ * options are cached, never the raw payload.
+ */
+
+/**
  * `Abbreviation - Legal_Form` reads well in Georgian ("შპს - შეზღუდული…"), but
  * the English table repeats the full name in both columns, so the two are only
  * joined when they actually differ.
@@ -40,11 +47,13 @@ function legalFormLabel(form: ApiRecord): string {
   return `${abbreviation} - ${full}`;
 }
 
-export async function fetchLegalForms(lang: Lang): Promise<Option[]> {
-  const data = toArray(await apiGet('/legal-forms', { lang: apiLang(lang) }));
-  return data
-    .map((form) => ({ value: str(form.ID ?? form.id), label: legalFormLabel(form) }))
-    .filter((o) => o.value && o.label);
+export function fetchLegalForms(lang: Lang): Promise<Option[]> {
+  return cachedLookup(`legal-forms.${lang}`, async () => {
+    const data = toArray(await apiGet('/legal-forms', { lang: apiLang(lang) }));
+    return data
+      .map((form) => ({ value: str(form.ID ?? form.id), label: legalFormLabel(form) }))
+      .filter((o) => o.value && o.label);
+  });
 }
 
 const toLocationOption = (l: ApiRecord): Option => ({
@@ -57,49 +66,59 @@ const toLocationOption = (l: ApiRecord): Option => ({
  * Georgia's regions. `/locations` is the country list (Level 1) — the regions
  * are Level 2, which is what `/locations/regions` returns.
  */
-export async function fetchRegions(lang: Lang): Promise<Option[]> {
-  const data = toArray(await apiGet('/locations/regions', { lang: apiLang(lang) }));
-  return data
-    .filter((l) => !l.Inactive)
-    .map(toLocationOption)
-    .filter((o) => o.label);
+export function fetchRegions(lang: Lang): Promise<Option[]> {
+  return cachedLookup(`regions.${lang}`, async () => {
+    const data = toArray(await apiGet('/locations/regions', { lang: apiLang(lang) }));
+    return data
+      .filter((l) => !l.Inactive)
+      .map(toLocationOption)
+      .filter((o) => o.label);
+  });
 }
 
 /**
  * Municipalities of one region, looked up by the region's location code
  * ("15" → "15 11", "15 23", …). Without a region there is nothing to list.
  */
-export async function fetchMunicipalities(lang: Lang, regionCode?: string): Promise<Option[]> {
+export function fetchMunicipalities(lang: Lang, regionCode?: string): Promise<Option[]> {
   const code = regionCode?.trim();
-  if (!code) return [];
-  const data = toArray(await apiGet(`/locations/code/${encodeURIComponent(code)}`, { lang: apiLang(lang) }));
-  return data
-    .filter((l) => !l.Inactive)
-    .map(toLocationOption)
-    .filter((o) => o.label && o.code !== code);
+  if (!code) return Promise.resolve([]);
+  return cachedLookup(`municipalities.${code}.${lang}`, async () => {
+    const data = toArray(await apiGet(`/locations/code/${encodeURIComponent(code)}`, { lang: apiLang(lang) }));
+    return data
+      .filter((l) => !l.Inactive)
+      .map(toLocationOption)
+      .filter((o) => o.label && o.code !== code);
+  });
 }
 
-export async function fetchActivities(lang: Lang): Promise<{ codes: Option[]; names: Option[] }> {
-  const data = toArray(await apiGet('/activities', { lang: apiLang(lang) }));
-  return {
-    codes: data.map((a) => ({ value: str(a.Activity_Code), label: str(a.Activity_Code) })),
-    names: data.map((a) => ({
-      value: str(a.Activity_Code),
-      label: `${str(a.Activity_Code)} - ${str(a.Activity_Name)}`,
-    })),
-  };
+export function fetchActivities(lang: Lang): Promise<{ codes: Option[]; names: Option[] }> {
+  return cachedLookup(`activities.${lang}`, async () => {
+    const data = toArray(await apiGet('/activities', { lang: apiLang(lang) }));
+    return {
+      codes: data.map((a) => ({ value: str(a.Activity_Code), label: str(a.Activity_Code) })),
+      names: data.map((a) => ({
+        value: str(a.Activity_Code),
+        label: `${str(a.Activity_Code)} - ${str(a.Activity_Name)}`,
+      })),
+    };
+  });
 }
 
-export async function fetchOwnershipTypes(lang: Lang): Promise<Option[]> {
-  const data = toArray(await apiGet('/ownership-types', { lang: apiLang(lang) }));
-  return data
-    .map((t) => ({ value: str(t.ID), label: str(t.Ownership_Type) }))
-    .filter((o) => o.label);
+export function fetchOwnershipTypes(lang: Lang): Promise<Option[]> {
+  return cachedLookup(`ownership-types.${lang}`, async () => {
+    const data = toArray(await apiGet('/ownership-types', { lang: apiLang(lang) }));
+    return data
+      .map((t) => ({ value: str(t.ID), label: str(t.Ownership_Type) }))
+      .filter((o) => o.label);
+  });
 }
 
-export async function fetchSizes(lang: Lang): Promise<Option[]> {
-  const data = toArray(await apiGet('/sizes', { lang: apiLang(lang) }));
-  return data.map((s) => ({ value: str(s.id), label: str(s.zoma) })).filter((o) => o.label);
+export function fetchSizes(lang: Lang): Promise<Option[]> {
+  return cachedLookup(`sizes.${lang}`, async () => {
+    const data = toArray(await apiGet('/sizes', { lang: apiLang(lang) }));
+    return data.map((s) => ({ value: str(s.id), label: str(s.zoma) })).filter((o) => o.label);
+  });
 }
 
 /* ── Subject search ────────────────────────────────────────────────────────── */
