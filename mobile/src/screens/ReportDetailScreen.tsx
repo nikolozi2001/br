@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, ScrollView, Text, View } from 'react-native';
 import type { TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,7 +10,14 @@ import { getReport, parseCountsReport, parseMatrixReport } from '../data/reports
 import { getStrings } from '../i18n/strings';
 import { useTheme, type ThemeColors } from '../theme/ThemeProvider';
 import type { ReportsScreenProps } from '../navigation/types';
-import { isCountsReport, type ApiRecord, type ParsedReport, type ReportMeta } from '../types';
+import {
+  isCountsReport,
+  type ApiRecord,
+  type CountsRow,
+  type MatrixReport,
+  type ParsedReport,
+  type ReportMeta,
+} from '../types';
 
 interface StatTileProps {
   label: string;
@@ -87,6 +94,63 @@ function ReportDetail({ report, onBack }: { report: ReportMeta; onBack: () => vo
   const matrix = !isCountsReport(parsed) ? parsed : null;
   const isEmpty = !loading && (!parsed || (counts ? !counts.items.length : !matrix?.items.length));
 
+  const renderCountsRow = useCallback(
+    ({ item }: { item: CountsRow }) => (
+      <View
+        style={{
+          backgroundColor: colors.card,
+          borderRadius: radius.lg + 2,
+          borderWidth: 1,
+          borderColor: colors.line,
+          paddingVertical: 13,
+          paddingHorizontal: 14,
+          gap: 9,
+          ...shadow.card,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+          <View
+            style={{
+              minWidth: 28,
+              height: 22,
+              paddingHorizontal: 7,
+              borderRadius: 7,
+              backgroundColor: colors.tint.blue10,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: fs(12), fontWeight: '700', color: colors.brand }}>{item.code}</Text>
+          </View>
+          <Text style={{ flex: 1, fontSize: fs(14), color: colors.ink, fontWeight: '600', lineHeight: fs(18) }}>
+            {item.name}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <StatTile label={t.registered} value={groupDigits(item.reg)} percent={item.regP} percentColor={colors.brand} />
+          <StatTile label={t.activeCount} value={groupDigits(item.act)} percent={item.actP} percentColor={colors.green} />
+        </View>
+      </View>
+    ),
+    [colors, fs, radius, shadow, t],
+  );
+
+  const renderMatrixRow = useCallback(
+    ({ item }: { item: MatrixReport['items'][number] }) => (
+      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.line3 }}>
+        <Text style={[bodyCell(fs, colors), { width: 190, fontWeight: '600' }]} numberOfLines={2}>
+          {item.label}
+        </Text>
+        {item.values.map((v, i) => (
+          <Text key={i} style={[bodyCell(fs, colors), { width: 84, textAlign: 'right' }]}>
+            {v == null ? '—' : groupDigits(v)}
+          </Text>
+        ))}
+      </View>
+    ),
+    [colors, fs],
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <HeroGradient>
@@ -125,66 +189,49 @@ function ReportDetail({ report, onBack }: { report: ReportMeta; onBack: () => vo
         </View>
       </HeroGradient>
 
-      <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 108, gap: 10 }}>
-        {loading ? (
-          <ActivityIndicator color={colors.brand} style={{ marginTop: 40 }} />
-        ) : isEmpty ? (
+      {loading ? (
+        <ActivityIndicator color={colors.brand} style={{ marginTop: 40 }} />
+      ) : isEmpty ? (
+        <View style={{ padding: 14 }}>
           <Card style={{ paddingVertical: 40, paddingHorizontal: 24 }}>
             <EmptyState icon="emptyReport" title={t.reportEmptyTitle} body={t.reportEmptyBody} size={78} />
           </Card>
-        ) : counts ? (
-          <>
-            <HeroGradient style={{ borderRadius: radius.lg + 2, padding: 14, gap: 9 }}>
+        </View>
+      ) : counts ? (
+        /* Report 1 has ~1700 rows; only what is on screen is built. */
+        <FlatList
+          data={counts.items}
+          keyExtractor={(row, index) => `${row.code}-${index}`}
+          renderItem={renderCountsRow}
+          contentContainerStyle={{ padding: 14, paddingBottom: 108, gap: 10 }}
+          initialNumToRender={8}
+          windowSize={7}
+          removeClippedSubviews
+          ListHeaderComponent={
+            <HeroGradient style={{ borderRadius: radius.lg + 2, padding: 14, gap: 9, marginBottom: 10 }}>
               <Text style={{ fontFamily: fonts.heading, fontSize: fs(15), color: '#fff' }}>{t.total}</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <StatTile onBlue label={t.registered} value={groupDigits(counts.totalReg)} percent="100.0%" percentColor="#bbf7d0" />
                 <StatTile onBlue label={t.activeCount} value={groupDigits(counts.totalAct)} percent="100.0%" percentColor="#bbf7d0" />
               </View>
             </HeroGradient>
-
-            {counts.items.map((row, index) => (
-              <View
-                key={`${row.code}-${index}`}
-                style={{
-                  backgroundColor: colors.card,
-                  borderRadius: radius.lg + 2,
-                  borderWidth: 1,
-                  borderColor: colors.line,
-                  paddingVertical: 13,
-                  paddingHorizontal: 14,
-                  gap: 9,
-                  ...shadow.card,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                  <View
-                    style={{
-                      minWidth: 28,
-                      height: 22,
-                      paddingHorizontal: 7,
-                      borderRadius: 7,
-                      backgroundColor: colors.tint.blue10,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text style={{ fontSize: fs(12), fontWeight: '700', color: colors.brand }}>{row.code}</Text>
-                  </View>
-                  <Text style={{ flex: 1, fontSize: fs(14), color: colors.ink, fontWeight: '600', lineHeight: fs(18) }}>
-                    {row.name}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <StatTile label={t.registered} value={groupDigits(row.reg)} percent={row.regP} percentColor={colors.brand} />
-                  <StatTile label={t.activeCount} value={groupDigits(row.act)} percent={row.actP} percentColor={colors.green} />
-                </View>
-              </View>
-            ))}
-          </>
-        ) : (
+          }
+        />
+      ) : (
+        /* The matrix is wide *and* long — report 10 is 4207 rows x 20 columns.
+           The horizontal ScrollView pans the table; the rows inside it are
+           virtualised vertically, which is what stopped it from opening. */
+        <ScrollView horizontal showsHorizontalScrollIndicator style={{ flex: 1 }} contentContainerStyle={{ padding: 14 }}>
           <Card style={{ overflow: 'hidden' }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator>
-              <View>
+            <FlatList
+              data={matrix!.items}
+              keyExtractor={(row, index) => `${row.label}-${index}`}
+              renderItem={renderMatrixRow}
+              initialNumToRender={16}
+              windowSize={9}
+              removeClippedSubviews
+              contentContainerStyle={{ paddingBottom: 94 }}
+              ListHeaderComponent={
                 <View style={{ flexDirection: 'row', borderBottomWidth: 2, borderBottomColor: colors.line2 }}>
                   <Text style={[headerCell(fs, colors), { width: 190 }]} />
                   {matrix!.columns.map((c) => (
@@ -193,26 +240,11 @@ function ReportDetail({ report, onBack }: { report: ReportMeta; onBack: () => vo
                     </Text>
                   ))}
                 </View>
-                {matrix!.items.map((row, index) => (
-                  <View
-                    key={`${row.label}-${index}`}
-                    style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.line3 }}
-                  >
-                    <Text style={[bodyCell(fs, colors), { width: 190, fontWeight: '600' }]} numberOfLines={2}>
-                      {row.label}
-                    </Text>
-                    {row.values.map((v, i) => (
-                      <Text key={i} style={[bodyCell(fs, colors), { width: 84, textAlign: 'right' }]}>
-                        {v == null ? '—' : groupDigits(v)}
-                      </Text>
-                    ))}
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
+              }
+            />
           </Card>
-        )}
-      </ScrollView>
+        </ScrollView>
+      )}
 
       <ReportExportSheet
         visible={shareOpen}
