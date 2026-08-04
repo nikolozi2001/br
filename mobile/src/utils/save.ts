@@ -26,15 +26,16 @@ export type SaveResult =
 /** The formats the photo library will take; everything else is a document. */
 const isPhoto = (mimeType: string): boolean => mimeType === 'image/png' || mimeType === 'image/jpeg';
 
-/** Saves an existing local file onto the device. */
+/**
+ * Saves an existing local file onto the device.
+ *
+ * Images reach the photo library on iOS only. Doing the same on Android means
+ * holding READ_MEDIA_IMAGES, which Google Play grants to apps whose core
+ * function is browsing the user's photos — this one only ever writes an image
+ * out, so it would be claiming an access it does not need. On Android an image
+ * is saved like every other file: into the folder the user picks.
+ */
 export async function saveToDevice(file: File, mimeType: string): Promise<SaveResult> {
-  if (isPhoto(mimeType)) {
-    const { granted } = await requestPermissionsAsync(true);
-    if (!granted) return 'denied';
-    await Asset.create(file.uri);
-    return 'gallery';
-  }
-
   if (Platform.OS === 'android') {
     const permission = await StorageAccessFramework.requestDirectoryPermissionsAsync();
     if (!permission.granted) return 'cancelled';
@@ -44,6 +45,14 @@ export async function saveToDevice(file: File, mimeType: string): Promise<SaveRe
     const target = await StorageAccessFramework.createFileAsync(permission.directoryUri, base, mimeType);
     await writeAsStringAsync(target, file.base64Sync(), { encoding: EncodingType.Base64 });
     return 'folder';
+  }
+
+  if (isPhoto(mimeType)) {
+    // Write-only access: the app adds a photo and never reads the library.
+    const { granted } = await requestPermissionsAsync(true);
+    if (!granted) return 'denied';
+    await Asset.create(file.uri);
+    return 'gallery';
   }
 
   // iOS has no shared Downloads folder. The app's own document directory is the
