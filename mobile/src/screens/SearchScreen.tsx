@@ -197,14 +197,12 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
                 label={t.idNumber}
                 value={form.id}
                 onChangeText={(v) => patchForm({ id: v })}
-                placeholder={t.idPlaceholder}
                 keyboardType="number-pad"
               />
               <TextField
                 label={t.orgName}
                 value={form.name}
                 onChangeText={(v) => patchForm({ name: v })}
-                placeholder={t.orgNamePlaceholder}
               />
               <SelectField
                 label={t.legalForm}
