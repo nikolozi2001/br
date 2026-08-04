@@ -27,14 +27,11 @@ export interface RequestOptions {
 }
 
 /**
- * GET a JSON endpoint. `params` values that are arrays are appended once per
- * item, matching how the backend reads repeated query keys (legalForm, size…).
+ * Query string for `params`. Array values are appended once per item, matching
+ * how the backend reads repeated query keys (legalForm, size…); empty values are
+ * left out entirely.
  */
-export async function apiGet<T = unknown>(
-  path: string,
-  params: QueryParams = {},
-  { signal, timeout = DEFAULT_TIMEOUT }: RequestOptions = {},
-): Promise<T> {
+export function buildQuery(params: QueryParams): string {
   const query = new URLSearchParams();
   const append = (key: string, value: QueryValue) => {
     if (value === undefined || value === null || value === '') return;
@@ -46,13 +43,27 @@ export async function apiGet<T = unknown>(
     else append(key, value);
   });
 
+  return query.toString();
+}
+
+/** Absolute URL for an endpoint — for downloads, which bypass {@link apiGet}. */
+export function apiUrl(path: string, params: QueryParams = {}): string {
+  const qs = buildQuery(params);
+  return `${API_BASE_URL}${path}${qs ? `?${qs}` : ''}`;
+}
+
+/** GET a JSON endpoint. */
+export async function apiGet<T = unknown>(
+  path: string,
+  params: QueryParams = {},
+  { signal, timeout = DEFAULT_TIMEOUT }: RequestOptions = {},
+): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   if (signal) signal.addEventListener('abort', () => controller.abort());
 
-  const qs = query.toString();
   try {
-    const response = await fetch(`${API_BASE_URL}${path}${qs ? `?${qs}` : ''}`, {
+    const response = await fetch(apiUrl(path, params), {
       signal: controller.signal,
       headers: { Accept: 'application/json' },
     });

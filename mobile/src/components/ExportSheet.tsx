@@ -5,7 +5,13 @@ import * as Print from 'expo-print';
 import BottomSheet, { SheetRow } from './BottomSheet';
 import { getStrings } from '../i18n/strings';
 import { groupDigits } from '../api/registry';
-import { saveMessage, saveToDevice, saveTextToDevice, saveUriToDevice, type SaveResult } from '../utils/save';
+import {
+  saveDownloadToDevice,
+  saveMessage,
+  saveToDevice,
+  saveUriToDevice,
+  type SaveResult,
+} from '../utils/save';
 import { writeXlsx, XLSX_MIME, type Cell } from '../utils/xlsx';
 import { useAppStore } from '../state/AppStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -32,6 +38,16 @@ const escapeHtml = (value: unknown): string =>
   String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const escapeCsv = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+/**
+ * Rough download size for the server CSV. Measured at ~780 bytes per row on a
+ * 43 811-row export, and the whole register is over a million rows — worth
+ * saying out loud before someone taps it on mobile data.
+ */
+function csvSize(rows: number): string {
+  const mb = (rows * 780) / (1024 * 1024);
+  return mb >= 1024 ? `~${(mb / 1024).toFixed(1)} GB` : `~${Math.max(1, Math.round(mb))} MB`;
+}
 
 function buildCsv(rows: Subject[], t: Strings): string {
   const header = COLUMNS.map(([, key]) => escapeCsv(t[key] as string)).join(',');
@@ -72,14 +88,16 @@ function buildHtmlTable(rows: Subject[], t: Strings, title: string): string {
 export interface ExportSheetProps {
   visible: boolean;
   onClose: () => void;
-  /** Total matching records — shown in the sheet subtitle. */
+  /** Total matching records — what the CSV covers. */
   count: number;
-  /** The rows actually loaded, which is what gets exported. */
+  /** The rows loaded so far — what the spreadsheet and PDF cover. */
   rows: Subject[];
   title: string;
+  /** `/documents/export` for the current filter: every matching row, streamed. */
+  csvUrl: string;
 }
 
-export default function ExportSheet({ visible, onClose, count, rows, title }: ExportSheetProps) {
+export default function ExportSheet({ visible, onClose, count, rows, title, csvUrl }: ExportSheetProps) {
   const { colors, lang } = useTheme();
   const t = getStrings(lang);
   const { showToast } = useAppStore();
@@ -111,7 +129,7 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
         badgeColor="#fff"
         badgeBg="#1d7044"
         title={t.excelTable}
-        subtitle=".xlsx"
+        subtitle={`.xlsx · ${t.loadedRecords(groupDigits(rows.length))}`}
         onPress={save(t.preparingXls, () =>
           saveToDevice(writeXlsx('business-register.xlsx', title, xlsxHeader(t), xlsxRows(rows)), XLSX_MIME),
         )}
@@ -121,9 +139,9 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
         badgeColor="#fff"
         badgeBg={colors.brand}
         title={t.csvData}
-        subtitle=".csv"
-        onPress={save(t.preparingCsv, () =>
-          saveTextToDevice('business-register.csv', buildCsv(rows, t), 'text/csv'),
+        subtitle={`.csv · ${t.allRecords(groupDigits(count))} · ${csvSize(count)}`}
+        onPress={save(t.downloadingCsv, () =>
+          saveDownloadToDevice(csvUrl, 'business-register.csv', 'text/csv'),
         )}
       />
       <SheetRow
@@ -131,7 +149,7 @@ export default function ExportSheet({ visible, onClose, count, rows, title }: Ex
         badgeColor="#fff"
         badgeBg={colors.redDark}
         title={t.pdfDocument}
-        subtitle=".pdf"
+        subtitle={`.pdf · ${t.loadedRecords(groupDigits(rows.length))}`}
         onPress={save(t.preparingPdf, async () => {
           const { uri } = await Print.printToFileAsync({ html: buildHtmlTable(rows, t, title) });
           return saveUriToDevice(uri, 'business-register.pdf', 'application/pdf');

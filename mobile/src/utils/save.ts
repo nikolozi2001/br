@@ -57,6 +57,21 @@ export async function saveToDevice(file: File, mimeType: string): Promise<SaveRe
 }
 
 /**
+ * Downloads a file and saves it onto the device. The download streams straight
+ * to disk, so a CSV of a million rows never has to fit in memory.
+ */
+export async function saveDownloadToDevice(
+  url: string,
+  filename: string,
+  mimeType: string,
+): Promise<SaveResult> {
+  const target = new File(Paths.cache, filename);
+  if (target.exists) target.delete();
+  const downloaded = await File.downloadFileAsync(url, target);
+  return saveToDevice(downloaded, mimeType);
+}
+
+/**
  * Saves a file that only exists as a uri — expo-print hands back a temporary
  * name like `.../Print/xyz.pdf`, so it is copied under a readable one first.
  */

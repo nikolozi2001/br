@@ -168,6 +168,9 @@ const ka = {
   exportShareSubtitle: (n: string | number) => `${n} ჩანაწერი · მიმდინარე ფილტრით`,
   excelTable: 'Excel ცხრილი',
   csvData: 'CSV მონაცემები',
+  allRecords: (n: string | number) => `ყველა ${n} ჩანაწერი · სერვერიდან`,
+  loadedRecords: (n: string | number) => `ჩატვირთული ${n} ჩანაწერი`,
+  downloadingCsv: 'სრული CSV ჩამოიტვირთება…',
   pdfDocument: 'PDF დოკუმენტი',
   print: 'ბეჭდვა',
   airPrint: 'AirPrint',
@@ -201,6 +204,8 @@ const ka = {
   saveDenied: 'გალერეაზე წვდომა ნებადართული არ არის',
   networkError: 'კავშირი ვერ დამყარდა',
   retry: 'ხელახლა ცდა',
+  crashTitle: 'რაღაც შეფერხდა',
+  crashBody: 'აპლიკაციამ მოულოდნელ შეცდომას მიაღწია. სცადეთ ხელახლა — თუ განმეორდა, დახურეთ და თავიდან გახსენით.',
 };
 
 const en = {
@@ -356,6 +361,9 @@ const en = {
   exportShareSubtitle: (n: string | number) => `${n} records · current filter`,
   excelTable: 'Excel table',
   csvData: 'CSV data',
+  allRecords: (n: string | number) => `all ${n} records · from the server`,
+  loadedRecords: (n: string | number) => `${n} loaded records`,
+  downloadingCsv: 'Downloading the full CSV…',
   pdfDocument: 'PDF document',
   print: 'Print',
   airPrint: 'AirPrint',
@@ -388,6 +396,8 @@ const en = {
   saveDenied: 'Photo library access is not allowed',
   networkError: 'Could not reach the server',
   retry: 'Try again',
+  crashTitle: 'Something went wrong',
+  crashBody: 'The app hit an unexpected error. Try again — if it keeps happening, close the app and reopen it.',
 };
 
 export type Strings = typeof ka;

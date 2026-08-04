@@ -6,7 +6,7 @@ import ExportSheet from '../components/ExportSheet';
 import Icon from '../components/Icon';
 import SubjectCard from '../components/SubjectCard';
 import { Card, EmptyState, HeroGradient, RoundButton, Skeleton } from '../components/primitives';
-import { groupDigits } from '../api/registry';
+import { groupDigits, subjectsCsvUrl } from '../api/registry';
 import { getStrings } from '../i18n/strings';
 import { useSearch } from '../state/SearchStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -48,7 +48,7 @@ export default function ResultsScreen({ navigation }: HomeScreenProps<'Results'>
   const { colors, fonts, fs, lang, radius } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
-  const { results, total, loading, loadingMore, error, sortBy, sortDir, changeSort, loadMore, refresh, hasMore } =
+  const { form, results, total, loading, loadingMore, error, sortBy, sortDir, changeSort, loadMore, refresh, hasMore } =
     useSearch();
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -180,6 +180,7 @@ export default function ResultsScreen({ navigation }: HomeScreenProps<'Results'>
         count={total}
         rows={results}
         title={t.results}
+        csvUrl={subjectsCsvUrl(form, lang)}
       />
     </View>
   );

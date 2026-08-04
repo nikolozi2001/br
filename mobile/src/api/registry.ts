@@ -1,4 +1,4 @@
-import { apiGet, toArray } from './client';
+import { apiGet, apiUrl, toArray } from './client';
 import { cachedLookup } from './lookupCache';
 import { apiLang } from '../i18n/strings';
 import type {
@@ -183,9 +183,14 @@ function activityCodes(form: SearchForm): string[] | undefined {
   return picked.length ? [...new Set(picked)] : undefined;
 }
 
-export async function searchSubjects(form: SearchForm, opts: SearchOptions): Promise<SearchResponse> {
+/**
+ * The filter half of a search query — everything except paging and sorting.
+ * `/documents` and `/documents/export` read exactly the same keys, so the CSV
+ * export covers precisely what the results list is showing.
+ */
+function filterParams(form: SearchForm, lang: Lang): Record<string, string | number | string[] | undefined> {
   const params: Record<string, string | number | string[] | undefined> = {
-    lang: apiLang(opts.lang),
+    lang: apiLang(lang),
     identificationNumber: form.id || undefined,
     organizationName: form.name || undefined,
     head: form.head || undefined,
@@ -195,10 +200,6 @@ export async function searchSubjects(form: SearchForm, opts: SearchOptions): Pro
     ownershipType: values(form.ownership),
     size: values(form.size),
     activityCode: activityCodes(form),
-    page: opts.page,
-    limit: opts.limit,
-    sortBy: opts.sortBy,
-    sortDir: opts.sortDir,
   };
 
   // The address filters match on location codes ("15", "15 11"), not on names —
@@ -212,6 +213,26 @@ export async function searchSubjects(form: SearchForm, opts: SearchOptions): Pro
     params.legalAddressCity = codes(form.muni);
     params.legalAddress = form.address || undefined;
   }
+  return params;
+}
+
+/**
+ * URL of the CSV of *every* matching subject. The backend streams it in 5000-row
+ * chunks, so this is the only export that covers the whole result set rather
+ * than the page the app has loaded.
+ */
+export function subjectsCsvUrl(form: SearchForm, lang: Lang): string {
+  return apiUrl('/documents/export', filterParams(form, lang));
+}
+
+export async function searchSubjects(form: SearchForm, opts: SearchOptions): Promise<SearchResponse> {
+  const params = {
+    ...filterParams(form, opts.lang),
+    page: opts.page,
+    limit: opts.limit,
+    sortBy: opts.sortBy,
+    sortDir: opts.sortDir,
+  };
 
   const payload = await apiGet<ApiRecord[] | { data?: ApiRecord[]; pagination?: SearchResponse['pagination'] }>(
     '/documents',
