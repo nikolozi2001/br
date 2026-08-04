@@ -48,6 +48,18 @@ export function municipalitiesIn(munis: Option[], regions: Option[]): Option[] {
 }
 
 /**
+ * The options whose value is in `values`, keeping the order of `options`.
+ *
+ * The NACE code and name pickers are two views of one selection — both list the
+ * same activities, keyed by activity code — so picking in either has to be
+ * reflected in the other, exactly as the web form does it.
+ */
+export function pickedByValue(options: Option[], values: Iterable<string>): Option[] {
+  const wanted = new Set(values);
+  return options.filter((o) => wanted.has(o.value));
+}
+
+/**
  * Field label for a selection: the first pick plus a count ("Adjara +2"), so a
  * 44px field stays readable however many values are picked.
  */

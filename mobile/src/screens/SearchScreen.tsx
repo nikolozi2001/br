@@ -9,7 +9,7 @@ import { SelectField, Segmented, TextField } from '../components/Field';
 import { Card, RoundButton, SectionLabel, Toggle } from '../components/primitives';
 import useLookups from '../hooks/useLookups';
 import { getStrings } from '../i18n/strings';
-import { isWholeGroup, municipalitiesIn, summarise, togglePicked } from '../utils/pickers';
+import { isWholeGroup, municipalitiesIn, pickedByValue, summarise, togglePicked } from '../utils/pickers';
 import { useAppStore } from '../state/AppStore';
 import { useSearch } from '../state/SearchStore';
 import { useTheme } from '../theme/ThemeProvider';
@@ -87,12 +87,25 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
     return summary(form.legalForm);
   };
 
+  /** Both NACE fields for a set of activity codes. */
+  const naceSelection = (values: string[]) => ({
+    naceCode: pickedByValue(lookups.naceCodes, values),
+    naceName: pickedByValue(lookups.naceNames, values),
+  });
+
   /** Adds or removes one option in a picker field. */
   const toggle = (key: PickerKey, option: Option) => {
     const next = togglePicked(form[key], option);
+
     if (key === 'region') {
       // Dropping a region drops the municipalities that came with it.
       patchForm({ region: next, muni: municipalitiesIn(form.muni, next) });
+      return;
+    }
+    if (key === 'naceCode' || key === 'naceName') {
+      // One activity selection, shown two ways — picking a code fills in its
+      // name and the other way round, as on the web form.
+      patchForm(naceSelection(next.map((o) => o.value)));
       return;
     }
     patchForm({ [key]: next });
@@ -380,6 +393,7 @@ export default function SearchScreen({ navigation }: HomeScreenProps<'Search'>) 
         }}
         onClear={() => {
           if (picker === 'region') patchForm({ region: [], muni: [] });
+          else if (picker === 'naceCode' || picker === 'naceName') patchForm({ naceCode: [], naceName: [] });
           else if (picker) patchForm({ [picker]: [] });
         }}
         onClose={() => setPicker(null)}

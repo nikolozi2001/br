@@ -2,6 +2,7 @@ import {
   belongsToRegion,
   isWholeGroup,
   municipalitiesIn,
+  pickedByValue,
   summarise,
   togglePicked,
 } from './pickers';
@@ -99,6 +100,40 @@ describe('municipalitiesIn', () => {
 
   it('drops municipalities that carry no code', () => {
     expect(municipalitiesIn([opt('99', 'Nowhere')], [ADJARA])).toEqual([]);
+  });
+});
+
+describe('pickedByValue', () => {
+  // The two NACE pickers list the same activities keyed by code: one shows the
+  // code, the other the code with its name.
+  const codes = [opt('01', '01'), opt('62', '62'), opt('86', '86')];
+  const names = [
+    opt('01', '01 - Crop and animal production'),
+    opt('62', '62 - Computer programming'),
+    opt('86', '86 - Human health activities'),
+  ];
+
+  it('turns a set of codes into the matching options of either list', () => {
+    expect(pickedByValue(names, ['62'])).toEqual([names[1]]);
+    expect(pickedByValue(codes, ['62'])).toEqual([codes[1]]);
+  });
+
+  it('mirrors a selection from one picker onto the other', () => {
+    const pickedInNameList = [names[0], names[2]];
+    const mirrored = pickedByValue(codes, pickedInNameList.map((o) => o.value));
+    expect(mirrored).toEqual([codes[0], codes[2]]);
+  });
+
+  it('keeps the order of the option list, not of the values', () => {
+    expect(pickedByValue(codes, ['86', '01'])).toEqual([codes[0], codes[2]]);
+  });
+
+  it('ignores values with no matching option', () => {
+    expect(pickedByValue(codes, ['99'])).toEqual([]);
+  });
+
+  it('returns nothing for an empty selection', () => {
+    expect(pickedByValue(codes, [])).toEqual([]);
   });
 });
 
