@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { searchSubjects } from '../api/registry';
+import { createRequestGuard } from '../utils/requestGuard';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAppStore } from './AppStore';
 import type { SearchForm, SortKey, Subject } from '../types';
@@ -66,7 +67,8 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [sortBy, setSortBy] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState(1);
 
-  const requestId = useRef(0);
+  // Searches overtake each other; only the newest may write to state.
+  const guard = useRef(createRequestGuard()).current;
 
   const patchForm = useCallback((patch: Partial<SearchForm>) => {
     setForm((prev) => ({ ...prev, ...patch, dirty: true }));
@@ -78,7 +80,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   const load = useCallback(
     async (nextPage: number, { append, currentSortBy, currentSortDir, formOverride }: LoadOptions) => {
-      const id = ++requestId.current;
+      const token = guard.start();
       if (append) setLoadingMore(true);
       else setLoading(true);
       setError(null);
@@ -91,22 +93,22 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
           sortBy: currentSortBy ?? sortBy,
           sortDir: (currentSortDir ?? sortDir) > 0 ? 'asc' : 'desc',
         });
-        if (id !== requestId.current) return;
+        if (!guard.isCurrent(token)) return;
         setResults((prev) => (append ? [...prev, ...rows] : rows));
         setTotal(pagination?.total ?? (append ? total + rows.length : rows.length));
         setPage(nextPage);
       } catch (err) {
-        if (id !== requestId.current) return;
+        if (!guard.isCurrent(token)) return;
         setError(err as Error);
         if (!append) setResults([]);
       } finally {
-        if (id === requestId.current) {
+        if (guard.isCurrent(token)) {
           setLoading(false);
           setLoadingMore(false);
         }
       }
     },
-    [form, lang, sortBy, sortDir, total],
+    [form, guard, lang, sortBy, sortDir, total],
   );
 
   /** Runs a fresh search and records it in the history list. */
