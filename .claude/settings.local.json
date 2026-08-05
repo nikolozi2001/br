@@ -46,7 +46,8 @@
       "mcp__claude-in-chrome__tabs_context_mcp",
       "mcp__claude-in-chrome__list_connected_browsers",
       "mcp__claude-in-chrome__find",
-      "mcp__claude-in-chrome__read_page"
+      "mcp__claude-in-chrome__read_page",
+      "mcp__claude-in-chrome__form_input"
     ]
   }
 }
