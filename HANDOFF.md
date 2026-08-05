@@ -42,6 +42,16 @@ npx eas build:list --platform ios --limit 1 --non-interactive | grep "Runtime Ve
 
 ❌ **არ გააკეთოთ:** app.json-ის უკან დაბრუნება მხოლოდ ჰეშის დასამთხვევად — კონფიგურაცია გაყალბდება და მომდევნო iOS ბილდში ზედმეტი ნებართვა დაბრუნდება.
 
+### თუ ცუდი განახლება გავიდა
+
+```bash
+npx eas update:rollback                       # ჩაშენებულ ან წინა ვერსიაზე დაბრუნება
+npx eas update:republish --group <group-id>   # კონკრეტული ძველი განახლების ხელახლა გამოქვეყნება
+npx eas channel:view production               # რომელი განახლება უდევს არხს ამჟამად
+```
+
+მომხმარებელი დაბრუნებულ ვერსიასაც **ორ გაშვებაში** მიიღებს — მყისიერი გამოსწორება არ არსებობს. სასურველია ერთხელ მშვიდად გაიაროთ `preview` არხზე, სანამ ინციდენტის დროს დაგჭირდებათ.
+
 ### რა ტეხს OTA-ს
 
 fingerprint-ს ცვლის და OTA-ს გამოშვებულ ბილდზე თიშავს:
@@ -103,6 +113,10 @@ e0c572e  feat(export): save exports to the device instead of only sharing
 **lookup-ების ქეში** — [lookupCache.ts](mobile/src/api/lookupCache.ts). მეხსიერება + AsyncStorage, ენის მიხედვით, 7 დღე. `/activities` 549 KB / 1697 სტრიქონია და ყოველ ჯერზე ჩამოდიოდა. ვადაგასული ჩანაწერი გაიცემა, თუ განახლება ჩავარდა → ოფლაინშიც მუშაობს.
 
 **PickerSheet ვირტუალიზებულია** — 1697 რიგი ერთბაშად აღარ იწყობა.
+
+**ფილტრების სიების განახლება** — პარამეტრებში ახალი მწკრივი, რომელიც ქეშს ასუფთავებს (`clearLookupCache`). 7-დღიან ვადამდე ახალი სამართლებრივი ფორმა ან NACE კოდი სხვაგვარად ვერ ჩამოვიდოდა. სიმულატორზე დადასტურებულია: AsyncStorage-ის 10 გასაღები → 0.
+
+**`requestGuard`** — [requestGuard.ts](mobile/src/utils/requestGuard.ts). `SearchStore`-ის დამცავი, რომელიც ნელ პასუხს არ ანებებს ახლის გადაფარვას, ცალკე პრიმიტივად გამოვიდა და 6 ტესტი დაეწერა. ქცევა უცვლელია.
 
 **ErrorBoundary** — [ErrorBoundary.tsx](mobile/src/components/ErrorBoundary.tsx). თეთრი ეკრანის ნაცვლად ახსნა და „ხელახლა ცდა". [reportError.ts](mobile/src/utils/reportError.ts) არის ერთი ფუნქცია, სადაც Sentry ჩაერთვება — **შეგნებულად არ დავამატე**, რადგან მისი SDK Expo Go-ში არ არის, Expo Go კი ერთადერთი გზაა iPhone-ზე გასაშვებად.
 
