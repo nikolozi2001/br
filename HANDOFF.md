@@ -2,22 +2,47 @@
 
 ## სად ვართ
 
-**ორივე მაღაზიაში 4.3.0 განხილვაშია.**
+**4.3.0 გამოქვეყნებულია ორივე მაღაზიაში** (5 აგვისტო).
 
-| | ვერსია | სტატუსი |
-|---|---|---|
-| 🍏 App Store | 4.3.0 (build 2) | Apple-ის განხილვა, გაგზავნილია 4 აგვისტოს `eas submit`-ით |
-| 🤖 Play Store | 4.3.0 (versionCode 10) | Changes in review, Managed publishing **გამორთული** → დამტკიცებისთანავე გამოქვეყნდება |
+| | ვერსია | აეწყო commit-იდან | fingerprint |
+|---|---|---|---|
+| 🍏 App Store | 4.3.0 (build 2) | `67c4080` | `8bb027cd…` |
+| 🤖 Play Store | 4.3.0 (versionCode 10) | `fb25581` | `65416ddc…` |
 
-გამოქვეყნებული: App Store — **1.0** (4 აგვისტო, პირველი iOS რელიზი), Play — **4.2.0 (8)** (2 აგვისტო).
+⚠️ ორი ბილდი ერთმანეთისგან განსხვავდება: iOS-ისა უფრო ადრეა აწყობილი. ფუნქციურად ორივე გამართულია — iOS-ზე გრაფიკი ფოტოებში ინახება, Android-ზე საქაღალდეში.
 
-⚠️ ორი ბილდი ოდნავ განსხვავდება: iOS-ის ბილდი `67c4080`-დან აეწყო, Android-ის — `fb25581`-დან (ფოტო-ნებართვების გასწორებით). ფუნქციურად ორივე გამართულია; iOS-ზე გრაფიკი ფოტოებში ინახება, Android-ზე — საქაღალდეში.
-
-**git:** `origin/main` = `e0c572e`-მდე. ლოკალურად **ahead 11**:
+**git:** ლოკალურად **ahead 1** (`5f23f42`, ლოგოს შესწორება):
 
 ```bash
 git push origin main
 ```
+
+## OTA მუშაობს — პირველი განახლება გაშვებულია
+
+5 აგვისტოს Android-ზე გავიდა პირველი OTA: **ინგლისური ლოგო** (`5f23f42`), runtime `65416ddc…`, group `3187897f-f16c-4314-911b-8c714c525cfe`.
+
+```bash
+npx eas update --branch production --platform android --environment production --message "..."
+```
+
+⚠️ `--environment` **სავალდებულოა** non-interactive რეჟიმში — მის გარეშე ბრძანება ვარდება.
+
+მომხმარებელი განახლებას იღებს **ორ გაშვებაში**: პირველზე ფონურად ჩამოტვირთავს, მეორეზე ამოქმედდება.
+
+### ყოველი OTA-ს წინ შეამოწმეთ fingerprint
+
+`runtimeVersion.policy` = **`fingerprint`**, ანუ განახლება მხოლოდ ზუსტად იმავე native შემადგენლობის ბილდს მიუვა. სანამ გამოაქვეყნებთ:
+
+```bash
+npx expo-updates fingerprint:generate --platform ios      | python3 -c "import json,sys; print(json.load(sys.stdin)['hash'])"
+npx eas build:list --platform ios --limit 1 --non-interactive | grep "Runtime Version"
+```
+
+თუ ჰეშები არ ემთხვევა — განახლება გამოქვეყნდება, მაგრამ **ჩუმად ვერავის მიუვა**.
+
+**ამჟამინდელი მდგომარეობა:** Android ემთხვევა ✅, **iOS არა** ❌ (`b46582df…` vs `8bb027cd…`). მიზეზი — `fb25581`-ის შემდეგ შეიცვალა `photosPermission: false` (iOS `Info.plist`) და `eas.json`-ის `ascAppId`; ორივე fingerprint-ის წყაროა. ამიტომ **ლოგოს შესწორება iOS-ზე მომდევნო ბილდს ელოდება** — ცალკე ქმედება არ სჭირდება, `main`-შია.
+
+❌ **არ გააკეთოთ:** app.json-ის უკან დაბრუნება მხოლოდ ჰეშის დასამთხვევად — კონფიგურაცია გაყალბდება და მომდევნო iOS ბილდში ზედმეტი ნებართვა დაბრუნდება.
 
 ## გადაუდებელი: backend-ის ინგლისური ჯერ არ არის სერვერზე
 
@@ -32,9 +57,12 @@ curl -s -G "https://br-api.geostat.ge/api/documents" --data-urlencode "lang=en" 
 
 `Region_name` უნდა იყოს `Adjara AR`, ახლა `აჭარა`-ა. საჭიროა `backend/src/routes/documents.js`-ის ხელახლა განთავსება 85.118.117.177-ზე (IIS + iisnode; `src/`-ის ცვლილება პროცესს არ გადატვირთავს — შეინახეთ `iisnode.yml` ან გადატვირთეთ app pool).
 
-## ამ სესიის commit-ები (11, დაუგზავნელი)
+## 4.3.0-ის commit-ები
+
+`5f23f42` (ინგლისური ლოგო) **4.3.0-ის ბილდებში არ არის** — Android-ზე OTA-თი გავიდა, iOS-ზე მომდევნო ბილდს ელოდება.
 
 ```
+5f23f42  fix(ui): show the English logo when the app is in English   ← ბილდების შემდეგ
 fb25581  fix(export): stop asking Android for photo library access
 67c4080  chore: bump version to 4.3.0
 8053665  feat(build): ship JS fixes over the air with EAS Update
@@ -64,7 +92,9 @@ e0c572e  feat(export): save exports to the device instead of only sharing
 
 **ErrorBoundary** — [ErrorBoundary.tsx](mobile/src/components/ErrorBoundary.tsx). თეთრი ეკრანის ნაცვლად ახსნა და „ხელახლა ცდა". [reportError.ts](mobile/src/utils/reportError.ts) არის ერთი ფუნქცია, სადაც Sentry ჩაერთვება — **შეგნებულად არ დავამატე**, რადგან მისი SDK Expo Go-ში არ არის, Expo Go კი ერთადერთი გზაა iPhone-ზე გასაშვებად.
 
-**EAS Update (OTA)** — `runtimeVersion.policy: "fingerprint"` (და არა `appVersion`): native პროექტის ჰეშს იღებს, ანუ განახლება შეუთავსებელ ბილდს არ მიეწოდება. ⚠️ **OTA ჯერ არ მუშაობს** — `expo-updates` native მოდულია, ამიტომ ჯერ 4.3.0 უნდა გამოქვეყნდეს; მხოლოდ ამის შემდეგ წავა JS-ის შესწორებები წუთებში.
+**EAS Update (OTA)** — `runtimeVersion.policy: "fingerprint"` (და არა `appVersion`): native პროექტის ჰეშს იღებს, ანუ განახლება შეუთავსებელ ბილდს არ მიეწოდება. **ამოქმედდა 4.3.0-ის გამოქვეყნებით** — იხ. „OTA მუშაობს" ზემოთ.
+
+**ინგლისური ლოგო** — ჰედერის ბანერი ენის მიხედვით იცვლება. ქართული და ინგლისური ერთი და იგივე დიზაინია (ნიშანი + უწყების სახელი + სლოგანი), აღებული geostat.ge-ს `logo.svg` / `logo_eng.svg`-დან და გადაყვანილი PNG-ად 999px სიგანით. SVG-ად არ დავტოვე: ამ Inkscape-ის ფაილებს react-native-svg-სთან პრობლემა აქვთ (არსებულ `GeostatLogo`-ს ხელით მიწერილი `scaleY: -1` აქვს სწორედ ამიტომ).
 
 **Android-ის ფოტო-ნებართვები მოხსნილია** — `expo-media-library`-ის plugin ამატებდა `READ_MEDIA_IMAGES` და სხვას, რაზეც Play ითხოვს დეკლარაციას „ფოტოებზე ფართო წვდომა ჩვენი აპის ძირითადი ფუნქციაა". ეს **სიმართლე არ იყო**, ამიტომ ნებართვები დაიბლოკა და Android-ზე სურათი საქაღალდეში ინახება. AAB-ის მანიფესტში დარჩა მხოლოდ `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE`, `SYSTEM_ALERT_WINDOW`, `DUMP`.
 
@@ -101,6 +131,6 @@ e0c572e  feat(export): save exports to the device instead of only sharing
 2. **backend-ის ინგლისური** (`781dada`) სერვერზე
 3. **Play Service Account გასაღები** — Play Console → Setup → API access; შემდეგ `eas build --platform android --auto-submit` მთელ ხელით პროცესს ჩაანაცვლებს
 4. App Store Connect: Keywords + Subtitle (ინგლისურად; ქართული სიმბოლოები Keywords-ში შესამოწმებელია)
-5. Android-ზე რეალური გატესტვა: ექსპორტის შენახვა (SAF)
+5. Android-ზე რეალური გატესტვა: ექსპორტის შენახვა (SAF) — და ამავე დროს შეამოწმეთ, OTA-ს ინგლისური ლოგო მოვიდა თუ არა (ორი გაშვების შემდეგ)
 6. Sentry — dev build-ის გამართვის შემდეგ
 7. `accessibilityLabel` აიქონ-ღილაკებზე
