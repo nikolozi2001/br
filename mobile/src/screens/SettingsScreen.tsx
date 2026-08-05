@@ -149,11 +149,16 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps<'Sett
                 <Icon name="external" size={15} color={colors.brand} />
               </View>
             </Row>
-            <Row last>
+            <Row>
               <Text style={{ fontSize: fs(15), color: colors.ink, flex: 1 }}>API</Text>
               <Text style={{ fontSize: fs(12), color: colors.faint }} numberOfLines={1}>
                 {API_BASE_URL.replace(/^https?:\/\//, '')}
               </Text>
+            </Row>
+            {/* geostat.ge serves the policy in both languages under the same path. */}
+            <Row last onPress={() => Linking.openURL(`https://www.geostat.ge/${lang}/page/privacy-policy`)}>
+              <Text style={{ fontSize: fs(15), color: colors.ink, flex: 1 }}>{t.privacy}</Text>
+              <Icon name="external" size={15} color={colors.brand} />
             </Row>
           </Card>
         </View>
