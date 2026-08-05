@@ -122,14 +122,28 @@ function buildWhereClause(query, request) {
   return where;
 }
 
-// ─── English display values ───────────────────────────────────────────────────
+// ─── Display values ───────────────────────────────────────────────────────────
 
 /**
- * DocMain stores its display text in Georgian only; the English wording lives in
- * parallel `*_EN` lookup tables (the same ones `/locations`, `/legal-forms` and
- * friends already read). The joins run over the *page* rather than the filtered
- * set — see the derived table in the route below — so localisation costs a
- * handful of lookups instead of a join across every match.
+ * DocMain carries the abbreviation ("შპს") but not the spelled-out legal form,
+ * only its id — so every caller that wanted the full name got the abbreviation
+ * instead. `/documents/export` has always joined this table for its CSV; the
+ * search endpoint now does too, in both languages.
+ */
+const LEGAL_FORM_JOIN = `
+  LEFT JOIN [register].[CL].[Legal_Forms] lfg ON lfg.ID = p.Legal_Form_ID
+`;
+
+const LEGAL_FORM_COLUMN = `
+  , lfg.Legal_Form AS Legal_Form
+`;
+
+/**
+ * DocMain stores the rest of its display text in Georgian only; the English
+ * wording lives in parallel `*_EN` lookup tables (the same ones `/locations`,
+ * `/legal-forms` and friends already read). The joins run over the *page* rather
+ * than the filtered set — see the derived table in the route below — so
+ * localisation costs a handful of lookups instead of a join across every match.
  *
  * `Zoma` is the odd one out: DocMain holds the Georgian word, not the size id,
  * so it goes through `Size` to reach `Size_EN`.
@@ -258,14 +272,17 @@ router.get("/", async (req, res) => {
 
     const page_ = `SELECT a.* FROM [register].[dbo].[DocMain] a ${whereClause} ORDER BY ${orderByOn("a")} OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
 
-    // The Georgian path is left exactly as it was — only `lang=en` pays for the
-    // lookups, and a derived table keeps them on one page of rows. The outer
-    // ORDER BY is required: a derived table carries no ordering of its own.
+    // The lookups hang off a derived table that has already been paged, so they
+    // run over one page of rows rather than every match. The outer ORDER BY is
+    // required: a derived table carries no ordering of its own.
+    //
+    // Both languages resolve the legal form; `lang=en` additionally swaps the
+    // rest of the display text for its English counterpart.
     const english = req.query.lang === "en";
+    const columns = LEGAL_FORM_COLUMN + (english ? EN_COLUMNS : "");
+    const joins = LEGAL_FORM_JOIN + (english ? EN_JOINS : "");
     const result = await request.query(
-      english
-        ? `SELECT p.* ${EN_COLUMNS} FROM (${page_}) p ${EN_JOINS} ORDER BY ${orderByOn("p")}`
-        : page_
+      `SELECT p.* ${columns} FROM (${page_}) p ${joins} ORDER BY ${orderByOn("p")}`
     );
 
     res.json({
