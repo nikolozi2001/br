@@ -65,7 +65,11 @@ curl -s -G "https://br-api.geostat.ge/api/documents" --data-urlencode "lang=en" 
   --data-urlencode "legalAddressRegion=15" --data-urlencode "legalForm=1" --data-urlencode "limit=1"
 ```
 
-`Region_name` უნდა იყოს `Adjara AR`, ახლა `აჭარა`-ა. საჭიროა `backend/src/routes/documents.js`-ის ხელახლა განთავსება 85.118.117.177-ზე (IIS + iisnode; `src/`-ის ცვლილება პროცესს არ გადატვირთავს — შეინახეთ `iisnode.yml` ან გადატვირთეთ app pool).
+`Region_name` უნდა იყოს `Adjara AR`, ახლა `აჭარა`-ა.
+
+**იმავე ფაილში ელოდება მეორე შესწორებაც** (`4bee948`): `/documents` ყოველთვის აბრუნებდა `Legal_Form: null` — DocMain-ს ეს სვეტი არ აქვს, მხოლოდ `Abbreviation` და `Legal_Form_ID`. ამიტომ სუბიექტის გვერდზე ველი „ორგ.-სამართ. ფორმა" აჩვენებდა „შპს"-ს სრული სახელის ნაცვლად, ექსპორტის სვეტი `legalFormFull`-იც. ახლა ჯოინი ორივე ენაზე მუშაობს. **ორივე შესწორება ერთი დეპლოით მიდის.**
+
+საჭიროა `backend/src/routes/documents.js`-ის ხელახლა განთავსება 85.118.117.177-ზე (IIS + iisnode; `src/`-ის ცვლილება პროცესს არ გადატვირთავს — შეინახეთ `iisnode.yml` ან გადატვირთეთ app pool).
 
 ## 4.3.0-ის commit-ები
 
