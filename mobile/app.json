@@ -60,8 +60,7 @@
             "backgroundColor": "#ffffff"
           }
         }
-      ],
-      "@sentry/react-native"
+      ]
     ],
     "extra": {
       "eas": {

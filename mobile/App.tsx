@@ -12,11 +12,9 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { AppStoreProvider } from './src/state/AppStore';
 import { SearchProvider } from './src/state/SearchStore';
 import { getStrings } from './src/i18n/strings';
-import { initErrorReporting } from './src/utils/reportError';
 import { ThemeProvider, useTheme } from './src/theme/ThemeProvider';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-initErrorReporting();
 
 function Shell() {
   const { colors, dark, hydrated, lang } = useTheme();
