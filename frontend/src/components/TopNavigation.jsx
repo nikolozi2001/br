@@ -3,9 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { Facebook, Info } from "lucide-react";
 import britishFlag from "/src/assets/images/british-flag.png";
 import georgianFlag from "/src/assets/images/georgian-flag.svg";
+import appQrCode from "/src/assets/images/app-download-qr.svg";
+import StoreBadge from "./common/StoreBadge";
 
 function TopNavigation({ isEnglish, onLanguageChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const location = useLocation();
 
   // Get current date information
@@ -64,12 +67,12 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
   // Add ESC key handler
   useEffect(() => {
     const handleEscKey = (event) => {
-      if (event.key === "Escape" && isModalOpen) {
-        handleModalClose();
-      }
+      if (event.key !== "Escape") return;
+      if (isQrOpen) setIsQrOpen(false);
+      else if (isModalOpen) handleModalClose();
     };
 
-    if (isModalOpen) {
+    if (isModalOpen || isQrOpen) {
       document.addEventListener("keydown", handleEscKey);
     }
 
@@ -77,7 +80,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
     return () => {
       document.removeEventListener("keydown", handleEscKey);
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, isQrOpen]);
 
   const handleLanguageSwitch = () => {
     onLanguageChange(!isEnglish);
@@ -89,6 +92,14 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+  };
+
+  const handleQrOpen = () => {
+    setIsQrOpen(true);
+  };
+
+  const handleQrClose = () => {
+    setIsQrOpen(false);
   };
 
   const dynamicDate = getCurrentMonthName();
@@ -103,6 +114,10 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
       },
       date: dynamicDate.georgian,
       languageSwitch: "Switch to English",
+      qr: {
+        title: "მობილური აპლიკაციის გადმოწერა",
+        hint: "დაასკანერეთ QR კოდი ტელეფონით — თქვენი მოწყობილობის შესაბამის მაღაზიაში გადაგამისამართებთ.",
+      },
       modal: {
         title: "ბიზნეს რეგისტრის შესახებ",
         closeButton: "დახურვა",
@@ -125,6 +140,10 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
       },
       date: dynamicDate.english,
       languageSwitch: "გადართვა ქართულზე",
+      qr: {
+        title: "Download the mobile app",
+        hint: "Scan the QR code with your phone — it will take you to the store matching your device.",
+      },
       modal: {
         title: "About Business Register",
         closeButton: "Close",
@@ -150,7 +169,7 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               {/* Left Side - Navigation Buttons */}
               <div
-                className="flex flex-wrap justify-center sm:justify-start sm:self-end"
+                className="flex flex-wrap lg:flex-nowrap shrink-0 justify-center sm:justify-start sm:self-end"
                 role="group"
               >
                 <Link
@@ -196,33 +215,36 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                 </a>
               </div>
 
-              {/* Center - Google Play download badge */}
-              <a
-                href="https://play.google.com/store/apps/details?id=ge.geostat.businessregister"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-[#0070aa] hover:bg-[#005580] text-white rounded-lg px-3 py-1.5 transition-colors shadow-sm"
-                aria-label={
-                  isEnglish
-                    ? "Download on Google Play"
-                    : "გადმოწერე Google Play-დან"
-                }
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-5 h-5 shrink-0"
-                  fill="currentColor"
-                  aria-hidden="true"
+              {/* Center - mobile app download: Play badge | QR | App Store badge */}
+              <div className="flex items-center gap-2 shrink-0">
+                <StoreBadge store="play" isEnglish={isEnglish} size="compact" />
+
+                <button
+                  onClick={handleQrOpen}
+                  className="hidden xl:block bg-white p-0.5 rounded border border-gray-300 hover:border-[#0070aa] transition-colors cursor-pointer shrink-0"
+                  aria-label={
+                    isEnglish
+                      ? "Show QR code to download the app"
+                      : "აპლიკაციის გადმოსაწერი QR კოდის ჩვენება"
+                  }
+                  title={
+                    isEnglish
+                      ? "Scan to download the app"
+                      : "დაასკანერეთ აპლიკაციის გადმოსაწერად"
+                  }
                 >
-                  <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.397 12l2.5-2.491zM5.864 2.658L16.802 8.99l-2.302 2.302-8.636-8.635z" />
-                </svg>
-                <span className="flex flex-col leading-tight text-left whitespace-nowrap">
-                  <span className="text-[9px] opacity-90 uppercase tracking-wide">
-                    {isEnglish ? "Get it on" : "ხელმისაწვდომია"}
-                  </span>
-                  <span className="text-sm font-bold -mt-0.5">Google Play</span>
-                </span>
-              </a>
+                  <img
+                    src={appQrCode}
+                    alt=""
+                    width="32"
+                    height="32"
+                    className="w-8 h-8 block"
+                    aria-hidden="true"
+                  />
+                </button>
+
+                <StoreBadge store="ios" isEnglish={isEnglish} size="compact" />
+              </div>
 
               {/* Right Side Group */}
               <div className="flex items-center gap-4 flex-wrap justify-center sm:justify-end">
@@ -282,6 +304,56 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
           </div>
         </div>
       </div>
+
+      {/* QR code modal - enlarged for reliable scanning */}
+      {isQrOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black opacity-50"
+            onClick={handleQrClose}
+            aria-hidden="true"
+          />
+          <div
+            className="relative w-full max-w-[380px] mx-4 z-10"
+            role="dialog"
+            aria-modal="true"
+            aria-label={currentLanguage.qr.title}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white rounded-lg shadow-xl">
+              <div className="border-b p-4 flex justify-between items-center">
+                <h5 className="font-bpg-nino text-lg">
+                  {currentLanguage.qr.title}
+                </h5>
+                <button
+                  type="button"
+                  className="text-gray-600 hover:text-gray-800 transition-colors text-2xl leading-none pb-1 cursor-pointer"
+                  onClick={handleQrClose}
+                  aria-label={isEnglish ? "Close" : "დახურვა"}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="p-6 font-bpg-nino flex flex-col items-center">
+                <img
+                  src={appQrCode}
+                  alt={currentLanguage.qr.title}
+                  width="240"
+                  height="240"
+                  className="w-[240px] h-[240px]"
+                />
+                <p className="text-sm text-gray-600 mt-4 text-center">
+                  {currentLanguage.qr.hint}
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
+                  <StoreBadge store="play" isEnglish={isEnglish} />
+                  <StoreBadge store="ios" isEnglish={isEnglish} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (

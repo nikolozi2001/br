@@ -16,6 +16,7 @@ const SearchHistory  = lazy(() => import("./pages/SearchHistory"));
 const Reports        = lazy(() => import("./components/Reports"));
 const ReportsResults = lazy(() => import("./components/ReportsResults"));
 const Charts         = lazy(() => import("./components/Charts"));
+const AppDownload    = lazy(() => import("./pages/AppDownload"));
 import SEO from "./components/SEO";
 import useDocumentTitle from "./hooks/useDocumentTitle";
 import NavigationProvider from "./contexts/NavigationContext.jsx";
@@ -90,6 +91,7 @@ function AppContent() {
             <Route path="/reports" element={<Reports isEnglish={isEnglish} />} />
             <Route path="/reports/:reportId" element={<ReportsResults isEnglish={isEnglish} />} />
             <Route path="/charts" element={<Charts isEnglish={isEnglish} />} />
+            <Route path="/app" element={<AppDownload isEnglish={isEnglish} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
