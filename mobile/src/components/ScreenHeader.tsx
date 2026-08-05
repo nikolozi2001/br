@@ -27,8 +27,14 @@ export function GeostatLogo({ height, color = '#ffffff' }: { height: number; col
   );
 }
 
-/** Full-width Geostat logo banner (geostat.ge) on a faint translucent-white wash for contrast. */
+/**
+ * Full-width Geostat logo banner (geostat.ge) on a faint translucent-white wash
+ * for contrast. Both artworks carry the office name and the strapline set into
+ * the image, so the banner simply follows the language — they are the same
+ * design, rasterised from geostat.ge's own logo.svg and logo_eng.svg.
+ */
 export function SakstatLogo() {
+  const { lang } = useTheme();
   return (
     <View
       style={{
@@ -39,7 +45,11 @@ export function SakstatLogo() {
       }}
     >
       <Image
-        source={require('../../assets/geostat-logo.png')}
+        source={
+          lang === 'en'
+            ? require('../../assets/geostat-logo-en.png')
+            : require('../../assets/geostat-logo.png')
+        }
         resizeMode="contain"
         style={{ width: '100%', height: 52 }}
       />
