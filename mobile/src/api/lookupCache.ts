@@ -77,7 +77,14 @@ export async function cachedLookup<T>(key: string, load: () => Promise<T>): Prom
   return task;
 }
 
-/** Drops every cached list. Exposed for tests and for a future "refresh" action. */
+/**
+ * Drops every cached list. Exposed for tests.
+ *
+ * A Settings row that called this was added and taken back out: these lists are
+ * effectively static — NACE Rev.2 is a European standard, legal forms follow
+ * legislation, regions follow administrative reform — so the week-long expiry
+ * covers it, and a control nobody needs is one more thing on the screen.
+ */
 export async function clearLookupCache(): Promise<void> {
   memory.clear();
   pending.clear();
