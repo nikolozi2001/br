@@ -160,6 +160,7 @@ const ka = {
   version: 'ვერსია',
   dataSource: 'მონაცემთა წყარო',
   privacy: 'კონფიდენციალურობის პოლიტიკა',
+  privacyOffline: 'პოლიტიკის ტექსტი geostat.ge-დან იტვირთება. შეამოწმეთ ინტერნეტკავშირი და სცადეთ ხელახლა.',
 
   // sheets
   exportShareTitle: 'ექსპორტი და გაზიარება',
@@ -351,6 +352,7 @@ const en = {
   version: 'Version',
   dataSource: 'Data source',
   privacy: 'Privacy policy',
+  privacyOffline: 'The policy is loaded from geostat.ge. Check your connection and try again.',
 
   exportShareTitle: 'Export and share',
   exportShareSubtitle: (n: string | number) => `${n} records · current filter`,

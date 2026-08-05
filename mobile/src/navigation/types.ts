@@ -20,6 +20,7 @@ export type ReportsStackParamList = {
 export type SettingsStackParamList = {
   SettingsRoot: undefined;
   History: undefined;
+  Privacy: undefined;
 };
 
 export type RootTabParamList = {

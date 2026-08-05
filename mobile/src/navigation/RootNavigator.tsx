@@ -7,6 +7,7 @@ import ChartsScreen from '../screens/ChartsScreen';
 import DetailScreen from '../screens/DetailScreen';
 import FavouritesScreen from '../screens/FavouritesScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import PrivacyScreen from '../screens/PrivacyScreen';
 import ReportDetailScreen from '../screens/ReportDetailScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import ResultsScreen from '../screens/ResultsScreen';
@@ -53,6 +54,7 @@ function SettingsNavigator() {
     <SettingsStack.Navigator screenOptions={stackOptions}>
       <SettingsStack.Screen name="SettingsRoot" component={SettingsScreen} />
       <SettingsStack.Screen name="History" component={HistoryScreen} />
+      <SettingsStack.Screen name="Privacy" component={PrivacyScreen} />
     </SettingsStack.Navigator>
   );
 }
