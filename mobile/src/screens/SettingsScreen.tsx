@@ -1,11 +1,12 @@
-import React from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 
 import Icon from '../components/Icon';
 import ScreenHeader, { FlagChip } from '../components/ScreenHeader';
 import { Segmented } from '../components/Field';
 import { Card, SectionLabel, Toggle } from '../components/primitives';
+import { clearLookupCache } from '../api/lookupCache';
 import { API_BASE_URL } from '../api/client';
 import { getStrings } from '../i18n/strings';
 import { useAppStore } from '../state/AppStore';
@@ -39,7 +40,27 @@ function Row({ children, last = false, onPress }: { children: React.ReactNode; l
 export default function SettingsScreen({ navigation }: SettingsScreenProps<'SettingsRoot'>) {
   const { colors, fonts, fs, lang, settings, update } = useTheme();
   const t = getStrings(lang);
-  const { recent } = useAppStore();
+  const { recent, showToast } = useAppStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  /**
+   * Drops the cached picker lists so the next screen that needs them fetches
+   * again. Nothing is re-fetched here: the search screen loads what it needs on
+   * mount, and doing it eagerly would download the NACE table for nothing.
+   */
+  const refreshLookups = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    showToast(t.refreshingLookups);
+    try {
+      await clearLookupCache();
+      showToast(t.lookupsRefreshed);
+    } catch (err) {
+      showToast((err as Error)?.message || t.networkError);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -124,12 +145,25 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps<'Sett
               <Text style={{ fontSize: fs(15), color: colors.ink, flex: 1 }}>{t.saveHistory}</Text>
               <Toggle value={settings.saveHistory} onChange={(v) => update({ saveHistory: v })} />
             </Row>
-            <Row last onPress={() => navigation.navigate('History')}>
+            <Row onPress={() => navigation.navigate('History')}>
               <Text style={{ fontSize: fs(15), color: colors.ink }}>{t.searchHistory}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ fontSize: fs(13), color: colors.faint }}>{t.historyCount(recent.length)}</Text>
                 <Icon name="chevronRight" size={16} color="#cbd5e1" />
               </View>
+            </Row>
+            {/* The picker lists are cached for a week; this is the way to pull
+                new legal forms or NACE codes in before that runs out. */}
+            <Row last onPress={refreshLookups}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: fs(15), color: colors.ink }}>{t.refreshLookups}</Text>
+                <Text style={{ fontSize: fs(12), color: colors.faint }}>{t.refreshLookupsHint}</Text>
+              </View>
+              {refreshing ? (
+                <ActivityIndicator color={colors.brand} />
+              ) : (
+                <Icon name="refresh" size={17} color={colors.brand} />
+              )}
             </Row>
           </Card>
         </View>
