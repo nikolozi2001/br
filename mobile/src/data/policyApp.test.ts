@@ -33,10 +33,16 @@ describe('policyApp', () => {
     expect(policyApp[lang].blocks.map((block) => block.text)).toEqual(published);
   });
 
-  it('carries the six sections, in both languages, in the same shape', () => {
+  it('numbers its sections from one, with no gap, in both languages', () => {
     for (const lang of ['ka', 'en'] as const) {
       const kinds = policyApp[lang].blocks.map((block) => block.kind);
-      expect(kinds.filter((kind) => kind === 'heading')).toHaveLength(6);
+      // Dropping a section is easy; renumbering the ones after it is the step
+      // that gets forgotten, and it leaves the reader looking for a missing 5.
+      const numbers = policyApp[lang].blocks
+        .filter((block) => block.kind === 'heading')
+        .map((block) => Number(block.text.match(/^(\d+)\./)?.[1]));
+      expect(numbers).toEqual(numbers.map((_, index) => index + 1));
+
       expect(kinds).toEqual(policyApp.ka.blocks.map((block) => block.kind));
       // The byline is shown apart from the blocks, so it has to survive the split.
       expect(policyApp[lang].owner).toMatch(/\S/);

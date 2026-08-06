@@ -11,7 +11,7 @@ import type { PolicyBlock } from '../utils/policyText';
  * document: change that file and this one together**, or a reader will be told
  * two different things about the same app. The heading is dropped here (the
  * screen already carries it) and the byline is split out, so what is left is the
- * six sections.
+ * numbered sections.
  */
 
 export interface AppPolicy {
@@ -25,7 +25,7 @@ export interface AppPolicy {
 export const policyApp: Record<Lang, AppPolicy> = {
   ka: {
     owner: 'ბიზნეს რეგისტრი · საქართველოს სტატისტიკის ეროვნული სამსახური (საქსტატი)',
-    updated: 'ბოლო განახლება: 2026 წლის 27 ივლისი',
+    updated: 'ბოლო განახლება: 2026 წლის 6 აგვისტო',
     blocks: [
       { kind: 'heading', text: '1. ზოგადი ინფორმაცია' },
       { kind: 'paragraph', text: 'აპლიკაცია „ბიზნეს რეგისტრი" უზრუნველყოფს საქართველოს ბიზნეს რეგისტრის საჯარო მონაცემების ძებნასა და დათვალიერებას. აპლიკაცია არ ითხოვს რეგისტრაციას და არ აგროვებს პერსონალურ მონაცემებს.' },
@@ -38,15 +38,13 @@ export const policyApp: Record<Lang, AppPolicy> = {
       { kind: 'paragraph', text: 'აპლიკაცია არ იყენებს რეკლამას, ანალიტიკას ან მომხმარებლის თვალთვალის (tracking) ინსტრუმენტებს. გარე სერვისები შემოიფარგლება საქსტატის API-თა და OpenStreetMap-ის რუკებით.' },
       { kind: 'heading', text: '4. მონაცემთა უსაფრთხოება' },
       { kind: 'paragraph', text: 'ყველა ქსელური მოთხოვნა ხორციელდება დაშიფრული HTTPS კავშირით.' },
-      { kind: 'heading', text: '5. ბავშვები' },
-      { kind: 'paragraph', text: 'აპლიკაცია არ არის მიმართული 13 წლამდე ბავშვებზე და არ აგროვებს მათგან ინფორმაციას.' },
-      { kind: 'heading', text: '6. კონტაქტი' },
+      { kind: 'heading', text: '5. კონტაქტი' },
       { kind: 'paragraph', text: 'კითხვების შემთხვევაში დაგვიკავშირდით: info@geostat.ge · www.geostat.ge' },
     ],
   },
   en: {
     owner: 'Business Register · National Statistics Office of Georgia (Geostat)',
-    updated: 'Last updated: 27 July 2026',
+    updated: 'Last updated: 6 August 2026',
     blocks: [
       { kind: 'heading', text: '1. Overview' },
       { kind: 'paragraph', text: 'The "Business Register" app lets you search and browse public data from Georgia\'s Business Register. The app requires no registration and collects no personal data.' },
@@ -59,9 +57,7 @@ export const policyApp: Record<Lang, AppPolicy> = {
       { kind: 'paragraph', text: 'The app contains no advertising, analytics, or user-tracking. External services are limited to the Geostat API and OpenStreetMap map tiles.' },
       { kind: 'heading', text: '4. Data Security' },
       { kind: 'paragraph', text: 'All network requests use encrypted HTTPS connections.' },
-      { kind: 'heading', text: '5. Children' },
-      { kind: 'paragraph', text: 'The app is not directed at children under 13 and does not knowingly collect their information.' },
-      { kind: 'heading', text: '6. Contact' },
+      { kind: 'heading', text: '5. Contact' },
       { kind: 'paragraph', text: 'For questions, contact us at: info@geostat.ge · www.geostat.ge' },
     ],
   },
