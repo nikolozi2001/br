@@ -166,10 +166,10 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
       <div className="w-full">
         <div className="container mx-auto">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap justify-between items-center gap-4">
               {/* Left Side - Navigation Buttons */}
               <div
-                className="flex flex-wrap lg:flex-nowrap shrink-0 justify-center sm:justify-start sm:self-end"
+                className="flex flex-wrap xl:flex-nowrap shrink-0 justify-center sm:justify-start sm:self-end"
                 role="group"
               >
                 <Link
@@ -215,8 +215,10 @@ function TopNavigation({ isEnglish, onLanguageChange }) {
                 </a>
               </div>
 
-              {/* Center - mobile app download: Play badge | QR | App Store badge */}
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Center - mobile app download: Play badge | QR | App Store badge.
+                  Below xl it drops to its own line so the tabs + date/icons row
+                  keeps its original composition. */}
+              <div className="flex items-center gap-2 shrink-0 order-last xl:order-none">
                 <StoreBadge store="play" isEnglish={isEnglish} size="compact" />
 
                 <button
