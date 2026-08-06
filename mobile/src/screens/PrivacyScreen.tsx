@@ -1,74 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { EmptyState, HeroGradient, RoundButton } from '../components/primitives';
+import { Card, EmptyState, HeroGradient, RoundButton } from '../components/primitives';
+import { cachedLookup } from '../api/lookupCache';
 import { getStrings } from '../i18n/strings';
+import { parsePolicy, type PolicyBlock } from '../utils/policyText';
 import { useTheme } from '../theme/ThemeProvider';
 import type { SettingsScreenProps } from '../navigation/types';
 
 /**
- * Geostat's confidentiality policy, read inside the app rather than handed to
- * the browser.
+ * Geostat's confidentiality policy, laid out by the app rather than shown in a
+ * WebView.
  *
- * The text is fetched from geostat.ge rather than shipped with the build: it is
- * the authority's own legal wording, and a copy embedded here would quietly go
- * out of date the day they revise it.
+ * The text is fetched instead of shipped with the build — it is the authority's
+ * own legal wording, and an embedded copy would go stale the day they revise it
+ * — but the *presentation* is ours, so it honours the theme and the font-size
+ * setting like every other screen. It is cached alongside the picker lists, so a
+ * second visit and an offline one both work.
  *
- * Only the policy itself is pulled out of the page and re-rendered in a document
- * of our own, so it reads as a screen rather than a website in a box. Injecting
- * CSS into their page was tried first and did not run at all; extracting the
- * text avoids depending on the WebView's injection timing, their content
- * security policy, and the chat widget they float over the corner.
+ * geostat.ge publishes this page only in English; see `privacyEnglishOnly`.
  */
 
 /** The policy sits in `.history-text` and holds only `<p>`; the next `<div>` ends it. */
 const POLICY_BODY = /history-text'>(.*?)(?=<div)/s;
 
-/**
- * The list bullets come through as U+F0B7 — the Wingdings glyph Word leaves
- * behind when text is pasted from it. Without that font it draws as an empty
- * box, so it becomes a real bullet.
- */
-const fixWordBullets = (html: string): string => html.replace(/\uF0B7/g, '\u2022');
-
-const page = (body: string): string => `<!doctype html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<style>
-  body { margin: 0; padding: 18px 16px 36px; background: #fff;
-         font-family: -apple-system, system-ui, sans-serif;
-         font-size: 15px; line-height: 1.65; color: #1a1a2e; }
-  p { margin: 0 0 14px; }
-  a { color: #0080be; }
-</style>
-</head><body>${body}</body></html>`;
+async function fetchPolicy(lang: string): Promise<PolicyBlock[]> {
+  const response = await fetch(`https://www.geostat.ge/${lang}/page/privacy-policy`);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const source = await response.text();
+  const body = POLICY_BODY.exec(source)?.[1];
+  if (!body) throw new Error('policy body not found');
+  return parsePolicy(body);
+}
 
 export default function PrivacyScreen({ navigation }: SettingsScreenProps<'Privacy'>) {
-  const { colors, fonts, fs, lang } = useTheme();
+  const { colors, fonts, fs, lang, radius } = useTheme();
   const t = getStrings(lang);
   const insets = useSafeAreaInsets();
 
-  const [html, setHtml] = useState<string | null>(null);
+  const [blocks, setBlocks] = useState<PolicyBlock[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setHtml(null);
+    setBlocks(null);
     setFailed(false);
 
-    fetch(`https://www.geostat.ge/${lang}/page/privacy-policy`)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.text();
-      })
-      .then((source) => {
-        if (cancelled) return;
-        const body = POLICY_BODY.exec(source)?.[1];
-        // A redesign could move the text; better to show the whole page than nothing.
-        setHtml(body ? page(fixWordBullets(body)) : source);
+    cachedLookup(`privacy.${lang}`, () => fetchPolicy(lang))
+      .then((result) => {
+        if (!cancelled) setBlocks(result);
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -104,11 +85,54 @@ export default function PrivacyScreen({ navigation }: SettingsScreenProps<'Priva
         <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
           <EmptyState icon="search" title={t.networkError} body={t.privacyOffline} />
         </View>
-      ) : html ? (
-        <WebView
-          source={{ html, baseUrl: 'https://www.geostat.ge/' }}
-          style={{ flex: 1, backgroundColor: '#fff' }}
-        />
+      ) : blocks ? (
+        <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: 32 + insets.bottom, gap: 10 }}>
+          {/* The source has no Georgian translation, so say so rather than let it surprise. */}
+          {lang === 'ka' ? (
+            <View
+              style={{
+                backgroundColor: colors.tint.blue10,
+                borderRadius: radius.lg,
+                paddingVertical: 10,
+                paddingHorizontal: 13,
+              }}
+            >
+              <Text style={{ fontSize: fs(12), color: colors.brand, lineHeight: fs(17) }}>
+                {t.privacyEnglishOnly}
+              </Text>
+            </View>
+          ) : null}
+
+          <Card style={{ padding: 16, gap: 12 }}>
+            {blocks.map((block, index) => {
+              if (block.kind === 'heading') {
+                return (
+                  <Text
+                    key={index}
+                    style={{ fontFamily: fonts.heading, fontSize: fs(17), color: colors.brand }}
+                  >
+                    {block.text}
+                  </Text>
+                );
+              }
+              if (block.kind === 'bullet') {
+                return (
+                  <View key={index} style={{ flexDirection: 'row', gap: 9, paddingLeft: 2 }}>
+                    <Text style={{ fontSize: fs(15), lineHeight: fs(23), color: colors.brand }}>•</Text>
+                    <Text style={{ flex: 1, fontSize: fs(15), lineHeight: fs(23), color: colors.ink }}>
+                      {block.text}
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <Text key={index} style={{ fontSize: fs(15), lineHeight: fs(23), color: colors.ink }}>
+                  {block.text}
+                </Text>
+              );
+            })}
+          </Card>
+        </ScrollView>
       ) : (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={colors.brand} />

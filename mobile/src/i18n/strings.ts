@@ -161,6 +161,7 @@ const ka = {
   dataSource: 'მონაცემთა წყარო',
   privacy: 'კონფიდენციალურობის პოლიტიკა',
   privacyOffline: 'პოლიტიკის ტექსტი geostat.ge-დან იტვირთება. შეამოწმეთ ინტერნეტკავშირი და სცადეთ ხელახლა.',
+  privacyEnglishOnly: 'საქსტატს ეს პოლიტიკა მხოლოდ ინგლისურად აქვს გამოქვეყნებული.',
 
   // sheets
   exportShareTitle: 'ექსპორტი და გაზიარება',
@@ -353,6 +354,7 @@ const en = {
   dataSource: 'Data source',
   privacy: 'Privacy policy',
   privacyOffline: 'The policy is loaded from geostat.ge. Check your connection and try again.',
+  privacyEnglishOnly: 'Geostat publishes this policy in English only.',
 
   exportShareTitle: 'Export and share',
   exportShareSubtitle: (n: string | number) => `${n} records · current filter`,
