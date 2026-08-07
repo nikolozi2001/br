@@ -204,7 +204,8 @@ export function EmptyState({ icon, title, body, size = 92, actionLabel, onAction
         <Icon name={icon} size={38} color={colors.brand} width={1.8} />
       </View>
       <Text style={{ fontFamily: fonts.heading, fontSize: fs(17), color: colors.ink, textAlign: 'center' }}>{title}</Text>
-      <Text style={{ fontSize: fs(14), color: colors.muted, lineHeight: fs(21), textAlign: 'center', maxWidth: 240 }}>
+      {/* No lineHeight — maxWidth guarantees wrapping, and a fixed one drops the last line. */}
+      <Text style={{ fontSize: fs(14), color: colors.muted, textAlign: 'center', maxWidth: 240 }}>
         {body}
       </Text>
       {actionLabel && onAction ? (

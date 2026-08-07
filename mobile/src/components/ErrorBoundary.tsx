@@ -42,7 +42,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
       <View style={{ flex: 1, backgroundColor: '#f4f7fb', justifyContent: 'center', padding: 24 }}>
         <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 22, gap: 12 }}>
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#1a1a2e' }}>{title}</Text>
-          <Text style={{ fontSize: 14, color: '#64748b', lineHeight: 20 }}>{body}</Text>
+          <Text style={{ fontSize: 14, color: '#64748b' }}>{body}</Text>
 
           {__DEV__ ? (
             <ScrollView style={{ maxHeight: 160 }}>

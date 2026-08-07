@@ -44,7 +44,8 @@ export default function SubjectCard({ subject, onPress }: { subject: Subject; on
         ) : null}
       </View>
 
-      <Text style={{ fontSize: fs(16.5), color: colors.ink, fontWeight: '700', lineHeight: fs(21.5) }}>
+      {/* No lineHeight — a fixed one drops the trailing line of long Georgian names. */}
+      <Text style={{ fontSize: fs(16.5), color: colors.ink, fontWeight: '700' }}>
         {subject.name}
       </Text>
 

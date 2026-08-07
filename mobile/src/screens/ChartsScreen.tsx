@@ -48,7 +48,7 @@ function ChartCard({ title, onFlip, onExport, captureRef, children }: ChartCardP
             gap: 10,
           }}
         >
-          <Text style={{ flex: 1, fontFamily: fonts.heading, fontSize: fs(14), color: '#fff', lineHeight: fs(18) }}>
+          <Text style={{ flex: 1, fontFamily: fonts.heading, fontSize: fs(14), color: '#fff' }}>
             {title}
           </Text>
           {onFlip ? (

@@ -122,7 +122,7 @@ function ReportDetail({ report, onBack }: { report: ReportMeta; onBack: () => vo
           >
             <Text style={{ fontSize: fs(12), fontWeight: '700', color: colors.brand }}>{item.code}</Text>
           </View>
-          <Text style={{ flex: 1, fontSize: fs(14), color: colors.ink, fontWeight: '600', lineHeight: fs(18) }}>
+          <Text style={{ flex: 1, fontSize: fs(14), color: colors.ink, fontWeight: '600' }}>
             {item.name}
           </Text>
         </View>
@@ -183,7 +183,7 @@ function ReportDetail({ report, onBack }: { report: ReportMeta; onBack: () => vo
           <RoundButton icon="share" color={colors.brand} background="#fff" elevated onPress={() => setShareOpen(true)} />
         </View>
         <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-          <Text style={{ fontSize: fs(13), color: 'rgba(255,255,255,0.85)', lineHeight: fs(18) }}>
+          <Text style={{ fontSize: fs(13), color: 'rgba(255,255,255,0.85)' }}>
             {report.title[lang] ?? report.title.ka}
           </Text>
         </View>

@@ -116,7 +116,7 @@ function MapPreview({
       )}
       <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 15 }}>
         <Icon name="pin" size={17} color={colors.faint} />
-        <Text style={{ flex: 1, fontSize: fs(13.5), color: colors.ink, lineHeight: fs(18) }}>{addressLine}</Text>
+        <Text style={{ flex: 1, fontSize: fs(13.5), color: colors.ink }}>{addressLine}</Text>
       </Pressable>
     </Card>
   );
@@ -472,7 +472,8 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
               </View>
             ) : null}
           </View>
-          <Text style={{ fontFamily: fonts.heading, fontSize: fs(22), color: '#fff', letterSpacing: -0.33, lineHeight: fs(27) }}>
+          {/* No lineHeight — a fixed one drops the trailing line of long Georgian names. */}
+          <Text style={{ fontFamily: fonts.heading, fontSize: fs(22), color: '#fff', letterSpacing: -0.33 }}>
             {subject.name}
           </Text>
           <Text style={{ marginTop: 5, fontSize: fs(13), color: 'rgba(255,255,255,0.8)' }}>
@@ -628,7 +629,7 @@ export default function DetailScreen({ navigation, route }: HomeScreenProps<'Det
                       key={`${a.addr}-${i}`}
                       style={{ gap: 3, padding: 15, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: colors.line3 }}
                     >
-                      <Text style={{ fontSize: fs(14), color: colors.ink, fontWeight: '500', lineHeight: fs(19) }}>
+                      <Text style={{ fontSize: fs(14), color: colors.ink, fontWeight: '500' }}>
                         {a.addr}
                       </Text>
                       <Text style={{ fontSize: fs(12), color: colors.muted }}>

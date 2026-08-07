@@ -103,7 +103,7 @@ export default function PersonInvolvementSheet({
             >
               <View style={{ flex: 1 }}>
                 <Text
-                  style={{ fontFamily: fonts.heading, fontSize: fs(18), color: '#fff', lineHeight: fs(23) }}
+                  style={{ fontFamily: fonts.heading, fontSize: fs(18), color: '#fff' }}
                   numberOfLines={2}
                 >
                   {personName}

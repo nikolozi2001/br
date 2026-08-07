@@ -48,7 +48,7 @@ export default function ReportsScreen({ navigation }: ReportsScreenProps<'Report
             >
               <Text style={{ fontFamily: fonts.heading, fontSize: fs(14), color: colors.brand }}>{item.id}</Text>
             </View>
-            <Text style={{ flex: 1, fontSize: fs(14), color: colors.ink, fontWeight: '500', lineHeight: fs(19) }}>
+            <Text style={{ flex: 1, fontSize: fs(14), color: colors.ink, fontWeight: '500' }}>
               {item.title[lang] ?? item.title.ka}
             </Text>
             <Icon name="chevronRight" size={16} color="#cbd5e1" />

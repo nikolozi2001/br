@@ -130,7 +130,8 @@ export default function SubjectShareSheet({ visible, onClose, subject }: Subject
 
           <View style={{ padding: 18, gap: 12 }}>
             <View>
-              <Text style={{ fontFamily: fonts.heading, fontSize: fs(19), color: colors.ink, lineHeight: fs(24) }}>
+              {/* No lineHeight — a fixed one drops the trailing line of long Georgian names. */}
+              <Text style={{ fontFamily: fonts.heading, fontSize: fs(19), color: colors.ink }}>
                 {subject.name}
               </Text>
               <Text style={{ fontSize: fs(12), color: colors.muted, marginTop: 3 }}>
